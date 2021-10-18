@@ -10,7 +10,7 @@ import numpy
 from . import dbmsh
 from . import configMESH
 import logging
-from ..utils import customLogging,fileio
+from . import customLogging,fileio
 
 # load Logger
 Logger = logging.getLogger(__name__)
