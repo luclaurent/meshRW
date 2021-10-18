@@ -11,7 +11,7 @@ from datetime import datetime
 import logging
 from . import dbvtk
 from . import configMESH
-from ..utils import customLogging,fileio
+from . import customLogging,fileio
 
 # load Logger
 Logger = logging.getLogger(__name__)
@@ -329,7 +329,7 @@ class vtkWriter:
             for itE in elems:
                 nbElems = itE[configMESH.DFLT_MESH].shape[0]
                 if configMESH.DFLT_PHYS_GRP in itE.keys():
-                    dataPhys = numpy.array(itE[configMESH.DFLT_PHYS_GRP],dtype=numpy.int)
+                    dataPhys = numpy.array(itE[configMESH.DFLT_PHYS_GRP],dtype=int)
                     if len(dataPhys) == nbElems:
                         data = numpy.append(data,dataPhys)
                     else:
