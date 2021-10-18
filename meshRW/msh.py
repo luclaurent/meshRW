@@ -418,7 +418,7 @@ class mshReader:
                     contentLine[1:], dtype=numpy.float)
                 itL += 1
         else:
-            print('No nodes found (tag {} not found)'.format(tagStart))
+            Logger.error('No nodes found (tag {} not found)'.format(tagStart))
         Logger.debug('Nodes read: {}, dimension: {}'.format(self.nbNodes,self.dim))
 
     def readElements(self):
@@ -432,7 +432,6 @@ class mshReader:
         # search for tagStart
         while not checkContentLine(contentLine,tagStart,0):
             contentLine = self.fhandle.readline().split()
-            print(contentLine)
         # start read elements
         if checkContentLine(contentLine,tagStart,0):
             contentLine = self.fhandle.readline().split()
@@ -447,7 +446,7 @@ class mshReader:
             # finalize data
             self._finalizeElems()
         else:
-            print('No elements found (tag {} not found)'.format(tagStart))
+            Logger.error('No elements found (tag {} not found)'.format(tagStart))
         Logger.debug('Elements read: {}'.format(self.nbElems))
         Logger.debug('Type of elements')
         for elemType in self.elems.keys():
@@ -586,7 +585,6 @@ def checkContentLine(content = None,
     if status:
         if content[0] != pattern:
             status = False
-        print(content[0])
     return status
 
 

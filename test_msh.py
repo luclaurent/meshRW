@@ -1,4 +1,4 @@
-from SILEXlib.mesh import msh
+from meshRW import msh
 import os
 import numpy
 import pickle
@@ -28,4 +28,4 @@ if __name__ == "__main__":
     #                     )
 
 
-    msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'./SILEXlib/vv.msh')))
+    msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'./test_data/vv.msh')))
