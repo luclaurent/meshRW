@@ -153,7 +153,7 @@ class mshWriter:
             self.fhandle = fileio.fileHandler(filename = filename,right = 'a',safeMode = False)
             self.appendTxt = True
         else:
-            self.fhandle = fileio.fileHandler(filename = filename,right = 'r',safeMode = False)
+            self.fhandle = fileio.fileHandler(filename = filename,right = 'w',safeMode = False)
 
         if not self.appendTxt:
             # write header
@@ -408,14 +408,14 @@ class mshReader:
             self.nodes = numpy.zeros((self.nbNodes, self.dim))
             # store first node
             self.nodes[itL, :] = numpy.array(
-                contentLine[1:], dtype=numpy.float)
+                contentLine[1:], dtype=float)
             itL += 1
             # read coordinates
             while itL < self.nbNodes:
                 contentLine = self.fhandle.readline().split()
                 # store nodes coordinates
                 self.nodes[itL, :] = numpy.array(
-                    contentLine[1:], dtype=numpy.float)
+                    contentLine[1:], dtype=float)
                 itL += 1
         else:
             Logger.error('No nodes found (tag {} not found)'.format(tagStart))

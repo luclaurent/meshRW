@@ -55,12 +55,13 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    # install_requires=[
+    install_requires=[
+        'numpy'
     #     'wand>=0.5.9',
     #     'lxml>=3.5.0',
     #     'pyparsing>=2.4.6',
     #     'wheel>=0.29.0',
     #     'markdown'
-    # ],
+    ],
     python_requires='>=3.5'
 )

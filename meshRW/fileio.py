@@ -89,9 +89,9 @@ class fileHandler:
         if self.append and os.path.exists(self.filename):
             Logger.warning('{} does not exist! Unable to append'.format(self.basename))
             self.fixRight(append = False)
-        if not safeMode and os.path.exists(self.filename) and not self.append:
+        if not safeMode and os.path.exists(self.filename) and not self.append and 'w' in self.right:
             Logger.warning('{} already exists! It will be overwritten'.format(self.basename))
-        if safeMode and os.path.exists(self.filename) and not self.append:
+        if safeMode and os.path.exists(self.filename) and not self.append and 'w' in self.right:
             Logger.warning('{} already exists! Not overwrite it'.format(self.basename))
         else:
             #
