@@ -36,9 +36,14 @@ class TestMSH(unittest.TestCase):
                             {'data':dataElemStep,'type':'elemental' ,'dim':3,'name':'alongsteps','nbsteps':5}]#,'steps':list of steps,'nbsteps':number of steps]
                     )
 
-    def test_MSHreader(self):
+    def test_MSHreader3D(self):
         #open fiel and read it
-        msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'./test_data/vv.msh')))
+        msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'./test_data/mesh3Dref.msh')))
+    
+    def test_MSHreader2D(self):
+        #open fiel and read it
+        msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'./test_data/mesh2Dref.msh')))
+
 
     def test_VTKwriter(self):
         #open data

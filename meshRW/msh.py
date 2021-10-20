@@ -10,7 +10,7 @@ import numpy
 from . import dbmsh
 from . import configMESH
 import logging
-from . import customLogging,fileio
+from . import customLogging, fileio
 
 # load Logger
 Logger = logging.getLogger(__name__)
@@ -108,7 +108,6 @@ def getNumberNodesFromNum(elementNum):
     return getNumberNodes(getElemTypeFromMSH(elementNum))
 
 
-
 class mshWriter:
     nbNodes = None
     nbElems = None
@@ -116,11 +115,11 @@ class mshWriter:
     appendTxt = False
     fhandle = None
 
-    def __init__(self, 
-                 filename=None, 
-                 nodes=None, 
-                 elems=None, 
-                 fields=None, 
+    def __init__(self,
+                 filename=None,
+                 nodes=None,
+                 elems=None,
+                 fields=None,
                  append=False):
         """
         load class to write file
@@ -150,16 +149,20 @@ class mshWriter:
         # depending on the case
         Logger.info('Start writing {}'.format(self.basename))
         if fields is not None and append and os.path.exists(filename):
-            self.fhandle = fileio.fileHandler(filename = filename,right = 'a',safeMode = False)
+            self.fhandle = fileio.fileHandler(
+                filename=filename, right='a', safeMode=False)
             self.appendTxt = True
         else:
-            self.fhandle = fileio.fileHandler(filename = filename,right = 'w',safeMode = False)
+            self.fhandle = fileio.fileHandler(
+                filename=filename, right='w', safeMode=False)
 
         if not self.appendTxt:
             # write header
-            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_OPEN_CLOSE['open']))
+            self.fhandle.write('{}\n'.format(
+                dbmsh.DFLT_FILE_OPEN_CLOSE['open']))
             self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_VERSION))
-            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_OPEN_CLOSE['close']))
+            self.fhandle.write('{}\n'.format(
+                dbmsh.DFLT_FILE_OPEN_CLOSE['close']))
             # write nodes
             self.writeNodes(nodes)
             # write elements
@@ -167,7 +170,7 @@ class mshWriter:
 
         # write fields
         if fields is not None:
-            self.writeFields(elems,fields)
+            self.writeFields(elems, fields)
 
         # close file
         self.fhandle.close()
@@ -243,7 +246,8 @@ class mshWriter:
             if type(iD[configMESH.DFLT_PHYS_GRP]) is int:
                 iD[configMESH.DFLT_PHYS_GRP] = [iD[configMESH.DFLT_PHYS_GRP]]
             if len(iD[configMESH.DFLT_PHYS_GRP]) == 1:
-                iD[configMESH.DFLT_PHYS_GRP].append(iD[configMESH.DFLT_PHYS_GRP][0])
+                iD[configMESH.DFLT_PHYS_GRP].append(
+                    iD[configMESH.DFLT_PHYS_GRP][0])
         Logger.debug('Done')
 
         # write all meshes
@@ -267,7 +271,7 @@ class mshWriter:
                 # write in file
                 self.fhandle.write(formatSpec.format(itElem, iD['eltypeGMSH'], len(
                     iD[configMESH.DFLT_PHYS_GRP]), *iD[configMESH.DFLT_PHYS_GRP], *iD[configMESH.DFLT_MESH][e]))
-        
+
         self.fhandle.write('{}\n'.format(dbmsh.DFLT_ELEMS_OPEN_CLOSE['close']))
         Logger.debug('Write elements: done')
 
@@ -311,7 +315,8 @@ class mshWriter:
         Logger.debug('Start writing fields')
         for iF in fieldsRun:
             nameField = iF[configMESH.DFLT_FIELD_NAME]
-            nbPerEntity = iF[configMESH.DFLT_FIELD_DIM]   # number of data per nodes/cells
+            # number of data per nodes/cells
+            nbPerEntity = iF[configMESH.DFLT_FIELD_DIM]
             if configMESH.DFLT_FIELD_STEPS in iF.keys():
                 listSteps = iF[configMESH.DFLT_FIELD_STEPS]
                 nbSteps = len(listSteps)
@@ -321,18 +326,20 @@ class mshWriter:
             else:
                 nbSteps = 1
                 listSteps = [0.0]
-            Logger.debug('Field: {}, number of steps: {}, dimension per node/cell: {}'.format(nameField,nbSteps,nbPerEntity))
+            Logger.debug('Field: {}, number of steps: {}, dimension per node/cell: {}'.format(
+                nameField, nbSteps, nbPerEntity))
             # reformat values as list of arrays
             if len(iF[configMESH.DFLT_FIELD_DATA]) > 1 and nbSteps == 1:
                 values = [iF[configMESH.DFLT_FIELD_DATA]]
             else:
                 values = iF[configMESH.DFLT_FIELD_DATA]
             # format specifier to write fields
-            formatSpec = '{:d} '+' '.join('{:9.4f}' for i in range(nbPerEntity))+'\n'
+            formatSpec = '{:d} ' + \
+                ' '.join('{:9.4f}' for i in range(nbPerEntity))+'\n'
             # along steps
             for iS in range(nbSteps):
-                if nbSteps>1:
-                    Logger.debug('Step number: {}/{}'.format(iS+1,nbSteps))
+                if nbSteps > 1:
+                    Logger.debug('Step number: {}/{}'.format(iS+1, nbSteps))
                 if iF[configMESH.DFLT_FIELD_TYPE] is configMESH.DFLT_FIELD_TYPE_NODAL:
                     typeData = dbmsh.DFLT_FIELDS_NODES_OPEN_CLOSE
                 elif iF[configMESH.DFLT_FIELD_TYPE] is configMESH.DFLT_FIELD_TYPE_ELEMENT:
@@ -352,10 +359,12 @@ class mshWriter:
                 self.fhandle.write('{:d}\n'.format(values[iS].shape[0]))
                 #
                 for i in range(values[iS].shape[0]):
-                    self.fhandle.write(formatSpec.format(i+1, *values[iS][i,:]))
+                    self.fhandle.write(
+                        formatSpec.format(i+1, *values[iS][i, :]))
 
                 self.fhandle.write('{}\n'.format(typeData['close']))
             Logger.debug('Write field: done')
+
 
 class mshReader:
 
@@ -366,96 +375,99 @@ class mshReader:
     tagsList = {}  # list of tags and associated elements
     fhandle = None
     objFile = None
+    readData = None
+    curIt = 0
 
     def __init__(self, filename=None, type='mshv2', dim=None):
 
         Logger.debug('Open file {}'.format(filename))
         # open file and get handle
-        self.objFile = fileio.fileHandler(filename = filename,right = 'r',safeMode = False)
+        self.objFile = fileio.fileHandler(
+            filename=filename, right='r', safeMode=False)
         self.fhandle = self.objFile.getHandler()
-        # read nodes
-        self.readNodes(dim)
-        # read elements
-        self.readElements()
-        # close file
-        self.fhandle.close()
+        # read file line by line
+        for l in self.fhandle:
+            if not self.readData:
+                self.readData = catchTag(l)
+            elif self.readData is 'nodes':
+                # read nodes
+                self.readNodes(dim, l)
+            elif self.readData is 'elems':
+                # read elements
+                self.readElements(l)
 
-    def readNodes(self, dim=None):
+        # close file
+        self.objFile.close()
+
+    def readNodes(self, dim=None, lineStr=None):
         """
-        Read nodes in msh file
-            imput: 
+        Read nodes in msh file from line
+            imputs: 
                 - dim (optional): dimension of the nodes (2D/3D)
+                - lineStr: content of the current line
         """
-        tagStart = dbmsh.DFLT_NODES_OPEN_CLOSE['open']
-        contentLine = [None]
-        itL = 0
-        Logger.debug('Start read nodes')
-        # search for tagStart
-        while not checkContentLine(contentLine,tagStart,0):
-            contentLine = self.fhandle.readline().split()
-        # start read nodes
-        if checkContentLine(contentLine,tagStart,0):
-            contentLine = self.fhandle.readline().split()
+        contentLine = lineStr.split()
+        # first read: access to the number of nodes
+        if self.curIt == 0:
             # read number of nodes
             self.nbNodes = int(contentLine[0])
-            # get the dimension
-            contentLine = self.fhandle.readline().split()
-            if not dim:
-                self.dim = len(contentLine)-1
-            else:
-                self.dim = dim
-            # create array to store nodes coordinates
-            self.nodes = numpy.zeros((self.nbNodes, self.dim))
-            # store first node
-            self.nodes[itL, :] = numpy.array(
-                contentLine[1:], dtype=float)
-            itL += 1
-            # read coordinates
-            while itL < self.nbNodes:
-                contentLine = self.fhandle.readline().split()
-                # store nodes coordinates
-                self.nodes[itL, :] = numpy.array(
-                    contentLine[1:], dtype=float)
-                itL += 1
+            self.curIt += 1
+            self.dim = dim
+            Logger.debug('Start read {} nodes'.format(self.nbNodes))
         else:
-            Logger.error('No nodes found (tag {} not found)'.format(tagStart))
-        Logger.debug('Nodes read: {}, dimension: {}'.format(self.nbNodes,self.dim))
+            if self.curIt == 1:
+                if not dim:
+                    # extract dimension
+                    self.dim = len(contentLine)-1
+                # create array to store nodes coordinates
+                self.nodes = numpy.zeros((self.nbNodes, self.dim))
+            # store nodes
+            self.nodes[self.curIt-1, :] = numpy.array(
+                contentLine[1:self.dim+1], dtype=float)
+            self.curIt += 1
+            # stop read nodes
+            if self.curIt-1 == self.nbNodes:
+                self.readData = None
+                self.curIt = 0
+                Logger.debug('Nodes read: {}, dimension: {}'.format(
+                    self.nbNodes, self.dim))
 
-    def readElements(self):
+    def readElements(self, lineStr=None):
         """
         Read elements
+        imput: 
+                - lineStr: content of the current line
         """
-        tagStart = dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']
-        contentLine = [None]
-        itL = 0
-        Logger.debug('Start read elements')
-        # search for tagStart
-        while not checkContentLine(contentLine,tagStart,0):
-            contentLine = self.fhandle.readline().split()
-        # start read elements
-        if checkContentLine(contentLine,tagStart,0):
-            contentLine = self.fhandle.readline().split()
+
+        contentLine = lineStr.split()
+        # first read: access to the number of elements
+        if self.curIt == 0:
             # read number of elements
             self.nbElems = int(contentLine[0])
-            # along elements lines
-            while itL < self.nbElems:
-                contentLine = self.fhandle.readline().split()
-                # store nodes coordinates
-                self._readElementsLine(contentLine)
-                itL += 1
-            # finalize data
-            self._finalizeElems()
+            self.curIt += 1
+            Logger.debug('Start read {} elements'.format(self.nbElems))
         else:
-            Logger.error('No elements found (tag {} not found)'.format(tagStart))
-        Logger.debug('Elements read: {}'.format(self.nbElems))
-        Logger.debug('Type of elements')
-        for elemType in self.elems.keys():
-            Logger.debug(' > {} {}'.format(self.elems[elemType].shape[0],elemType))
-        Logger.debug('Tags')
-        for tagName in self.tagsList.keys():
-            Logger.debug('Tag: {}'.format(tagName))
-            for elemType in self.tagsList[tagName].keys():
-                Logger.debug(' > {} {}'.format(len(self.tagsList[tagName][elemType]),elemType))
+            # store elements connectivity
+            self._readElementsLine(contentLine)
+            self.curIt += 1
+            # stop read nodes
+            if self.curIt-1 == self.nbElems:
+                #  finalize data
+                self._finalizeElems()
+                # reset
+                self.readData = None
+                self.curIt = 0
+                Logger.debug('Elements read: {}'.format(self.nbElems))
+                Logger.debug('Type of elements')
+                for elemType in self.elems.keys():
+                    Logger.debug(' > {} {}'.format(
+                        self.elems[elemType].shape[0], elemType))
+                Logger.debug('Tags')
+                for tagName in self.tagsList.keys():
+                    Logger.debug('Tag: {}'.format(tagName))
+                    for elemType in self.tagsList[tagName].keys():
+                        Logger.debug(' > {} {}'.format(
+                            len(self.tagsList[tagName][elemType]), elemType))
 
     def _finalizeElems(self):
         """
@@ -566,11 +578,23 @@ class mshReader:
         return listTypes
 
 
+def catchTag(content=None):
+    """
+    Try to find a specific tag in content
+    """
+    tagStartNodes = dbmsh.DFLT_NODES_OPEN_CLOSE['open']
+    tagStartElems = dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']
+    typeTag = None
+    if tagStartNodes == content.strip():
+        typeTag = 'nodes'
+    if tagStartElems == content.strip():
+        typeTag = 'elems'
+    return typeTag
 
 
-def checkContentLine(content = None,
-                    pattern = None,
-                    item = 0):
+def checkContentLine(content=None,
+                     pattern=None,
+                     item=0):
     """
     check if the pattern could be found exactly in content (list)
     """
@@ -586,5 +610,3 @@ def checkContentLine(content = None,
         if content[0] != pattern:
             status = False
     return status
-
-
