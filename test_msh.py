@@ -29,4 +29,5 @@ CurrentPath = os.path.dirname(__file__)
 
 
 # msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'./meshRW/test_data/vv.msh')))
-msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'xfem3_noarea_fin_dim_b_fluid.msh')),dim=2)
+M = msh.mshReader(filename=os.path.abspath(os.path.join(CurrentPath,'meshRW/test_data/mesh2Dref.msh')),dim=2)
+M.getElements(dictFormat = False)

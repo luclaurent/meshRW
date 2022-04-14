@@ -517,7 +517,7 @@ class mshReader:
         """
         return self.nodes
 
-    def getElements(self, type=None, tag=None):
+    def getElements(self, type = None, tag = None, dictFormat = True):
         """
         Return elements list
         Inputs:
@@ -545,13 +545,21 @@ class mshReader:
             elemsExportUnique = list()
             if type in elemsTag.keys():
                 elemsExport = self.elems[type][elemsTag[type], :]
-                elemsExportUnique = numpy.unique(elemsExport, axis=0)
+                elemsExportUnique = numpy.unique(elemsExport)
         else:
             elemsExport = dict()
             elemsExportUnique = dict()
             for iT in elemsTag.keys():
                 elemsExport[iT] = self.elems[iT][elemsTag[iT], :]
-                elemsExportUnique[iT] = numpy.unique(elemsExport[iT], axis=0)
+                elemsExportUnique[iT] = numpy.unique(elemsExport[iT])
+
+        #specific export
+        if not dictFormat and not type:
+            if len(elemsExport) > 1:
+                Logger.warning('Elements exported without the dictionary format: some data are not exported')
+            idElems = list(elemsExport.keys())[0]
+            elemsExport = elemsExport[idElems]
+            elemsExportUnique = elemsExportUnique[idElems]
 
         return elemsExport, elemsExportUnique
 
