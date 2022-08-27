@@ -1,5 +1,7 @@
 """
-This file contains the default declatation of the keywords used to declare/manipulate a mesh in Python
+This file contains the default
+declaration of the keywords
+used to declare/manipulate a mesh in Python
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
@@ -17,4 +19,3 @@ DFLT_FIELD_DIM = 'dim'
 DFLT_FIELD_NAME = 'name'
 DFLT_FIELD_STEPS = 'steps'
 DFLT_FIELD_NBSTEPS = 'nbsteps'
-

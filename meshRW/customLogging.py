@@ -8,21 +8,24 @@ DEFAULT_LOG_VERBB_FORMATTER = lambda x : '%(relativeCreated)dms - ({}-%(name)s) 
 DEFAULT_LOG_VERBC_FORMATTER = '%(relativeCreated)dms - (%(name)s) [%(levelname)-8s]: %(message)s '
 DEFAULT_FMT_TIME = '%H:%M:%S'
 
-
 class customLogger:
     """ 
     Basic custom Logger management (load logger, remove consol/file logger, create console/file logger)
     """
 
     def __init__(self,
-        loggerName='custom',
+        loggerName='custommm',
+        loggerRoot=None,
         console=False,
         filename=None,
         activate=False):
         """
         Load logger with loggerName ID and set level to DEBUG
         """
-        self.rootLogger = logging.getLogger(loggerName)
+        if loggerRoot:
+            self.rootLogger = loggerRoot
+        else:
+            self.rootLogger = logging.getLogger(loggerName)
         self.rootLogger.setLevel(logging.DEBUG)
         #
         if activate:

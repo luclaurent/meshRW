@@ -1,6 +1,9 @@
 """
-This class is a part of the SILEX library and will write results in msh v2 file. 
-Documentation available here: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
+This class is a part of
+the SILEX library and
+will write results in msh v2 file.
+Documentation available here:
+https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
@@ -14,9 +17,9 @@ from . import customLogging, fileio
 
 # load Logger
 Logger = logging.getLogger(__name__)
-if not Logger.hasHandlers():
-    LogObj = customLogging.customLogger(activate=True)
-    Logger = LogObj.getLogger()
+# if not Logger.hasHandlers():
+#     LogObj = customLogging.customLogger(loggerRoot=Logger,activate=True)
+#     Logger = LogObj.getLogger()
 
 
 def getMSHElemType(txtEltype):
@@ -340,9 +343,9 @@ class mshWriter:
             for iS in range(nbSteps):
                 if nbSteps > 1:
                     Logger.debug('Step number: {}/{}'.format(iS+1, nbSteps))
-                if iF[configMESH.DFLT_FIELD_TYPE] is configMESH.DFLT_FIELD_TYPE_NODAL:
+                if iF[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_NODAL:
                     typeData = dbmsh.DFLT_FIELDS_NODES_OPEN_CLOSE
-                elif iF[configMESH.DFLT_FIELD_TYPE] is configMESH.DFLT_FIELD_TYPE_ELEMENT:
+                elif iF[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT:
                     typeData = dbmsh.DFLT_FIELDS_ELEMS_OPEN_CLOSE
                 self.fhandle.write('{}\n'.format(typeData['open']))
                 self.fhandle.write('1\n')  # one string tag
@@ -389,10 +392,10 @@ class mshReader:
         for l in self.fhandle:
             if not self.readData:
                 self.readData = catchTag(l)
-            elif self.readData is 'nodes':
+            elif self.readData == 'nodes':
                 # read nodes
                 self.readNodes(dim, l)
-            elif self.readData is 'elems':
+            elif self.readData == 'elems':
                 # read elements
                 self.readElements(l)
 

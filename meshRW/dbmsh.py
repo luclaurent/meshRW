@@ -1,6 +1,8 @@
 """"
-This file includes the definition and tools to manipulate MSH format
-Documentation available here: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
+This file includes the definition
+and tools to manipulate MSH format
+Documentation available here:
+https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 
@@ -44,7 +46,8 @@ def loadElementDict():
         'HEX8': 5,
         # 20-nodes second order hexahedron (8 vertices and 12 on edges)
         'HEX20': 17,
-        # 27-nodes higher order hexahedron (8 vertices, 12 on edges, 6 on faces and 1 inside)
+        # 27-nodes higher order hexahedron
+        # (8 vertices, 12 on edges, 6 on faces and 1 inside)
         'HEX27': 12,
         # 6-nodes prism
         'PRI6': 6,
@@ -101,7 +104,8 @@ def loadNodesElement():
         'HEX8': 8,
         # 20-nodes second order hexahedron (8 vertices and 12 on edges)
         'HEX20': 20,
-        # 27-nodes higher order hexahedron (8 vertices, 12 on edges, 6 on faces and 1 inside)
+        # 27-nodes higher order hexahedron
+        # (8 vertices, 12 on edges, 6 on faces and 1 inside)
         'HEX27': 27,
         # 6-nodes prism
         'PRI6': 6,
@@ -121,10 +125,15 @@ def loadNodesElement():
     return elementDict
 
 
-#Keywords MSH
-DFLT_FILE_OPEN_CLOSE={'open':'$MeshFormat','close':'$EndMeshFormat'}
-DFLT_FILE_VERSION='2.2 0 8'
-DFLT_NODES_OPEN_CLOSE={'open':'$Nodes','close':'$EndNodes'}
-DFLT_ELEMS_OPEN_CLOSE={'open':'$Elements','close':'$EndElements'}
-DFLT_FIELDS_NODES_OPEN_CLOSE={'open':'$NodesData','close':'$EndNodesData'}
-DFLT_FIELDS_ELEMS_OPEN_CLOSE={'open':'$ElementData','close':'$EndElementData'}
+# Keywords MSH
+DFLT_FILE_OPEN_CLOSE = {'open': '$MeshFormat',
+                        'close': '$EndMeshFormat'}
+DFLT_FILE_VERSION = '2.2 0 8'
+DFLT_NODES_OPEN_CLOSE = {'open': '$Nodes',
+                         'close': '$EndNodes'}
+DFLT_ELEMS_OPEN_CLOSE = {'open': '$Elements',
+                         'close': '$EndElements'}
+DFLT_FIELDS_NODES_OPEN_CLOSE = {'open': '$NodesData',
+                                'close': '$EndNodesData'}
+DFLT_FIELDS_ELEMS_OPEN_CLOSE = {'open': '$ElementData',
+                                'close': '$EndElementData'}

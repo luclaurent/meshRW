@@ -11,9 +11,9 @@ from . import various
 
 # load Logger
 Logger = logging.getLogger(__name__)
-if not Logger.hasHandlers():
-    LogObj = customLogging.customLogger(activate=True)
-    Logger = LogObj.getLogger()
+# if not Logger.hasHandlers():
+#     LogObj = customLogging.customLogger(loggerRoot=Logger, activate=True)
+#     Logger = LogObj.getLogger()
 
 class fileHandler:
 
