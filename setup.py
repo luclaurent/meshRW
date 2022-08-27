@@ -42,7 +42,7 @@ setup(
     name="meshRW",
     version=this_version,
     author="L. Laurent",
-    author_email="luc.laurant@lecnam.net",
+    author_email="luc.laurent@lecnam.net",
     description="A tool to read and write MSH (v2) and VTK files",
     long_description=long_description,
     long_description_content_type="text/markdown",
