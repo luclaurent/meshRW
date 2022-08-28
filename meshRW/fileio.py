@@ -147,7 +147,7 @@ class fileHandler:
                 self.right = 'w'
         else:
             self.right=right
-            if right[0] is 'w':
+            if right[0] == 'w':
                 self.append = False
-            elif right[0] is 'a':
+            elif right[0] == 'a':
                 self.append = True
