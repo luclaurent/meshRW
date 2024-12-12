@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mesRW"
+dynamic = ['version']
+authors = [{ name = "L. Laurent", email = "luc.laurent@lecnam.net" }]
+description = "meshRW is a Python module that proposes basic readers and writers for msh (gmsh) and vtk (Paraview)."
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+license = { file = "LICENSE" }
+dependencies = ['numpy', 'vtk', 'gmsh', 'pytest']
+requires-python = '>=3.8'
+
+
+[project.urls]
+Homepage = "https://github.com/luclaurent/meshRW"
+Repository = "https://github.com/luclaurent/meshRW"
+Issues = "https://github.com/luclaurent/meshRW/issues"
+
+
+[tool.hatch.version]
+path = "meshRW/__init__.py"
+
+[tool.hatch.build]
+packages = ["meshRW"]
+# only-packages = true
+ignore-vcs = false
+
+[tool.hatch.envs.hatch-test]
+default-args = ["meshRW/tests"]
+
+[tool.coverage.run]
+branch = true
+command_line = "-m unittest discover -s meshRW/tests/"
+
+[tool.coverage.html]
+directory = "coverage_html_report"
+
+[tool.ruff]
+# Allow lines to be as long as 120.
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "single"

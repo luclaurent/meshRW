@@ -1,0 +1,7 @@
+{
+    "python.testing.pytestArgs": [
+        "meshRW"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
