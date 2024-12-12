@@ -4,14 +4,15 @@ This class is a part of the SILEX library and will write results in legacy VTK f
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
-import os, sys
+import os
+import sys
 import numpy
 import time
 from datetime import datetime
 import logging
 from . import dbvtk
 from . import configMESH
-from . import customLogging,fileio
+from . import customLogging, fileio
 
 # load Logger
 Logger = logging.getLogger(__name__)
@@ -20,13 +21,12 @@ if not Logger.hasHandlers():
     Logger = LogObj.getLogger()
 
 
-
 def getVTKElemType(txtEltype):
     """
     Get the element type defined as in vtk (refer to VTK documentation for numbering) from text declaration
     syntax:
         getVTKElemType(txtEltype)
-    
+
     input:
         txtEltype: element declared using VTK string (if number is used the function wil return it)
     output:
@@ -35,10 +35,10 @@ def getVTKElemType(txtEltype):
     VTKtoElem = dbvtk.getVTKtoElem()
     elementDict = dbvtk.loadElementDict()
     numPerElementDict = dbvtk.loadNodesElement()
-    
-    #depending on the type of txtEltype
+
+    # depending on the type of txtEltype
     numPerElement = -1
-    if isinstance(txtEltype,int):
+    if isinstance(txtEltype, int):
         elementNum = txtEltype
     else:
         if txtEltype.upper() in VTKtoElem.keys():
@@ -47,7 +47,7 @@ def getVTKElemType(txtEltype):
         numPerElement = numPerElementDict[txtEltype.upper()]
     if not elementNum:
         Logger.error('Element type {} not implemented'.format(txtEltype))
-    return elementNum,numPerElement
+    return elementNum, numPerElement
 
 
 def getElemTypeFromVTK(elementNum):
@@ -108,19 +108,20 @@ def getNumberNodesFromNum(elementNum):
     return getNumberNodes(getElemTypeFromVTK(elementNum))
 
 
-#DEFAULT VALUES
-ALLOWED_EXTENSIONS = ['.vtk','.vtk.bz2','.vtk.gz']
+# DEFAULT VALUES
+ALLOWED_EXTENSIONS = ['.vtk', '.vtk.bz2', '.vtk.gz']
+
 
 class vtkWriter:
 
-    def __init__(self, 
-                filename = None, 
-                nodes = None, 
-                elems = None, 
-                fields = None, 
-                append = False,
-                title = None,
-                type = 'v2'):
+    def __init__(self,
+                 filename=None,
+                 nodes=None,
+                 elems=None,
+                 fields=None,
+                 append=False,
+                 title=None,
+                 type='v2'):
         """
         load class to write file
 
@@ -146,7 +147,7 @@ class vtkWriter:
             type (optional, default: 'v2') : XMl format (v2 or XML) 
 
         """
-        # 
+        #
         self.append = append
         self.type = type.lower()
         self.title = self.adaptTitle(txt=title)
@@ -163,62 +164,67 @@ class vtkWriter:
             if not fields:
                 fields = list()
             fields.extend(newFields)
-        #check for data along steps
+        # check for data along steps
         if fields is not None:
-            for ix,itF in enumerate(fields):
+            for ix, itF in enumerate(fields):
                 if configMESH.DFLT_FIELD_STEPS in itF.keys():
-                    nbSteps = numpy.max([nbSteps,len(itF[configMESH.DFLT_FIELD_STEPS])])
+                    nbSteps = numpy.max(
+                        [nbSteps, len(itF[configMESH.DFLT_FIELD_STEPS])])
                     if len(itF[configMESH.DFLT_FIELD_STEPS]) > 1:
                         iXSteps.append(ix)
                 elif configMESH.DFLT_FIELD_NBSTEPS in itF.keys():
-                    nbSteps = numpy.max([nbSteps,itF[configMESH.DFLT_FIELD_NBSTEPS]])
+                    nbSteps = numpy.max(
+                        [nbSteps, itF[configMESH.DFLT_FIELD_NBSTEPS]])
                     if itF[configMESH.DFLT_FIELD_NBSTEPS] > 1:
                         iXSteps.append(ix)
 
         # write along steps
         if nbSteps > 0:
             for itS in range(nbSteps):
-                #adapt title
-                self.title = self.adaptTitle(txt=' step num {:d}'.format(itS),append=True)
-                #adapt the filename
-                filename = self.getFilename(suffix='_' + str(itS).zfill(len(str(nbSteps))))
-                self.customHandler = fileio.fileHandler(filename = filename,
-                                                        append = self.append,
-                                                        safeMode = False)
-                #prepare fields (only write all fields on the first step)
+                # adapt title
+                self.title = self.adaptTitle(
+                    txt=' step num {:d}'.format(itS), append=True)
+                # adapt the filename
+                filename = self.getFilename(
+                    suffix='_' + str(itS).zfill(len(str(nbSteps))))
+                self.customHandler = fileio.fileHandler(filename=filename,
+                                                        append=self.append,
+                                                        safeMode=False)
+                # prepare fields (only write all fields on the first step)
                 fieldsOk = list()
                 fieldsOk = fields
-                Logger.info('Start writing {}'.format(self.customHandler.filename))
-                self.writeContents(nodes,elems,fieldsOk,numStep=itS)
+                Logger.info('Start writing {}'.format(
+                    self.customHandler.filename))
+                self.writeContents(nodes, elems, fieldsOk, numStep=itS)
                 self.customHandler.close()
-        else:            
+        else:
             filename = self.getFilename()
-            self.customHandler = fileio.fileHandler(filename = filename,
-                                                    append = self.append,
-                                                    safeMode = False)
+            self.customHandler = fileio.fileHandler(filename=filename,
+                                                    append=self.append,
+                                                    safeMode=False)
             Logger.info('Start writing {}'.format(self.customHandler.filename))
-            self.writeContents(nodes,elems,fields)            
+            self.writeContents(nodes, elems, fields)
             self.customHandler.close()
 
         Logger.info('Done')
 
-    def writeContents(self,nodes,elements,fields=None,numStep=None):
+    def writeContents(self, nodes, elements, fields=None, numStep=None):
         """
         Write all contents for one step
         """
         # if we are not appending to an existing file
         if not self.getAppend():
-            #write header
+            # write header
             self.writeHeader()
-            #write nodes
+            # write nodes
             self.writeNodes(nodes)
-            #write elements
+            # write elements
             self.writeElements(elements)
-        #write fields if available
+        # write fields if available
         if fields is not None:
-            self.writeFields(fields,numStep)
+            self.writeFields(fields, numStep)
 
-    def adaptTitle(self,txt='',append=False):
+    def adaptTitle(self, txt='', append=False):
         """
         """
         if append:
@@ -227,8 +233,8 @@ class vtkWriter:
             txtFinal = txt
         if not txtFinal:
             txtFinal = datetime.today().strftime('%Y-%M-%d %H:%M:%s')
-        return txtFinal    
-    
+        return txtFinal
+
     def getAppend(self):
         """
         Obtain the adapt flag from the handler (automatic adaptation if the file exists)
@@ -236,11 +242,11 @@ class vtkWriter:
         self.append = self.customHandler.append
         return self.append
 
-    def getFilename(self,prefix = None, suffix = None):
+    def getFilename(self, prefix=None, suffix=None):
         """
         Add prefix and/or suffi to the filename
         """
-        basename,extension = self.splitFilename()
+        basename, extension = self.splitFilename()
         if prefix is not None:
             basename = prefix + basename
         if suffix is not None:
@@ -255,7 +261,7 @@ class vtkWriter:
         filename = self.filename
         it = 0
         while it < 2:
-            filename,ext = os.path.splitext(filename)
+            filename, ext = os.path.splitext(filename)
             extension += ext
             if extension in ALLOWED_EXTENSIONS:
                 it = 3
@@ -263,36 +269,36 @@ class vtkWriter:
                 it += 1
             if it == 2:
                 self.logBadExtension()
-        return filename,extension
+        return filename, extension
 
     def logBadExtension(self):
         """
         """
-        Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename,' '.join(ALLOWED_EXTENSIONS)))
-
+        Logger.error('File {}: bad extension (ALLOWED: {})'.format(
+            self.filename, ' '.join(ALLOWED_EXTENSIONS)))
 
     def writeHeader(self):
         """ 
         Write header of the VTK file
         """
         if self.type == 'v2':
-            headerVTKv2(self.customHandler.fhandle,commentTxt=self.title)
+            headerVTKv2(self.customHandler.fhandle, commentTxt=self.title)
         elif self.type == 'xml':
             self.headerVTKXML(self.customHandler.fhandle)
 
-    def writeNodes(self,nodes):
+    def writeNodes(self, nodes):
         """
         Write elements depending on version
         """
-        #count number of nodes
+        # count number of nodes
         self.nbNodes = nodes.shape[0]
         if self.type == 'v2':
-            WriteNodesV2(self.customHandler.fhandle,nodes)
+            WriteNodesV2(self.customHandler.fhandle, nodes)
         elif self.type == 'xml':
-            WriteNodesXML(self.customHandler.fhandle,nodes)
+            WriteNodesXML(self.customHandler.fhandle, nodes)
         return
-    
-    def writeElements(self,elems):
+
+    def writeElements(self, elems):
         """
         Write elements depending on version
         """
@@ -301,22 +307,22 @@ class vtkWriter:
             elemsRun = [elems]
         else:
             elemsRun = elems
-        #count number of elements
+        # count number of elements
         self.nbElems = 0
         for e in elemsRun:
             self.nbElems += e[configMESH.DFLT_MESH].shape[0]
 
         if self.type == 'v2':
-            WriteElemsV2(self.customHandler.fhandle,elems)
+            WriteElemsV2(self.customHandler.fhandle, elems)
         elif self.type == 'xml':
-            WriteElemsXML(self.customHandler.fhandle,elems)
+            WriteElemsXML(self.customHandler.fhandle, elems)
         return
-    
-    def createNewFields(self,elems):
+
+    def createNewFields(self, elems):
         """
         Prepare new fields from elems data (for instance physical group)
         """
-        #check if physgroup exists
+        # check if physgroup exists
         physGrp = False
         newFields = None
         for itE in elems:
@@ -329,107 +335,121 @@ class vtkWriter:
             for itE in elems:
                 nbElems = itE[configMESH.DFLT_MESH].shape[0]
                 if configMESH.DFLT_PHYS_GRP in itE.keys():
-                    dataPhys = numpy.array(itE[configMESH.DFLT_PHYS_GRP],dtype=int)
+                    dataPhys = numpy.array(
+                        itE[configMESH.DFLT_PHYS_GRP], dtype=int)
                     if len(dataPhys) == nbElems:
-                        data = numpy.append(data,dataPhys)
+                        data = numpy.append(data, dataPhys)
                     else:
-                        data = numpy.append(data,dataPhys[0]*numpy.ones(nbElems))
+                        data = numpy.append(
+                            data, dataPhys[0]*numpy.ones(nbElems))
                 else:
-                    data = numpy.append(data,-numpy.ones(nbElems))
+                    data = numpy.append(data, -numpy.ones(nbElems))
             Logger.debug('Create new field for physical group')
-            newFields.extend([{'data':data,'type':'elemental_scalar' ,'dim':1,'name':configMESH.DFLT_PHYS_GRP}])
-        
+            newFields.extend([{'data': data, 'type': 'elemental_scalar',
+                             'dim': 1, 'name': configMESH.DFLT_PHYS_GRP}])
+
         return newFields
 
-    def writeFields(self,fields,numStep=None):
+    def writeFields(self, fields, numStep=None):
         """
         Write fields depending on version
         """
         if self.type == 'v2':
-            WriteFieldsV2(self.customHandler.fhandle,self.nbNodes,self.nbElems,fields,numStep)
+            WriteFieldsV2(self.customHandler.fhandle,
+                          self.nbNodes, self.nbElems, fields, numStep)
         elif self.type == 'xml':
-            WriteFieldsXML(self.customHandler.fhandle,self.nbNodes,self.nbElems,fields,numStep)
+            WriteFieldsXML(self.customHandler.fhandle,
+                           self.nbNodes, self.nbElems, fields, numStep)
 
 
-######### classical function to write contents
+# classical function to write contents
 # write header in VTK file
-def headerVTKv2(fileHandle,commentTxt=''):
+def headerVTKv2(fileHandle, commentTxt=''):
     fileHandle.write('{}\n'.format(dbvtk.DFLT_HEADER_VERSION))
     fileHandle.write('{}\n'.format(commentTxt))
     fileHandle.write('{}\n'.format(dbvtk.DFLT_TYPE_ASCII))
     fileHandle.write('{}\n'.format(dbvtk.DFLT_TYPE_MESH))
 
-def headerVTKXML(fileHandle,commentTxt=''):
+
+def headerVTKXML(fileHandle, commentTxt=''):
     pass
 
-#write nodes in VTK file
-def WriteNodesV2(fileHandle,nodes):
+# write nodes in VTK file
+
+
+def WriteNodesV2(fileHandle, nodes):
     """Write nodes coordinates for unstructured grid"""
     nbNodes = nodes.shape[0]
     Logger.debug('Write {} nodes'.format(nbNodes))
-    fileHandle.write('\n{} {:d} {}\n'.format(dbvtk.DFLT_NODES,nbNodes,dbvtk.DFLT_DOUBLE))
+    fileHandle.write('\n{} {:d} {}\n'.format(
+        dbvtk.DFLT_NODES, nbNodes, dbvtk.DFLT_DOUBLE))
     #
     dimPb = nodes.shape[1]
 
-    #declare format specification
+    # declare format specification
     if dimPb == 2:
-        formatSpec = '{:9.4g} {:9.4g}\n' 
+        formatSpec = '{:9.4g} {:9.4g}\n'
     elif dimPb == 3:
-        formatSpec = '{:9.4g} {:9.4g} {:9.4g}\n'  
-    #write coordinates
+        formatSpec = '{:9.4g} {:9.4g} {:9.4g}\n'
+    # write coordinates
     for i in range(nbNodes):
-        fileHandle.write(formatSpec.format(*nodes[i,:]))
+        fileHandle.write(formatSpec.format(*nodes[i, :]))
     return
 
-def WriteNodesXML(fileHandle,nodes):
+
+def WriteNodesXML(fileHandle, nodes):
     """Write nodes coordinates for unstructured grid"""
     pass
 
-#write elements in VTK file
-def WriteElemsV2(fileHandle,elements):
-    """Write elements for unstructured grid"""    
-    #count data
+# write elements in VTK file
+
+
+def WriteElemsV2(fileHandle, elements):
+    """Write elements for unstructured grid"""
+    # count data
     nbElems = 0
     nbInt = 0
     for itE in elements:
         nbElems += itE[configMESH.DFLT_MESH].shape[0]
-        nbInt += numpy.prod(itE[configMESH.DFLT_MESH].shape) 
-        Logger.debug('{} {}'.format(itE[configMESH.DFLT_MESH].shape[0],itE[configMESH.DFLT_FIELD_TYPE]))
-    
-    #initialize size declaration
-    fileHandle.write('\n{} {:d} {:d}\n'.format(dbvtk.DFLT_ELEMS,nbElems,nbInt+nbElems))
-    Logger.debug('Start writing {} {}'.format(nbElems,dbvtk.DFLT_ELEMS))
-    #along the element types
+        nbInt += numpy.prod(itE[configMESH.DFLT_MESH].shape)
+        Logger.debug('{} {}'.format(
+            itE[configMESH.DFLT_MESH].shape[0], itE[configMESH.DFLT_FIELD_TYPE]))
+
+    # initialize size declaration
+    fileHandle.write('\n{} {:d} {:d}\n'.format(
+        dbvtk.DFLT_ELEMS, nbElems, nbInt+nbElems))
+    Logger.debug('Start writing {} {}'.format(nbElems, dbvtk.DFLT_ELEMS))
+    # along the element types
     for itE in elements:
-        #get the numbering the the element and the number of nodes per element
+        # get the numbering the the element and the number of nodes per element
         nbNodesPerCell = getNumberNodes(itE[configMESH.DFLT_FIELD_TYPE])
         formatSpec = '{:d} '
         formatSpec += ' '.join('{:d}' for _ in range(nbNodesPerCell))
         formatSpec += '\n'
-        #write cells
+        # write cells
         for e in itE[configMESH.DFLT_MESH]:
-            fileHandle.write(formatSpec.format(nbNodesPerCell,*e))
+            fileHandle.write(formatSpec.format(nbNodesPerCell, *e))
 
-    #declaration of cell types
-    fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_ELEMS_TYPE,nbElems))
-    Logger.debug('Start writing {} {}'.format(nbElems,dbvtk.DFLT_ELEMS_TYPE))
-    #along the element types
+    # declaration of cell types
+    fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_ELEMS_TYPE, nbElems))
+    Logger.debug('Start writing {} {}'.format(nbElems, dbvtk.DFLT_ELEMS_TYPE))
+    # along the element types
     for itE in elements:
-        numElemVTK,_ = getVTKElemType(itE[configMESH.DFLT_FIELD_TYPE])
+        numElemVTK, _ = getVTKElemType(itE[configMESH.DFLT_FIELD_TYPE])
         for _ in range(itE[configMESH.DFLT_MESH].shape[0]):
             fileHandle.write('{:d}\n'.format(numElemVTK))
 
 
-def WriteElemsXML(fileHandle,elements):
-    """Write elements  for unstructured grid"""    
+def WriteElemsXML(fileHandle, elements):
+    """Write elements  for unstructured grid"""
     pass
 
 
 def WriteFieldsV2(fileHandle,
-                    nbNodes,
-                    nbElems,
-                    fields,
-                    numStep=None):
+                  nbNodes,
+                  nbElems,
+                  fields,
+                  numStep=None):
     """
             write fields
         input:
@@ -458,14 +478,14 @@ def WriteFieldsV2(fileHandle,
                          - list of a arrays with all nodal or elemental values along steps
                          - a dictionary {'array':ar,'connectivityId':int} in the case of elemental
                             'connectivityId': the data are given associated to a certain list of cells (other is defined as 0)
-        
+
     """
-    #analyze fields data
+    # analyze fields data
     iXNodalField = list()
     iXElementalField = list()
     iXNodalScalar = list()
     iXElementalScalar = list()
-    for i,f in enumerate(fields):
+    for i, f in enumerate(fields):
         if f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_NODAL:
             iXNodalField.append(i)
         elif f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT:
@@ -475,51 +495,57 @@ def WriteFieldsV2(fileHandle,
         elif f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT_SCALAR:
             iXElementalScalar.append(i)
 
-    #write CELL_DATA
+    # write CELL_DATA
     if len(iXElementalField)+len(iXElementalScalar) > 0:
-        Logger.debug('Start writing {} {}'.format(nbElems,dbvtk.DFLT_ELEMS_DATA))
-        fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_ELEMS_DATA,nbElems))
+        Logger.debug('Start writing {} {}'.format(
+            nbElems, dbvtk.DFLT_ELEMS_DATA))
+        fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_ELEMS_DATA, nbElems))
 
-        #write scalars
+        # write scalars
         if len(iXElementalScalar) > 0:
             for iX in iXElementalScalar:
-                #get array of data
-                data = getData(fields[iX],numStep)
-                writeScalarsDataV2(fileHandle,data,fields[iX]['name'])
-        #write fields
+                # get array of data
+                data = getData(fields[iX], numStep)
+                writeScalarsDataV2(fileHandle, data, fields[iX]['name'])
+        # write fields
         if len(iXElementalField) > 0:
-            Logger.debug('Start writing {} {}'.format(len(iXElementalField),dbvtk.DFLT_FIELD))
-            fileHandle.write('{} {} {:d}\n'.format(dbvtk.DFLT_FIELD,'cellField',len(iXElementalField)))
+            Logger.debug('Start writing {} {}'.format(
+                len(iXElementalField), dbvtk.DFLT_FIELD))
+            fileHandle.write('{} {} {:d}\n'.format(
+                dbvtk.DFLT_FIELD, 'cellField', len(iXElementalField)))
             for iX in iXElementalField:
-                #get array of data
-                data = getData(fields[iX],numStep)
-                writeFieldsDataV2(fileHandle,data,fields[iX]['name'])
-    
-    #write POINT_DATA
+                # get array of data
+                data = getData(fields[iX], numStep)
+                writeFieldsDataV2(fileHandle, data, fields[iX]['name'])
+
+    # write POINT_DATA
     if len(iXNodalField)+len(iXNodalScalar) > 0:
-        Logger.debug('Start writing {} {}'.format(nbNodes,dbvtk.DFLT_NODES_DATA))
-        fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_NODES_DATA,nbNodes))
-        #write scalars
+        Logger.debug('Start writing {} {}'.format(
+            nbNodes, dbvtk.DFLT_NODES_DATA))
+        fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_NODES_DATA, nbNodes))
+        # write scalars
         if len(iXNodalScalar) > 0:
             for iX in iXNodalScalar:
-                #get array of data
-                data = getData(fields[iX],numStep)
-                writeScalarsDataV2(fileHandle,data,fields[iX]['name'])
-        #write fields
+                # get array of data
+                data = getData(fields[iX], numStep)
+                writeScalarsDataV2(fileHandle, data, fields[iX]['name'])
+        # write fields
         if len(iXNodalField) > 0:
-            Logger.debug('Start writing {} {}'.format(len(iXNodalField),dbvtk.DFLT_FIELD))
-            fileHandle.write('{} {} {:d}\n'.format(dbvtk.DFLT_FIELD,'pointField',len(iXNodalField)))
+            Logger.debug('Start writing {} {}'.format(
+                len(iXNodalField), dbvtk.DFLT_FIELD))
+            fileHandle.write('{} {} {:d}\n'.format(
+                dbvtk.DFLT_FIELD, 'pointField', len(iXNodalField)))
             for iX in iXNodalField:
-                #get array of data
-                data = getData(fields[iX],numStep)
-                writeFieldsDataV2(fileHandle,data,fields[iX]['name'])
+                # get array of data
+                data = getData(fields[iX], numStep)
+                writeFieldsDataV2(fileHandle, data, fields[iX]['name'])
 
 
-def getData(data,num):
+def getData(data, num):
     """
     get data for the right step
     """
-    #create array of data
+    # create array of data
     dataOut = None
     if configMESH.DFLT_FIELD_STEPS in data.keys():
         if len(data[configMESH.DFLT_FIELD_STEPS]) > 1:
@@ -531,55 +557,59 @@ def getData(data,num):
         dataOut = data[configMESH.DFLT_FIELD_DATA]
     return dataOut
 
-def writeScalarsDataV2(fileHandle,data,name):
+
+def writeScalarsDataV2(fileHandle, data, name):
     """
     write data using SCALARS
     """
-    if len(data.shape)>1:
+    if len(data.shape) > 1:
         nbComp = data.shape[1]
     else:
         nbComp = 1
-    #dataType
+    # dataType
     dataType = 'double'
     formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) + '\n'
-    if issubclass(data.dtype.type,numpy.integer):
+    if issubclass(data.dtype.type, numpy.integer):
         dataType = 'int'
         formatSpec = ' '.join('{:d}' for _ in range(nbComp)) + '\n'
-    elif issubclass(data.dtype.type,numpy.floating):
+    elif issubclass(data.dtype.type, numpy.floating):
         dataType = 'double'
         formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) + '\n'
-    Logger.debug('Start writing {} {}'.format(dbvtk.DFLT_SCALARS,name))
-    fileHandle.write('{} {} {} {:d}\n'.format(dbvtk.DFLT_SCALARS,name,dataType,nbComp))
-    fileHandle.write('{} {}\n'.format(dbvtk.DFLT_TABLE,dbvtk.DFLT_TABLE_DEFAULT))
+    Logger.debug('Start writing {} {}'.format(dbvtk.DFLT_SCALARS, name))
+    fileHandle.write('{} {} {} {:d}\n'.format(
+        dbvtk.DFLT_SCALARS, name, dataType, nbComp))
+    fileHandle.write('{} {}\n'.format(
+        dbvtk.DFLT_TABLE, dbvtk.DFLT_TABLE_DEFAULT))
     for d in data:
         fileHandle.write(formatSpec.format(d))
 
-def writeFieldsDataV2(fileHandle,data,name):
+
+def writeFieldsDataV2(fileHandle, data, name):
     """
     write data using FIELD
     """
     nbComp = data.shape[1]
-    #dataType
+    # dataType
     dataType = 'double'
     formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) + '\n'
-    if issubclass(data.dtype.type,numpy.integer):
+    if issubclass(data.dtype.type, numpy.integer):
         dataType = 'int'
         formatSpec = ' '.join('{:d}' for _ in range(nbComp)) + '\n'
-    elif issubclass(data.dtype.type,numpy.floating):
+    elif issubclass(data.dtype.type, numpy.floating):
         dataType = 'double'
-        formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) +'\n'
-    #start writing
-    Logger.debug('Start writing {} {}'.format(dbvtk.DFLT_FIELD,name))
-    fileHandle.write('{} {:d} {:d} {}\n'.format(name,nbComp,data.shape[0],dataType))
+        formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) + '\n'
+    # start writing
+    Logger.debug('Start writing {} {}'.format(dbvtk.DFLT_FIELD, name))
+    fileHandle.write('{} {:d} {:d} {}\n'.format(
+        name, nbComp, data.shape[0], dataType))
     for d in data:
         fileHandle.write(formatSpec.format(*d))
 
 
 def WriteFieldsXML(fileHandle,
-                    nbNodes,
-                    nbElems,
-                    fields,
-                    numStep=None):
+                   nbNodes,
+                   nbElems,
+                   fields,
+                   numStep=None):
     """Write elements"""
     pass
-

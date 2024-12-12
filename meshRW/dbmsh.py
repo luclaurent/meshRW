@@ -66,6 +66,10 @@ def loadElementDict():
     }
     return elementDict
 
+def getElementCode(name):
+    data = loadElementDict()
+    return data.get(name.upper(),None)
+
 
 def loadNodesElement():
     """

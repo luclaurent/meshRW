@@ -381,7 +381,7 @@ class mshReader:
     readData = None
     curIt = 0
 
-    def __init__(self, filename=None, type='mshv2', dim=None):
+    def __init__(self, filename=None, type='mshv2', dim=3):
 
         Logger.debug('Open file {}'.format(filename))
         # open file and get handle
@@ -496,9 +496,13 @@ class mshReader:
         # element nodes
         elementNodes = arrayint[3+nbTags:]
         # check if element can be stored
-        if not elemType in self.elems.keys():
+        print(self.elems.keys())
+        print(elemType)
+        
+        if elemType not in self.elems.keys():
             self.elems[elemType] = list()
         # store it
+        print(type(self.elems[elemType]))
         self.elems[elemType].append(elementNodes)
         # get the item of the element
         iX = len(self.elems[elemType])-1
@@ -506,10 +510,10 @@ class mshReader:
         for iT in tags:
             iTs = str(iT)
             # check if the tag already exists
-            if not iTs in self.tagsList.keys():
+            if iTs not in self.tagsList.keys():
                 self.tagsList[iTs] = dict()
             # check if the element type has been already created
-            if not elemType in self.tagsList[iTs].keys():
+            if elemType not in self.tagsList[iTs].keys():
                 self.tagsList[iTs][elemType] = list()
             # store the elements
             self.tagsList[iTs][elemType].append(iX)

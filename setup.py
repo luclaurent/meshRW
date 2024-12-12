@@ -56,7 +56,10 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        'numpy'
+        'numpy',
+        'vtk',
+        'gmsh',
+        'pytest'
     #     'wand>=0.5.9',
     #     'lxml>=3.5.0',
     #     'pyparsing>=2.4.6',
