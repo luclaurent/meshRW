@@ -1,7 +1,8 @@
-from meshRW import msh, msh2
 import pickle
-import numpy
 from pathlib import Path
+
+import numpy
+from meshRW import msh, msh2
 
 # load current path
 CurrentPath = Path(__file__).parent
@@ -14,7 +15,7 @@ ArtifactsPath.mkdir(exist_ok=True)
 
 
 def test_MSHwriter():
-    # open data    
+    # open data
     hf = open(datafile, 'rb')
     #
     data = pickle.load(hf)
@@ -32,7 +33,7 @@ def test_MSHwriter():
     dataElemStep = [numpy.random.rand(
         elemsData['TET4'].shape[0]+elemsData['PRI6'].shape[0], 3) for i in range(5)]
     # write msh file
-    outputfile = ArtifactsPath / Path('build.msh')   
+    outputfile = ArtifactsPath / Path('build.msh')
     msh.mshWriter(filename=outputfile,
                     nodes=nodes,
                     elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
@@ -42,7 +43,7 @@ def test_MSHwriter():
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}]  # ,'steps':list of steps,'nbsteps':number of steps]
                     )
     assert outputfile.exists()
-    
+
 def test_MSH2writer():
     # open data
     hf = open(datafile, 'rb')
@@ -61,7 +62,7 @@ def test_MSH2writer():
     dataElemStep = [numpy.random.rand(
         elemsData['TET4'].shape[0]+elemsData['PRI6'].shape[0], 3) for i in range(5)]
     # write msh file
-    outputfile = ArtifactsPath / Path('build2.msh')   
+    outputfile = ArtifactsPath / Path('build2.msh')
     msh2.mshWriter(filename=outputfile,
                     nodes=nodes,
                     elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},

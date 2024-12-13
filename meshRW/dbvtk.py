@@ -6,6 +6,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 """
 
+from loguru import logger as Logger
 
 def loadElementDict():
     """
@@ -13,15 +14,15 @@ def loadElementDict():
     """
     elementDict = {
         # 2-nodes line
-        'LIN2': 3,
+        'LIN2': {'code':3, 'nodes':2, 'dim':1},
         # 3-nodes second order line
-        'LIN3': 21,
+        'LIN3': {'code':21, 'nodes':3, 'dim':1},
         # 4-nodes third order line
         'LIN4': None,
         # 3-nodes triangle
-        'TRI3': 5,
+        'TRI3': {'code':5, 'nodes':3, 'dim':2},
         # 6-nodes second order triangle (3 vertices, 3 on edges)
-        'TRI6': 22,
+        'TRI6': {'code':22, 'nodes':6, 'dim':2},
         # 9-nodes cubic order triangle (3 vertices, 3 on edges and 3 inside)
         'TRI9': None,
         # 10-nodes higher order triangle (3 vertices, 6 on edges and 1 inside)
@@ -31,122 +32,51 @@ def loadElementDict():
         # 15-nodes higher order triangle (3 vertices, 9 on edges and 3 inside)
         'TRI15': None,
         # 4-nodes quadrangle
-        'QUA4': 9,
+        'QUA4': {'code':9, 'nodes':4, 'dim':2},
         # 8-nodes second order quadrangle (4 vertices and 4 on edges)
-        'QUA8': 23,
+        'QUA8': {'code':23, 'nodes':8, 'dim':2},
         # 9-nodes higher order quadrangle (4 vertices, 4 on edges and 1 inside)
         'QUA9': None,
         # 4-nodes tetrahedron
-        'TET4': 10,
+        'TET4': {'code':10, 'nodes':4, 'dim':3},
         # 10-nodes second order tetrahedron (4 vertices and 6 on edges)
-        'TET10': 24,
+        'TET10': {'code':24, 'nodes':10, 'dim':3},
         # 8-nodes hexahedron
-        'HEX8': 12,
+        'HEX8': {'code':12, 'nodes':8, 'dim':3},
         # 20-nodes second order hexahedron (8 vertices and 12 on edges)
-        'HEX20': 25,
-        # 27-nodes higher order hexahedron (8 vertices, 
-        # 12 on edges, 6 on faces and 1 inside)
-        'HEX27': None,
-        # 6-nodes prism
-        'PRI6': 13,
-        # 15-nodes second order prism (6 vertices and 9 on edges)
-        'PRI15': None,
-        # 18-nodes higher order prism (6 vertices, 9 on edges and 3 on faces)
-        'PRI18': None,
-        # 5-node pyramid
-        'PYR5': 14,
-        # 13-nodes second order pyramid (5 edges and 8 on edges)
-        'PYR13': None,
-        # 14-nodes higher order pyramid (5 edges, 8 on edges and 1 inside)
-        'PYR14': None,
-        # 1-node point
-        'NOD1': 1,
-        #
-        # many nodes
-        'NODN': 2,
-        # many lines (poly-lines)
-        'LINEN': 4,
-        # many stripped triangles
-        'TRIN': 6,
-        # polygons
-        'POLY': 7,
-        # pixel
-        'PIXEL': 8,
-        # voxel
-        'VOXEL': 11
-    }
-    return elementDict
-
-
-def loadNodesElement():
-    """
-        dictionary of number of nodes per element type
-    """
-    numPerElementDict = {
-        # 2-nodes line
-        'LIN2': 2,
-        # 3-nodes second order line
-        'LIN3': 3,
-        # 4-nodes third order line
-        'LIN4': None,
-        # 3-nodes triangle
-        'TRI3': 3,
-        # 6-nodes second order triangle (3 vertices, 3 on edges)
-        'TRI6': 6,
-        # 9-nodes cubic order triangle (3 vertices, 3 on edges and 3 inside)
-        'TRI9': None,
-        # 10-nodes higher order triangle (3 vertices, 6 on edges and 1 inside)
-        'TRI10': None,
-        # 12-nodes higher order triangle (3 vertices and 9 on edges)
-        'TRI12': None,
-        # 15-nodes higher order triangle (3 vertices, 9 on edges and 3 inside)
-        'TRI15': None,
-        # 4-nodes quadrangle
-        'QUA4': 4,
-        # 8-nodes second order quadrangle (4 vertices and 4 on edges)
-        'QUA8': 8,
-        # 9-nodes higher order quadrangle (4 vertices, 4 on edges and 1 inside)
-        'QUA9': None,
-        # 4-nodes tetrahedron
-        'TET4': 4,
-        # 10-nodes second order tetrahedron (4 vertices and 6 on edges)
-        'TET10': 10,
-        # 8-nodes hexahedron
-        'HEX8': 8,
-        # 20-nodes second order hexahedron (8 vertices and 12 on edges)
-        'HEX20': 20,
+        'HEX20': {'code':25, 'nodes':20, 'dim':3},
         # 27-nodes higher order hexahedron (8 vertices,
         # 12 on edges, 6 on faces and 1 inside)
         'HEX27': None,
         # 6-nodes prism
-        'PRI6': 6,
+        'PRI6': {'code':13, 'nodes':6, 'dim':3},
         # 15-nodes second order prism (6 vertices and 9 on edges)
         'PRI15': None,
         # 18-nodes higher order prism (6 vertices, 9 on edges and 3 on faces)
         'PRI18': None,
         # 5-node pyramid
-        'PYR5': 5,
+        'PYR5': {'code':14, 'nodes':5, 'dim':3},
         # 13-nodes second order pyramid (5 edges and 8 on edges)
         'PYR13': None,
         # 14-nodes higher order pyramid (5 edges, 8 on edges and 1 inside)
         'PYR14': None,
         # 1-node point
-        'NOD1': 1,
+        'NOD1': {'code':1, 'nodes':1, 'dim':0},
         #
         # many nodes
-        'NODN': -1,
+        'NODN': {'code':2, 'nodes':-1, 'dim':0},
         # many lines (poly-lines)
-        'LINEN': -1,
+        'LINEN': {'code':4, 'nodes':-1, 'dim':1},
         # many stripped triangles
-        'TRIN': -1,
+        'TRIN': {'code':6, 'nodes':-1, 'dim':2},
         # polygons
-        'POLY': -1,
+        'POLY': {'code':7, 'nodes':-1, 'dim':2},
         # pixel
-        'PIXEL': 4,
+        'PIXEL': {'code':8, 'nodes':-1, 'dim':2},
         # voxel
-        'VOXEL': 8
+        'VOXEL': {'code':11, 'nodes':-1, 'dim':3},
     }
-    return numPerElementDict
+    return elementDict
 
 
 def getVTKtoElem():
@@ -189,9 +119,9 @@ def getVTKElemType(txtEltype):
     output:
         element type defined as VTK number
     """
-    VTKtoElem = dbvtk.getVTKtoElem()
-    elementDict = dbvtk.loadElementDict()
-    numPerElementDict = dbvtk.loadNodesElement()
+    
+    VTKtoElem = getVTKtoElem()
+    elementDict = loadElementDict()
 
     # depending on the type of txtEltype
     numPerElement = -1
@@ -200,10 +130,10 @@ def getVTKElemType(txtEltype):
     else:
         if txtEltype.upper() in VTKtoElem.keys():
             txtEltype = VTKtoElem[txtEltype]
-        elementNum = elementDict[txtEltype.upper()]
-        numPerElement = numPerElementDict[txtEltype.upper()]
+        elementNum = elementDict[txtEltype.upper()].get('code', None)
+        numPerElement = getNumberNodes(txtEltype.upper())
     if not elementNum:
-        Logger.error('Element type {} not implemented'.format(txtEltype))
+        Logger.error(f'Element type {txtEltype} not implemented')
     return elementNum, numPerElement
 
 
@@ -218,14 +148,18 @@ def getElemTypeFromVTK(elementNum):
     output:
         global name of the element
     """
-    elementDict = dbvtk.loadElementDict()
+    # load the dictionary
+    elementDict = loadElementDict()
     globalName = None
-    for i in elementDict:
-        if elementDict[i] == elementNum:
-            globalName = i
-            break
+    # get the name of the element using the integer iD along the dictionary
+    for k,v in elementDict.items():
+        if v:
+            if v.get('code', None) == elementNum:
+                globalName = k
+                break
+    # if the name of the element if not available show error
     if globalName is None:
-        Logger.error('Element type not found with id {}'.format(elementNum))
+        Logger.error(f'Element type not found with id {elementNum}')
     return globalName
 
 
@@ -241,12 +175,15 @@ def getNumberNodes(txtElemtype):
             number of nodes for txtEltype
     """
 
-    nodesPerElem = dbvtk.loadNodesElement()
-    nbNodes = 0
-    if txtElemtype in nodesPerElem.keys():
-        nbNodes = nodesPerElem[txtElemtype]
+    elementDict = loadElementDict()
+    # check if the type of element exists
+    if txtElemtype in elementDict.keys():
+        # get the number of nodes for the type of element
+        if elementDict[txtElemtype]:
+            nbNodes = elementDict[txtElemtype].get('nodes', None)
     else:
-        Logger.error('Element type {} not defined'.format(txtElemtype))
+        # show error message if the type of element does not exist
+        Logger.error(f'Element type {txtElemtype} not defined')
     return nbNodes
 
 
@@ -280,7 +217,7 @@ DFLT_DOUBLE = 'double'
 DFLT_FLOAT = 'float'
 DFLT_INT = 'int'
 DFLT_ELEMS = 'CELLS'
-DFLT_ELEMS_TYPE = 'CELLS_TYPES'
+DFLT_ELEMS_TYPE = 'CELL_TYPES'
 DFLT_ELEMS_DATA = 'CELL_DATA'
 DFLT_FIELD = 'FIELD'
 DFLT_SCALARS = 'SCALARS'

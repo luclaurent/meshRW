@@ -9,6 +9,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 from loguru import logger as Logger
 
+
 def loadElementDict():
     """
     dictionary from element (string) to msh element number
@@ -89,7 +90,7 @@ def getMSHElemType(txtEltype):
         elementNum = elementDict[txtEltype.upper()].get('code', None)
     # show error if the type is not available
     if not elementNum:
-        Logger.error('Element type {} not implemented'.format(txtEltype))
+        Logger.error(f'Element type {txtEltype} not implemented')
     return elementNum
 
 
@@ -115,7 +116,7 @@ def getElemTypeFromMSH(elementNum):
                 break
     # if the name of the element if not available show error
     if globalName is None:
-        Logger.error('Element type not found with id {}'.format(elementNum))
+        Logger.error(f'Element type not found with id {elementNum}')
     return globalName
 
 
@@ -140,7 +141,7 @@ def getNumberNodes(txtElemtype):
             nbNodes = elementDict[txtElemtype].get('nodes', None)
     else:
         # show error message if the type of element does not exist
-        Logger.error('Element type {} not defined'.format(txtElemtype))
+        Logger.error(f'Element type {txtElemtype} not defined')
     return nbNodes
 
 

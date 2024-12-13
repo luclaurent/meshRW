@@ -4,14 +4,15 @@ This class is a part of the meshRW library and will write a vtk file from a mesh
 Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
 
-import vtk
-from loguru import logger as Logger
 
-class fem2vtk():
-    
+import vtk
+
+
+class fem2vtk:
+
     def __init__(self,nodes,elems,
                     nodalFields=None,
-                    cellFields=None, 
+                    cellFields=None,
                     filename=None,
                     opts={'binary':False}):
         # points
@@ -24,7 +25,7 @@ class fem2vtk():
         #
         for k,v in elems.items():
             if k == 'tri3':
-                nbnodes = 3            
+                nbnodes = 3
                 cell = vtk.vtkTriangle()
             elif k == 'tri6':
                 nbnodes = 6
@@ -44,11 +45,11 @@ class fem2vtk():
             elif k =='tet10':
                 nbnodes = 10
                 cell = vtk.vtkQuadraticTetra()
-            for t in v:            
+            for t in v:
                 for i in range(nbnodes):
                     cell.GetPointIds().SetId(i,t[i])
                 ugrid.InsertNextCell(cell.GetCellType(),cell.GetPointIds())
-        # initialize polydata    
+        # initialize polydata
         if nodalFields:
             for k,v in nodalFields.items():
                 nf = vtk.vtkDoubleArray()
@@ -72,7 +73,7 @@ class fem2vtk():
                 for i,c in enumerate(v):
                     cf.InsertNextTuple3(*c)
                 ugrid.GetCellData().AddArray(cf)
-                
+
         # output
         if filename:
             writer = vtk.vtkXMLUnstructuredGridWriter()

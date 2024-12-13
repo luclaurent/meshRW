@@ -4,12 +4,13 @@ This class is a part of the SILEX library and will write results in legacy VTK f
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
-import numpy
 from datetime import datetime
-from . import dbvtk
-from . import configMESH
-from . import  fileio
+from pathlib import Path
+
+import numpy
 from loguru import logger as Logger
+
+from . import configMESH, dbvtk, fileio
 
 
 class vtkWriter:
@@ -51,7 +52,7 @@ class vtkWriter:
         self.append = append
         self.type = type.lower()
         self.title = self.adaptTitle(txt=title)
-        self.filename = filename
+        self.filename = Path(filename)
         #
         self.nbNodes = 0
         self.nbElems = 0
@@ -83,18 +84,17 @@ class vtkWriter:
             for itS in range(nbSteps):
                 # adapt title
                 self.title = self.adaptTitle(
-                    txt=' step num {:d}'.format(itS), append=True)
+                    txt=f' step num {itS:d}', append=True)
                 # adapt the filename
                 filename = self.getFilename(
-                    suffix='_' + str(itS).zfill(len(str(nbSteps))))
+                    suffix='.' + str(itS).zfill(len(str(nbSteps))))
                 self.customHandler = fileio.fileHandler(filename=filename,
                                                         append=self.append,
                                                         safeMode=False)
                 # prepare fields (only write all fields on the first step)
                 fieldsOk = list()
                 fieldsOk = fields
-                Logger.info('Start writing {}'.format(
-                    self.customHandler.filename))
+                Logger.info(f'Start writing {self.customHandler.filename}')
                 self.writeContents(nodes, elems, fieldsOk, numStep=itS)
                 self.customHandler.close()
         else:
@@ -102,7 +102,7 @@ class vtkWriter:
             self.customHandler = fileio.fileHandler(filename=filename,
                                                     append=self.append,
                                                     safeMode=False)
-            Logger.info('Start writing {}'.format(self.customHandler.filename))
+            Logger.info(f'Start writing {self.customHandler.filename}')
             self.writeContents(nodes, elems, fields)
             self.customHandler.close()
 
@@ -144,14 +144,14 @@ class vtkWriter:
 
     def getFilename(self, prefix=None, suffix=None):
         """
-        Add prefix and/or suffi to the filename
+        Add prefix and/or suffix to the filename
         """
-        basename, extension = self.splitFilename()
+        path, basename, extension = self.splitFilename()
         if prefix is not None:
             basename = prefix + basename
         if suffix is not None:
             basename = basename + suffix
-        return basename + extension
+        return path / (basename + extension)
 
     def splitFilename(self):
         """
@@ -161,21 +161,23 @@ class vtkWriter:
         filename = self.filename
         it = 0
         while it < 2:
-            filename, ext = os.path.splitext(filename)
+            path = self.filename.parent
+            filename = self.filename.stem
+            ext = self.filename.suffix
             extension += ext
-            if extension in ALLOWED_EXTENSIONS:
+            if extension in dbvtk.ALLOWED_EXTENSIONS:
                 it = 3
             else:
                 it += 1
             if it == 2:
                 self.logBadExtension()
-        return filename, extension
+        return path,filename, extension
 
     def logBadExtension(self):
         """
         """
         Logger.error('File {}: bad extension (ALLOWED: {})'.format(
-            self.filename, ' '.join(ALLOWED_EXTENSIONS)))
+            self.filename, ' '.join(dbvtk.ALLOWED_EXTENSIONS)))
 
     def writeHeader(self):
         """ 
@@ -196,7 +198,6 @@ class vtkWriter:
             WriteNodesV2(self.customHandler.fhandle, nodes)
         elif self.type == 'xml':
             WriteNodesXML(self.customHandler.fhandle, nodes)
-        return
 
     def writeElements(self, elems):
         """
@@ -216,7 +217,6 @@ class vtkWriter:
             WriteElemsV2(self.customHandler.fhandle, elems)
         elif self.type == 'xml':
             WriteElemsXML(self.customHandler.fhandle, elems)
-        return
 
     def createNewFields(self, elems):
         """
@@ -265,10 +265,10 @@ class vtkWriter:
 # classical function to write contents
 # write header in VTK file
 def headerVTKv2(fileHandle, commentTxt=''):
-    fileHandle.write('{}\n'.format(dbvtk.DFLT_HEADER_VERSION))
-    fileHandle.write('{}\n'.format(commentTxt))
-    fileHandle.write('{}\n'.format(dbvtk.DFLT_TYPE_ASCII))
-    fileHandle.write('{}\n'.format(dbvtk.DFLT_TYPE_MESH))
+    fileHandle.write(f'{dbvtk.DFLT_HEADER_VERSION}\n')
+    fileHandle.write(f'{commentTxt}\n')
+    fileHandle.write(f'{dbvtk.DFLT_TYPE_ASCII}\n')
+    fileHandle.write(f'{dbvtk.DFLT_TYPE_MESH}\n')
 
 
 def headerVTKXML(fileHandle, commentTxt=''):
@@ -280,9 +280,8 @@ def headerVTKXML(fileHandle, commentTxt=''):
 def WriteNodesV2(fileHandle, nodes):
     """Write nodes coordinates for unstructured grid"""
     nbNodes = nodes.shape[0]
-    Logger.debug('Write {} nodes'.format(nbNodes))
-    fileHandle.write('\n{} {:d} {}\n'.format(
-        dbvtk.DFLT_NODES, nbNodes, dbvtk.DFLT_DOUBLE))
+    Logger.debug(f'Write {nbNodes} nodes')
+    fileHandle.write(f'\n{dbvtk.DFLT_NODES} {nbNodes:d} {dbvtk.DFLT_DOUBLE}\n')
     #
     dimPb = nodes.shape[1]
 
@@ -294,12 +293,10 @@ def WriteNodesV2(fileHandle, nodes):
     # write coordinates
     for i in range(nbNodes):
         fileHandle.write(formatSpec.format(*nodes[i, :]))
-    return
 
 
 def WriteNodesXML(fileHandle, nodes):
     """Write nodes coordinates for unstructured grid"""
-    pass
 
 # write elements in VTK file
 
@@ -312,17 +309,15 @@ def WriteElemsV2(fileHandle, elements):
     for itE in elements:
         nbElems += itE[configMESH.DFLT_MESH].shape[0]
         nbInt += numpy.prod(itE[configMESH.DFLT_MESH].shape)
-        Logger.debug('{} {}'.format(
-            itE[configMESH.DFLT_MESH].shape[0], itE[configMESH.DFLT_FIELD_TYPE]))
+        Logger.debug(f'{itE[configMESH.DFLT_MESH].shape[0]} {itE[configMESH.DFLT_FIELD_TYPE]}')
 
     # initialize size declaration
-    fileHandle.write('\n{} {:d} {:d}\n'.format(
-        dbvtk.DFLT_ELEMS, nbElems, nbInt+nbElems))
-    Logger.debug('Start writing {} {}'.format(nbElems, dbvtk.DFLT_ELEMS))
+    fileHandle.write(f'\n{dbvtk.DFLT_ELEMS} {nbElems:d} {nbInt+nbElems:d}\n')
+    Logger.debug(f'Start writing {nbElems} {dbvtk.DFLT_ELEMS}')
     # along the element types
     for itE in elements:
         # get the numbering the the element and the number of nodes per element
-        nbNodesPerCell = getNumberNodes(itE[configMESH.DFLT_FIELD_TYPE])
+        nbNodesPerCell = dbvtk.getNumberNodes(itE[configMESH.DFLT_FIELD_TYPE])
         formatSpec = '{:d} '
         formatSpec += ' '.join('{:d}' for _ in range(nbNodesPerCell))
         formatSpec += '\n'
@@ -331,18 +326,17 @@ def WriteElemsV2(fileHandle, elements):
             fileHandle.write(formatSpec.format(nbNodesPerCell, *e))
 
     # declaration of cell types
-    fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_ELEMS_TYPE, nbElems))
-    Logger.debug('Start writing {} {}'.format(nbElems, dbvtk.DFLT_ELEMS_TYPE))
+    fileHandle.write(f'\n{dbvtk.DFLT_ELEMS_TYPE} {nbElems:d}\n')
+    Logger.debug(f'Start writing {nbElems} {dbvtk.DFLT_ELEMS_TYPE}')
     # along the element types
     for itE in elements:
-        numElemVTK, _ = getVTKElemType(itE[configMESH.DFLT_FIELD_TYPE])
+        numElemVTK, _ = dbvtk.getVTKElemType(itE[configMESH.DFLT_FIELD_TYPE])
         for _ in range(itE[configMESH.DFLT_MESH].shape[0]):
-            fileHandle.write('{:d}\n'.format(numElemVTK))
+            fileHandle.write(f'{numElemVTK:d}\n')
 
 
 def WriteElemsXML(fileHandle, elements):
     """Write elements  for unstructured grid"""
-    pass
 
 
 def WriteFieldsV2(fileHandle,
@@ -397,9 +391,8 @@ def WriteFieldsV2(fileHandle,
 
     # write CELL_DATA
     if len(iXElementalField)+len(iXElementalScalar) > 0:
-        Logger.debug('Start writing {} {}'.format(
-            nbElems, dbvtk.DFLT_ELEMS_DATA))
-        fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_ELEMS_DATA, nbElems))
+        Logger.debug(f'Start writing {nbElems} {dbvtk.DFLT_ELEMS_DATA}')
+        fileHandle.write(f'\n{dbvtk.DFLT_ELEMS_DATA} {nbElems:d}\n')
 
         # write scalars
         if len(iXElementalScalar) > 0:
@@ -409,8 +402,7 @@ def WriteFieldsV2(fileHandle,
                 writeScalarsDataV2(fileHandle, data, fields[iX]['name'])
         # write fields
         if len(iXElementalField) > 0:
-            Logger.debug('Start writing {} {}'.format(
-                len(iXElementalField), dbvtk.DFLT_FIELD))
+            Logger.debug(f'Start writing {len(iXElementalField)} {dbvtk.DFLT_FIELD}')
             fileHandle.write('{} {} {:d}\n'.format(
                 dbvtk.DFLT_FIELD, 'cellField', len(iXElementalField)))
             for iX in iXElementalField:
@@ -420,9 +412,8 @@ def WriteFieldsV2(fileHandle,
 
     # write POINT_DATA
     if len(iXNodalField)+len(iXNodalScalar) > 0:
-        Logger.debug('Start writing {} {}'.format(
-            nbNodes, dbvtk.DFLT_NODES_DATA))
-        fileHandle.write('\n{} {:d}\n'.format(dbvtk.DFLT_NODES_DATA, nbNodes))
+        Logger.debug(f'Start writing {nbNodes} {dbvtk.DFLT_NODES_DATA}')
+        fileHandle.write(f'\n{dbvtk.DFLT_NODES_DATA} {nbNodes:d}\n')
         # write scalars
         if len(iXNodalScalar) > 0:
             for iX in iXNodalScalar:
@@ -431,8 +422,7 @@ def WriteFieldsV2(fileHandle,
                 writeScalarsDataV2(fileHandle, data, fields[iX]['name'])
         # write fields
         if len(iXNodalField) > 0:
-            Logger.debug('Start writing {} {}'.format(
-                len(iXNodalField), dbvtk.DFLT_FIELD))
+            Logger.debug(f'Start writing {len(iXNodalField)} {dbvtk.DFLT_FIELD}')
             fileHandle.write('{} {} {:d}\n'.format(
                 dbvtk.DFLT_FIELD, 'pointField', len(iXNodalField)))
             for iX in iXNodalField:
@@ -475,11 +465,9 @@ def writeScalarsDataV2(fileHandle, data, name):
     elif issubclass(data.dtype.type, numpy.floating):
         dataType = 'double'
         formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) + '\n'
-    Logger.debug('Start writing {} {}'.format(dbvtk.DFLT_SCALARS, name))
-    fileHandle.write('{} {} {} {:d}\n'.format(
-        dbvtk.DFLT_SCALARS, name, dataType, nbComp))
-    fileHandle.write('{} {}\n'.format(
-        dbvtk.DFLT_TABLE, dbvtk.DFLT_TABLE_DEFAULT))
+    Logger.debug(f'Start writing {dbvtk.DFLT_SCALARS} {name}')
+    fileHandle.write(f'{dbvtk.DFLT_SCALARS} {name} {dataType} {nbComp:d}\n')
+    fileHandle.write(f'{dbvtk.DFLT_TABLE} {dbvtk.DFLT_TABLE_DEFAULT}\n')
     for d in data:
         fileHandle.write(formatSpec.format(d))
 
@@ -499,9 +487,8 @@ def writeFieldsDataV2(fileHandle, data, name):
         dataType = 'double'
         formatSpec = ' '.join('{:9.4f}' for _ in range(nbComp)) + '\n'
     # start writing
-    Logger.debug('Start writing {} {}'.format(dbvtk.DFLT_FIELD, name))
-    fileHandle.write('{} {:d} {:d} {}\n'.format(
-        name, nbComp, data.shape[0], dataType))
+    Logger.debug(f'Start writing {dbvtk.DFLT_FIELD} {name}')
+    fileHandle.write(f'{name} {nbComp:d} {data.shape[0]:d} {dataType}\n')
     for d in data:
         fileHandle.write(formatSpec.format(*d))
 
@@ -512,4 +499,3 @@ def WriteFieldsXML(fileHandle,
                    fields,
                    numStep=None):
     """Write elements"""
-    pass

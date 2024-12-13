@@ -9,11 +9,12 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
 from pathlib import Path
+
 import numpy
 from loguru import logger as Logger
-from . import dbmsh
-from . import configMESH
-from . import fileio
+
+from . import configMESH, dbmsh, fileio
+
 
 class mshWriter:
     nbNodes = None
@@ -55,7 +56,7 @@ class mshWriter:
         self.filename = Path(filename)
         self.basename = self.filename.name
         # depending on the case
-        Logger.info('Start writing {}'.format(self.basename))
+        Logger.info(f'Start writing {self.basename}')
         if fields is not None and append and filename.exists():
             self.fhandle = fileio.fileHandler(
                 filename=filename, right='a', safeMode=False)
@@ -68,7 +69,7 @@ class mshWriter:
             # write header
             self.fhandle.write('{}\n'.format(
                 dbmsh.DFLT_FILE_OPEN_CLOSE['open']))
-            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_VERSION))
+            self.fhandle.write(f'{dbmsh.DFLT_FILE_VERSION}\n')
             self.fhandle.write('{}\n'.format(
                 dbmsh.DFLT_FILE_OPEN_CLOSE['close']))
             # write nodes
@@ -91,10 +92,10 @@ class mshWriter:
         write nodes coordinates
         """
         self.nbNodes = nodes.shape[0]
-        Logger.debug('Write {} nodes'.format(self.nbNodes))
+        Logger.debug(f'Write {self.nbNodes} nodes')
         #
         self.fhandle.write('{}\n'.format(dbmsh.DFLT_NODES_OPEN_CLOSE['open']))
-        self.fhandle.write('{}\n'.format(self.nbNodes))
+        self.fhandle.write(f'{self.nbNodes}\n')
         #
         self.dimPb = nodes.shape[1]
 
@@ -159,9 +160,9 @@ class mshWriter:
         Logger.debug('Done')
 
         # write all meshes
-        Logger.debug('Start writing {} elements'.format(self.nbElems))
+        Logger.debug(f'Start writing {self.nbElems} elements')
         self.fhandle.write('{}\n'.format(dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']))
-        self.fhandle.write('{}\n'.format(self.nbElems))
+        self.fhandle.write(f'{self.nbElems}\n')
         itElem = 0  # iterator for elements
         for iD in elemsRun:
             # create format specifier for element
@@ -234,8 +235,7 @@ class mshWriter:
             else:
                 nbSteps = 1
                 listSteps = [0.0]
-            Logger.debug('Field: {}, number of steps: {}, dimension per node/cell: {}'.format(
-                nameField, nbSteps, nbPerEntity))
+            Logger.debug(f'Field: {nameField}, number of steps: {nbSteps}, dimension per node/cell: {nbPerEntity}')
             # reformat values as list of arrays
             if len(iF[configMESH.DFLT_FIELD_DATA]) > 1 and nbSteps == 1:
                 values = [iF[configMESH.DFLT_FIELD_DATA]]
@@ -247,7 +247,7 @@ class mshWriter:
             # along steps
             for iS in range(nbSteps):
                 if nbSteps > 1:
-                    Logger.debug('Step number: {}/{}'.format(iS+1, nbSteps))
+                    Logger.debug(f'Step number: {iS+1}/{nbSteps}')
                 if iF[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_NODAL:
                     typeData = dbmsh.DFLT_FIELDS_NODES_OPEN_CLOSE
                 elif iF[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT:
@@ -255,16 +255,15 @@ class mshWriter:
                 self.fhandle.write('{}\n'.format(typeData['open']))
                 self.fhandle.write('1\n')  # one string tag
                 # the name of the view
-                self.fhandle.write('"{}"\n'.format(nameField))
+                self.fhandle.write(f'"{nameField}"\n')
                 self.fhandle.write('1\n')  # one real tag
-                self.fhandle.write('{:9.4f}\n'.format(
-                    listSteps[iS]))  # the time value
+                self.fhandle.write(f'{listSteps[iS]:9.4f}\n')  # the time value
                 self.fhandle.write('3\n')  # three integer tags
-                self.fhandle.write('{:d}\n'.format(iS))  # time step value
+                self.fhandle.write(f'{iS:d}\n')  # time step value
                 # number of components per nodes
-                self.fhandle.write('{:d}\n'.format(nbPerEntity))
+                self.fhandle.write(f'{nbPerEntity:d}\n')
                 # number of nodal values
-                self.fhandle.write('{:d}\n'.format(values[iS].shape[0]))
+                self.fhandle.write(f'{values[iS].shape[0]:d}\n')
                 #
                 for i in range(values[iS].shape[0]):
                     self.fhandle.write(
@@ -274,11 +273,11 @@ class mshWriter:
             Logger.debug('Write field: done')
 
 
-class mshReader:    
+class mshReader:
 
     def __init__(self, filename=None, type='mshv2', dim=3):
         self.initcontent()
-        Logger.debug('Open file {}'.format(filename))
+        Logger.debug(f'Open file {filename}')
         # open file and get handle
         self.objFile = fileio.fileHandler(
             filename=filename, right='r', safeMode=False)
@@ -298,7 +297,7 @@ class mshReader:
 
         # close file
         self.objFile.close()
-    
+
     def initcontent(self):
         self.nodes = None  # array of nodes coordinates
         self.dim = None  # dimension of the mesh (2/3)
@@ -309,11 +308,11 @@ class mshReader:
         self.objFile = None
         self.readData = None
         self.curIt = 0
-        
+
     def __del__(self):
         self.clean()
-    
-    def clean(self):        
+
+    def clean(self):
         """ Clean the object"""
         self.initcontent()
 
@@ -331,7 +330,7 @@ class mshReader:
             self.nbNodes = int(contentLine[0])
             self.curIt += 1
             self.dim = dim
-            Logger.debug('Start read {} nodes'.format(self.nbNodes))
+            Logger.debug(f'Start read {self.nbNodes} nodes')
         else:
             if self.curIt == 1:
                 if not dim:
@@ -347,8 +346,7 @@ class mshReader:
             if self.curIt-1 == self.nbNodes:
                 self.readData = None
                 self.curIt = 0
-                Logger.debug('Nodes read: {}, dimension: {}'.format(
-                    self.nbNodes, self.dim))
+                Logger.debug(f'Nodes read: {self.nbNodes}, dimension: {self.dim}')
 
     def readElements(self, lineStr=None):
         """
@@ -363,7 +361,7 @@ class mshReader:
             # read number of elements
             self.nbElems = int(contentLine[0])
             self.curIt += 1
-            Logger.debug('Start read {} elements'.format(self.nbElems))
+            Logger.debug(f'Start read {self.nbElems} elements')
         else:
             # store elements connectivity
             self._readElementsLine(contentLine)
@@ -375,17 +373,15 @@ class mshReader:
                 # reset
                 self.readData = None
                 self.curIt = 0
-                Logger.debug('Elements read: {}'.format(self.nbElems))
+                Logger.debug(f'Elements read: {self.nbElems}')
                 Logger.debug('Type of elements')
                 for elemType in self.elems.keys():
-                    Logger.debug(' > {} {}'.format(
-                        self.elems[elemType].shape[0], elemType))
+                    Logger.debug(f' > {self.elems[elemType].shape[0]} {elemType}')
                 Logger.debug('Tags')
                 for tagName in self.tagsList.keys():
-                    Logger.debug('Tag: {}'.format(tagName))
+                    Logger.debug(f'Tag: {tagName}')
                     for elemType in self.tagsList[tagName].keys():
-                        Logger.debug(' > {} {}'.format(
-                            len(self.tagsList[tagName][elemType]), elemType))
+                        Logger.debug(f' > {len(self.tagsList[tagName][elemType])} {elemType}')
 
     def _finalizeElems(self):
         """

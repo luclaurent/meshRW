@@ -17,4 +17,4 @@ def convert_size(size_bytes):
     i = int(numpy.floor(numpy.log(size_bytes)/numpy.log(1024)))
     p = numpy.power(1024, i)
     s = round(size_bytes / p, 2)
-    return '{:g} {}'.format(s, size_name[i])
+    return f'{s:g} {size_name[i]}'

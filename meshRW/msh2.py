@@ -5,32 +5,33 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
 
 import gmsh
-from . import dbmsh
 import numpy as np
-from loguru import logger as Logger
 
-class mshWriter():
-    
+from . import dbmsh
+
+
+class mshWriter:
+
     def __init__(self,nodes,elems,
                     fields=None,
                     filename=None,
                     version=2.2):
-        # 
+        #
         self.modelName = "Imported mesh"
         self.itName = 0
-        
+
         # initialize gmsh
         gmsh.initialize()
-        gmsh.option.setNumber("Mesh.MshFileVersion",2.2) 
+        gmsh.option.setNumber("Mesh.MshFileVersion",2.2)
         # create empty entity
         gmsh.model.add(self.modelName)
         vol = gmsh.model.addDiscreteEntity(3)
- 
+
         # add nodes
         self.nbNodes = len(nodes)
         nodesNum = np.arange(1,len(nodes)+1)
         gmsh.model.mesh.addNodes(3,vol,nodesNum,nodes.flatten())
-        
+
         # add elements
         self.nbElems = 0
         for m in elems:
@@ -47,18 +48,18 @@ class mshWriter():
                     physgrp = [physgrp]
                 for p in np.unique(physgrp):
                     gmsh.model.addPhysicalGroup(3,[vol],p)
-        
+
         gmsh.model.mesh.reclassifyNodes()
-        
+
         # add fields
         if not isinstance(fields, list):
             fields = [fields]
         for f in fields:
             self.setField(f)
-        
+
         # write msh file
         gmsh.write(str(filename))
-        
+
     def setField(self,field):
         """ """
         # load field data
@@ -72,7 +73,7 @@ class mshWriter():
         typeField = field.get('type')
         #
         if not name:
-            name = '{}_{}'.format(typeField,self.itName)
+            name = f'{typeField}_{self.itName}'
             self.itName += 1
         if not steps and nbsteps:
             steps = np.arange(nbsteps, dtype=int)
@@ -80,13 +81,13 @@ class mshWriter():
             timesteps = np.zeros(nbsteps)
         if nbsteps ==1 and len(data) > 1:
             data = [data]
-        
+
         # add field
         if typeField == 'nodal':
             nameTypeData = 'NodeData'
             if numEntities is None:
                 numEntities = np.arange(1,self.nbNodes+1)
-            
+
         elif typeField == 'elemental':
             nameTypeData = 'ElementData'
             if numEntities is None:
@@ -95,7 +96,7 @@ class mshWriter():
             raise ValueError('typeField must be nodal or elemental')
         #
         tagView = gmsh.view.add(name)
-        for s,t in zip(steps,timesteps): 
+        for s,t in zip(steps,timesteps):
             gmsh.view.addModelData(tagView,
                                     s,
                                     self.modelName,
@@ -105,6 +106,5 @@ class mshWriter():
                                     time=t,
                                     numComponents=dim,
                                     partition=0)
-        
-        pass
-        
+
+

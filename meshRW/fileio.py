@@ -3,10 +3,13 @@ This file includes the definition and tools to manipulate files
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
-from pathlib import Path
 import time
+from pathlib import Path
+
 from loguru import logger as Logger
+
 from . import various
+
 
 class fileHandler:
 
@@ -58,15 +61,14 @@ class fileHandler:
         #check extension for compression
         if filename.suffix == '.gz':
             self.compress = 'gz'
-        elif filename.suffix == '.bz2':           
+        elif filename.suffix == '.bz2':
             self.compress = 'bz2'
-        else:
-            if gz:
-                filename.with_suffix(filename.suffix + '.gz')
-                self.compress = 'gz'
-            elif bz2:
-                filename.with_suffix(filename.suffix + '.bz2')
-                self.compress = 'bz2'
+        elif gz:
+            filename.with_suffix(filename.suffix + '.gz')
+            self.compress = 'gz'
+        elif bz2:
+            filename.with_suffix(filename.suffix + '.bz2')
+            self.compress = 'bz2'
         #extract information about filename
         self.basename = filename.name
         self.dirname = filename.absolute().parent
@@ -78,15 +80,15 @@ class fileHandler:
         """
         #adapt the rights (in case of the file does not exist)
         if self.append and self.filename.exists():
-            Logger.warning('{} does not exist! Unable to append'.format(self.basename))
+            Logger.warning(f'{self.basename} does not exist! Unable to append')
             self.fixRight(append = False)
         if not safeMode and self.filename.exists() and not self.append and 'w' in self.right:
-            Logger.warning('{} already exists! It will be overwritten'.format(self.basename))
+            Logger.warning(f'{self.basename} already exists! It will be overwritten')
         if safeMode and self.filename.exists() and not self.append and 'w' in self.right:
-            Logger.warning('{} already exists! Not overwrite it'.format(self.basename))
+            Logger.warning(f'{self.basename} already exists! Not overwrite it')
         else:
             #
-            Logger.debug('Open {} in {} with right {}'.format(self.basename,self.dirname,self.right))
+            Logger.debug(f'Open {self.basename} in {self.dirname} with right {self.right}')
             # open file
             if self.compress == 'gz':
                 Logger.debug('Use GZ lib')
@@ -101,7 +103,7 @@ class fileHandler:
         #store timestamp at opening
         self.startTime = time.perf_counter()
         return self.fhandle
-    
+
     def close(self):
         """
         Close openned file
@@ -109,23 +111,20 @@ class fileHandler:
         if self.fhandle:
             self.fhandle.close()
             self.fhandle = None
-            Logger.info('Close file {} with elapsed time {:g}s - size {}'.format(
-                self.basename,
-                time.perf_counter()-self.startTime,
-                various.convert_size(self.filename.stat().st_size)))
-    
+            Logger.info(f'Close file {self.basename} with elapsed time {time.perf_counter()-self.startTime:g}s - size {various.convert_size(self.filename.stat().st_size)}')
+
     def getHandler(self):
         """
         get the file handler
         """
         return self.fhandle
-    
+
     def write(self,txt):
         """
         write in the file using handle
         """
         return self.fhandle.write(txt)
-    
+
     def fixRight(self,append = None, right = None):
         """
         Fix issue on right to write file
