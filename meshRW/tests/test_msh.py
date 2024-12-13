@@ -71,6 +71,8 @@ def test_MSH2writer():
                             {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}],  # ,'steps':list of steps,'nbsteps':number of steps]
                     version=2.2)
+       
+    assert outputfile.exists()
 
 def test_MSHreader3D():
     inputfile = DataPath / Path('mesh3Dref.msh')

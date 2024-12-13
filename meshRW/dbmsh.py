@@ -167,7 +167,7 @@ DFLT_NODES_OPEN_CLOSE = {'open': '$Nodes',
                          'close': '$EndNodes'}
 DFLT_ELEMS_OPEN_CLOSE = {'open': '$Elements',
                          'close': '$EndElements'}
-DFLT_FIELDS_NODES_OPEN_CLOSE = {'open': '$NodesData',
-                                'close': '$EndNodesData'}
+DFLT_FIELDS_NODES_OPEN_CLOSE = {'open': '$NodeData',
+                                'close': '$EndNodeData'}
 DFLT_FIELDS_ELEMS_OPEN_CLOSE = {'open': '$ElementData',
                                 'close': '$EndElementData'}

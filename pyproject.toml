@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mesRW"
+name = "meshRW"
 dynamic = ['version']
 authors = [{ name = "L. Laurent", email = "luc.laurent@lecnam.net" }]
 description = "meshRW is a Python module that proposes basic readers and writers for msh (gmsh) and vtk (Paraview)."
@@ -33,11 +33,11 @@ packages = ["meshRW"]
 ignore-vcs = false
 
 [tool.hatch.envs.hatch-test]
-default-args = ["meshRW/tests"]
+default-args = ["meshRW/tests/"]
 
 [tool.coverage.run]
 branch = true
-command_line = "-m unittest discover -s meshRW/tests/"
+# command_line = "-m unittest discover -s meshRW/tests/"
 
 [tool.coverage.html]
 directory = "coverage_html_report"
