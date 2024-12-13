@@ -4,112 +4,12 @@ This class is a part of the SILEX library and will write results in legacy VTK f
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
-import os
-import sys
 import numpy
-import time
 from datetime import datetime
-import logging
 from . import dbvtk
 from . import configMESH
-from . import customLogging, fileio
-
-# load Logger
-Logger = logging.getLogger(__name__)
-if not Logger.hasHandlers():
-    LogObj = customLogging.customLogger(activate=True)
-    Logger = LogObj.getLogger()
-
-
-def getVTKElemType(txtEltype):
-    """
-    Get the element type defined as in vtk (refer to VTK documentation for numbering) from text declaration
-    syntax:
-        getVTKElemType(txtEltype)
-
-    input:
-        txtEltype: element declared using VTK string (if number is used the function wil return it)
-    output:
-        element type defined as VTK number
-    """
-    VTKtoElem = dbvtk.getVTKtoElem()
-    elementDict = dbvtk.loadElementDict()
-    numPerElementDict = dbvtk.loadNodesElement()
-
-    # depending on the type of txtEltype
-    numPerElement = -1
-    if isinstance(txtEltype, int):
-        elementNum = txtEltype
-    else:
-        if txtEltype.upper() in VTKtoElem.keys():
-            txtEltype = VTKtoElem[txtEltype]
-        elementNum = elementDict[txtEltype.upper()]
-        numPerElement = numPerElementDict[txtEltype.upper()]
-    if not elementNum:
-        Logger.error('Element type {} not implemented'.format(txtEltype))
-    return elementNum, numPerElement
-
-
-def getElemTypeFromVTK(elementNum):
-    """
-    Get the element type from id (integer) defined in gmsh (refer to gmsh documentation for numbering)
-    syntax:
-        getElemTypeFromVTK(elementNum)
-
-    input:
-        elementNum: integer used in gmsh to declare element
-    output:
-        global name of the element
-    """
-    elementDict = dbvtk.loadElementDict()
-    globalName = None
-    for i in elementDict:
-        if elementDict[i] == elementNum:
-            globalName = i
-            break
-    if globalName is None:
-        Logger.error('Element type not found with id {}'.format(elementNum))
-    return globalName
-
-
-def getNumberNodes(txtElemtype):
-    """
-    Get the number of nodes for a specific element type type (declare as string)
-        syntax:
-            getNumberNodes(txtElemtype)
-
-       input:
-            txtElemtype: element declared using string (if number is used the function wil return it)
-        output:
-            number of nodes for txtEltype
-    """
-
-    nodesPerElem = dbvtk.loadNodesElement()
-    nbNodes = 0
-    if txtElemtype in nodesPerElem.keys():
-        nbNodes = nodesPerElem[txtElemtype]
-    else:
-        Logger.error('Element type {} not defined'.format(txtElemtype))
-    return nbNodes
-
-
-def getNumberNodesFromNum(elementNum):
-    """
-    Get the number of nodfs for a specific element type type (declare as string)
-        syntax:
-            getNumberNodesFromNum(elementNum)
-
-        input:
-            elementNum: integer used in gmsh to declare element
-        output:
-            number of nodes for txtEltype
-    """
-
-    return getNumberNodes(getElemTypeFromVTK(elementNum))
-
-
-# DEFAULT VALUES
-ALLOWED_EXTENSIONS = ['.vtk', '.vtk.bz2', '.vtk.gz']
+from . import  fileio
+from loguru import logger as Logger
 
 
 class vtkWriter:

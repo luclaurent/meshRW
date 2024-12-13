@@ -7,6 +7,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 import gmsh
 from . import dbmsh
 import numpy as np
+from loguru import logger as Logger
 
 class mshWriter():
     

@@ -4,16 +4,9 @@ This file includes the definition and tools to manipulate files
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 import os
-import logging
 import time
-from . import customLogging
+from loguru import logger as Logger
 from . import various
-
-# load Logger
-Logger = logging.getLogger(__name__)
-# if not Logger.hasHandlers():
-#     LogObj = customLogging.customLogger(loggerRoot=Logger, activate=True)
-#     Logger = LogObj.getLogger()
 
 class fileHandler:
 

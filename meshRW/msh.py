@@ -10,106 +10,10 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 import os
 import numpy
+from loguru import logger as Logger
 from . import dbmsh
 from . import configMESH
-import logging
-from . import customLogging, fileio
-
-# load Logger
-Logger = logging.getLogger(__name__)
-# if not Logger.hasHandlers():
-#     LogObj = customLogging.customLogger(loggerRoot=Logger,activate=True)
-#     Logger = LogObj.getLogger()
-
-
-def getMSHElemType(txtEltype):
-    """
-    Get the element type defined as in gmsh (refer to gmsh documentation for numbering) from text declaration
-    syntax:
-        getMshElemType(txtEltype)
-
-    input:
-        txtEltype: element declared using string (if number is used the function will return it)
-    output:
-        element type defined as gmsh number
-    """
-    elementDict = dbmsh.loadElementDict()
-
-    # depending on the type of txtEltype
-    # - if int: return txtEltype
-    # - else get the number from the dictionary
-    if isinstance(txtEltype, int):
-        elementNum = txtEltype
-    else:
-        elementNum = elementDict[txtEltype.upper()]
-    # show error if the type is not available
-    if not elementNum:
-        Logger.error('Element type {} not implemented'.format(txtEltype))
-    return elementNum
-
-
-def getElemTypeFromMSH(elementNum):
-    """
-    Get the element type from id (integer) defined in gmsh (refer to gmsh documentation for numbering)
-    syntax:
-        getElemTypeFromMSH(elementNum)
-
-    input:
-        elementNum: integer used in gmsh to declare element
-    output:
-        global name of the element
-    """
-    # load the dictionary
-    elementDict = dbmsh.loadElementDict()
-    globalName = None
-    # get the name of the element using the integer iD along the dictionary
-    for i in elementDict:
-        if elementDict[i] == elementNum:
-            globalName = i
-            break
-    # if the name of the element if not available show error
-    if globalName is None:
-        Logger.error('Element type not found with id {}'.format(elementNum))
-    return globalName
-
-
-def getNumberNodes(txtElemtype):
-    """
-    Get the number of nodes for a specific element type type (declare as string)
-        syntax:
-            getNumberNodes(txtElemtype)
-
-       input:
-            txtElemtype: element declared using string (if number is used the function wil return it)
-        output:
-            number of nodes for txtEltype
-    """
-    # load the dictionary
-    nodesPerElem = dbmsh.loadNodesElement()
-    nbNodes = 0
-    # check if the type of element exists
-    if txtElemtype in nodesPerElem.keys():
-        # get the number of nodes for the type of element
-        nbNodes = nodesPerElem[txtElemtype]
-    else:
-        # show error message if the type of element does not exist
-        Logger.error('Element type {} not defined'.format(txtElemtype))
-    return nbNodes
-
-
-def getNumberNodesFromNum(elementNum):
-    """
-    Get the number of nodfs for a specific element type type (declare as string)
-        syntax:
-            getNumberNodesFromNum(elementNum)
-
-        input:
-            elementNum: integer used in gmsh to declare element
-        output:
-            number of nodes for txtEltype
-    """
-    return getNumberNodes(getElemTypeFromMSH(elementNum))
-
+from . import fileio
 
 class mshWriter:
     nbNodes = None

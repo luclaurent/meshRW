@@ -5,6 +5,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
 
 import vtk
+from loguru import logger as Logger
 
 class fem2vtk():
     

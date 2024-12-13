@@ -14,7 +14,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 license = { file = "LICENSE" }
-dependencies = ['numpy', 'vtk', 'gmsh', 'pytest']
+dependencies = ['numpy', 'vtk', 'gmsh', 'pytest', 'loguru']
 requires-python = '>=3.8'
 
 
