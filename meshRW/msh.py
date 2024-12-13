@@ -8,7 +8,7 @@ https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
-import os
+from pathlib import Path
 import numpy
 from loguru import logger as Logger
 from . import dbmsh
@@ -44,7 +44,7 @@ class mshWriter:
                     'type': type of elements (could be a string or an integer, see getGmshElemType and  gmsh documentation)
                     'physgrp' (optional): physical group (integer or array of integers to declare the physical group of each cell)
             fields (optional)  : list of the fields to write, syntax:
-                fields=[{'data':variable_name1,'type':'nodal' or 'elemental' ,'dim':number of values per node,'name':'name 1','steps':list of steps,'nbsteps':number of steps],
+                fields=[{'data':variable_name1,'type':'nodal' or 'elemental' 'numentities': number of concerned values (nodes, elements),'dim':number of values per node,'name':'name 1','steps':list of steps,'nbsteps':number of steps],
                         {'data':variable_name2,'type':'nodal' or 'elemental' ,'dim':number of values per node,'name':'name 2','steps':list of steps,'nbsteps':number of steps],
                         ...
                         ]
@@ -52,10 +52,11 @@ class mshWriter:
 
         """
         #
-        self.basename = os.path.basename(filename)
+        self.filename = Path(filename)
+        self.basename = self.filename.name
         # depending on the case
         Logger.info('Start writing {}'.format(self.basename))
-        if fields is not None and append and os.path.exists(filename):
+        if fields is not None and append and filename.exists():
             self.fhandle = fileio.fileHandler(
                 filename=filename, right='a', safeMode=False)
             self.appendTxt = True
@@ -146,9 +147,9 @@ class mshWriter:
             self.nbElems += dimC[0]  # total number of elements
             #
             # convert element type to MSH number
-            iD['eltypeGMSH'] = getMSHElemType(iD[configMESH.DFLT_TYPE_ELEM])
+            iD['eltypeGMSH'] = dbmsh.getMSHElemType(iD[configMESH.DFLT_TYPE_ELEM])
             #
-            if not configMESH.DFLT_PHYS_GRP in iD.keys():
+            if configMESH.DFLT_PHYS_GRP not in iD.keys():
                 iD[configMESH.DFLT_PHYS_GRP] = 0
             if type(iD[configMESH.DFLT_PHYS_GRP]) is int:
                 iD[configMESH.DFLT_PHYS_GRP] = [iD[configMESH.DFLT_PHYS_GRP]]
@@ -273,20 +274,10 @@ class mshWriter:
             Logger.debug('Write field: done')
 
 
-class mshReader:
-
-    nodes = None  # array of nodes coordinates
-    dim = None  # dimension of the mesh (2/3)
-    nbNodes = None  # number of nodes
-    elems = {}  # dictionary of elements (keys are name of the element)
-    tagsList = {}  # list of tags and associated elements
-    fhandle = None
-    objFile = None
-    readData = None
-    curIt = 0
+class mshReader:    
 
     def __init__(self, filename=None, type='mshv2', dim=3):
-
+        self.initcontent()
         Logger.debug('Open file {}'.format(filename))
         # open file and get handle
         self.objFile = fileio.fileHandler(
@@ -302,9 +293,29 @@ class mshReader:
             elif self.readData == 'elems':
                 # read elements
                 self.readElements(l)
+        # finalize data
+        self._finalizeElems()
 
         # close file
         self.objFile.close()
+    
+    def initcontent(self):
+        self.nodes = None  # array of nodes coordinates
+        self.dim = None  # dimension of the mesh (2/3)
+        self.nbNodes = None  # number of nodes
+        self.elems = {}  # dictionary of elements (keys are name of the element)
+        self.tagsList = {}  # list of tags and associated elements
+        self.fhandle = None
+        self.objFile = None
+        self.readData = None
+        self.curIt = 0
+        
+    def __del__(self):
+        self.clean()
+    
+    def clean(self):        
+        """ Clean the object"""
+        self.initcontent()
 
     def readNodes(self, dim=None, lineStr=None):
         """
@@ -357,7 +368,7 @@ class mshReader:
             # store elements connectivity
             self._readElementsLine(contentLine)
             self.curIt += 1
-            # stop read nodes
+            # stop read elements
             if self.curIt-1 == self.nbElems:
                 #  finalize data
                 self._finalizeElems()
@@ -393,20 +404,16 @@ class mshReader:
         arrayint = numpy.array(arraystr, dtype=int)
         # get element id
         elementId = arrayint[1]
-        elemType = getElemTypeFromMSH(elementId)
+        elemType = dbmsh.getElemTypeFromMSH(elementId)
         # get number of tags
         nbTags = arrayint[2]
         tags = arrayint[3:3+nbTags]
         # element nodes
         elementNodes = arrayint[3+nbTags:]
         # check if element can be stored
-        print(self.elems.keys())
-        print(elemType)
-        
         if elemType not in self.elems.keys():
             self.elems[elemType] = list()
         # store it
-        print(type(self.elems[elemType]))
         self.elems[elemType].append(elementNodes)
         # get the item of the element
         iX = len(self.elems[elemType])-1
@@ -447,7 +454,7 @@ class mshReader:
                 # along meshes in tag
                 for iM in vT.keys():
                     # check if element type already exists
-                    if not iM in elemsTag.keys():
+                    if iM not in elemsTag.keys():
                         elemsTag[iM] = list()
                     elemsTag[iM].extend(vT[iM])
         # filter by type
@@ -456,13 +463,13 @@ class mshReader:
             elemsExportUnique = list()
             if type in elemsTag.keys():
                 elemsExport = self.elems[type][elemsTag[type], :]
-                elemsExportUnique = numpy.unique(elemsExport)
+                elemsExportUnique = numpy.unique(elemsExport,axis=0)
         else:
             elemsExport = dict()
             elemsExportUnique = dict()
             for iT in elemsTag.keys():
                 elemsExport[iT] = self.elems[iT][elemsTag[iT], :]
-                elemsExportUnique[iT] = numpy.unique(elemsExport[iT])
+                elemsExportUnique[iT] = numpy.unique(elemsExport[iT],axis=0)
 
         #specific export
         if not dictFormat and not type:
@@ -472,7 +479,7 @@ class mshReader:
             elemsExport = elemsExport[idElems]
             elemsExportUnique = elemsExportUnique[idElems]
 
-        return elemsExport, elemsExportUnique
+        return elemsExportUnique
 
     def getTags(self):
         """

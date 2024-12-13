@@ -3,7 +3,7 @@ This file includes the definition and tools to manipulate files
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
-import os
+from pathlib import Path
 import time
 from loguru import logger as Logger
 from . import various
@@ -46,7 +46,7 @@ class fileHandler:
             checkOk = False
             Logger.error('Right(s) not provided')
         #load the filename
-        self.getFilename(filename,gz,bz2)
+        self.getFilename(Path(filename),gz,bz2)
         #open the file
         self.open(safeMode)
 
@@ -56,22 +56,20 @@ class fileHandler:
         """
         self.compress = None
         #check extension for compression
-        if os.path.splitext(filename) == '.gz':
+        if filename.suffix == '.gz':
             self.compress = 'gz'
-        elif os.path.splitext(filename) == '.bz2':           
+        elif filename.suffix == '.bz2':           
             self.compress = 'bz2'
         else:
             if gz:
-                filename += '.gz'
+                filename.with_suffix(filename.suffix + '.gz')
                 self.compress = 'gz'
             elif bz2:
-                filename += '.bz2'
+                filename.with_suffix(filename.suffix + '.bz2')
                 self.compress = 'bz2'
         #extract information about filename
-        self.basename = os.path.basename(filename)
-        self.dirname = os.path.dirname(filename)
-        if not self.dirname:
-            self.dirname = os.getcwd()
+        self.basename = filename.name
+        self.dirname = filename.absolute().parent
         self.filename = filename
 
     def open(self,safeMode=False):
@@ -79,12 +77,12 @@ class fileHandler:
             Open the file w/- or W/o safe mode (avoid overwrite existing file
         """
         #adapt the rights (in case of the file does not exist)
-        if self.append and os.path.exists(self.filename):
+        if self.append and self.filename.exists():
             Logger.warning('{} does not exist! Unable to append'.format(self.basename))
             self.fixRight(append = False)
-        if not safeMode and os.path.exists(self.filename) and not self.append and 'w' in self.right:
+        if not safeMode and self.filename.exists() and not self.append and 'w' in self.right:
             Logger.warning('{} already exists! It will be overwritten'.format(self.basename))
-        if safeMode and os.path.exists(self.filename) and not self.append and 'w' in self.right:
+        if safeMode and self.filename.exists() and not self.append and 'w' in self.right:
             Logger.warning('{} already exists! Not overwrite it'.format(self.basename))
         else:
             #
@@ -114,7 +112,7 @@ class fileHandler:
             Logger.info('Close file {} with elapsed time {:g}s - size {}'.format(
                 self.basename,
                 time.perf_counter()-self.startTime,
-                various.convert_size(os.path.getsize(self.filename))))
+                various.convert_size(self.filename.stat().st_size)))
     
     def getHandler(self):
         """

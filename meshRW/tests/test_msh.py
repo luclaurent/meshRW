@@ -13,7 +13,7 @@ ArtifactsPath = CurrentPath / Path('artifacts')
 ArtifactsPath.mkdir(exist_ok=True)
 
 
-def test_MSHwriter(self):
+def test_MSHwriter():
     # open data    
     hf = open(datafile, 'rb')
     #
@@ -38,12 +38,12 @@ def test_MSHwriter(self):
                     elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
                             {'connectivity': elemsData[list(elemsData.keys())[1]], 'type':list(elemsData.keys())[1], 'physgrp':[6, 6]}],
                     fields=[{'data': dataNodes, 'type': 'nodal', 'dim': 3, 'name': 'nodal3'},  # ,'steps':list of steps,'nbsteps':number of steps],
-                            {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
+                            {'data': dataElem, 'type': 'elemental', 'dim': 1, 'name': 'name_2'},
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}]  # ,'steps':list of steps,'nbsteps':number of steps]
                     )
     assert outputfile.exists()
     
-def test_MSH2writer(self):
+def test_MSH2writer():
     # open data
     hf = open(datafile, 'rb')
     data = pickle.load(hf)
@@ -71,15 +71,41 @@ def test_MSH2writer(self):
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}],  # ,'steps':list of steps,'nbsteps':number of steps]
                     version=2.2)
 
-def test_MSHreader3D(self):
+def test_MSHreader3D():
     inputfile = DataPath / Path('mesh3Dref.msh')
     # open file and read it
-    msh.mshReader(filename=inputfile)
+    mesh = msh.mshReader(filename=inputfile)
+    assert mesh.getNodes().shape == (21050,3)
+    assert mesh.getTags() == [5, 6]
+    assert mesh.getElements().get('TET4').shape == (96925, 4)
+    assert mesh.getElements().get('PRI6').shape == (1667,6)
+    assert mesh.getElements(type='TET4').shape == (96925, 4)
+    assert mesh.getElements(type='PRI6').shape == (1667, 6)
+    assert mesh.getElements(tag=5).get('TET4').shape == (96925, 4)
+    assert mesh.getElements(tag=6).get('PRI6').shape == (1667,6)
+    assert mesh.getElements(tag=6).get('TET4') is None
+    assert mesh.getElements(tag=5).get('PRI6') is None
+    assert len(mesh.getElements(tag=6, type='TET4')) == 0
+    assert len(mesh.getElements(tag=5, type='PRI6')) == 0
 
-def test_MSHreader2D(self):
-    inputfile = DataPath / Path('mesh3Dref.msh')
+def test_MSHreader2D():
+    inputfile = DataPath / Path('mesh2Dref.msh')
     # open file and read it
-    msh.mshReader(filename=inputfile)
+    mesh = msh.mshReader(filename=inputfile)
+    assert mesh.getNodes().shape == (7480,3)
+    assert mesh.getTags() == [2, 4, 1, 15, 5, 27]
+    assert mesh.getElements().get('LIN2').shape == (52, 2)
+    assert mesh.getElements().get('TRI3').shape == (14614,3)
+    assert mesh.getElements(type='LIN2').shape == (52,2)
+    assert mesh.getElements(type='TRI3').shape == (14614, 3)
+    assert mesh.getElements(tag=2, type='LIN2').shape == (52,2)
+    assert mesh.getElements(tag=4, type='LIN2').shape == (52,2)
+    assert mesh.getElements(tag=1, type='TRI3').shape == (14614,3)
+    assert mesh.getElements(tag=15, type='TRI3').shape == (14156,3)
+    assert mesh.getElements(tag=5, type='TRI3').shape == (458,3)
+    assert mesh.getElements(tag=27, type='TRI3').shape == (458,3)
+    assert len(mesh.getElements(tag=5, type='LIN2')) == 0
+    assert len(mesh.getElements(tag=27, type='LIN2')) == 0
 
 
 

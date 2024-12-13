@@ -37,7 +37,7 @@ class mshWriter():
             typeElem = m.get('type')
             connectivity = m.get('connectivity')
             physgrp = m.get('physgrp',None)
-            codeElem = dbmsh.getElementCode(typeElem)
+            codeElem = dbmsh.getMSHElemType(typeElem)
             #
             self.nbElems += len(connectivity)
             #
@@ -57,7 +57,7 @@ class mshWriter():
             self.setField(f)
         
         # write msh file
-        gmsh.write(filename)
+        gmsh.write(str(filename))
         
     def setField(self,field):
         """ """

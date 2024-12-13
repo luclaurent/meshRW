@@ -66,19 +66,6 @@ def loadElementDict():
     }
     return elementDict
 
-def getElementCode(name):
-    data = loadElementDict()
-    return data.get(name.upper(),None).get('code',None)
-
-def getDim(name):
-    data = loadElementDict()
-    return data.get(name.upper(),None).get('dim',None)
-
-def getNbNodes(name):
-    data = loadElementDict()
-    return data.get(name.upper(),None).get('nodes',None)
-
-
 
 def getMSHElemType(txtEltype):
     """
@@ -99,7 +86,7 @@ def getMSHElemType(txtEltype):
     if isinstance(txtEltype, int):
         elementNum = txtEltype
     else:
-        elementNum = elementDict[txtEltype.upper()]
+        elementNum = elementDict[txtEltype.upper()].get('code', None)
     # show error if the type is not available
     if not elementNum:
         Logger.error('Element type {} not implemented'.format(txtEltype))
@@ -121,10 +108,11 @@ def getElemTypeFromMSH(elementNum):
     elementDict = loadElementDict()
     globalName = None
     # get the name of the element using the integer iD along the dictionary
-    for i in elementDict:
-        if elementDict[i] == elementNum:
-            globalName = i
-            break
+    for k,v in elementDict.items():
+        if v:
+            if v.get('code', None) == elementNum:
+                globalName = k
+                break
     # if the name of the element if not available show error
     if globalName is None:
         Logger.error('Element type not found with id {}'.format(elementNum))
@@ -143,12 +131,13 @@ def getNumberNodes(txtElemtype):
             number of nodes for txtEltype
     """
     # load the dictionary
-    nodesPerElem = loadNodesElement()
+    elementDict = loadElementDict()
     nbNodes = 0
     # check if the type of element exists
-    if txtElemtype in nodesPerElem.keys():
+    if txtElemtype in elementDict.keys():
         # get the number of nodes for the type of element
-        nbNodes = nodesPerElem[txtElemtype]
+        if elementDict[txtElemtype]:
+            nbNodes = elementDict[txtElemtype].get('nodes', None)
     else:
         # show error message if the type of element does not exist
         Logger.error('Element type {} not defined'.format(txtElemtype))
