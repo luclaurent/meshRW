@@ -12,7 +12,9 @@ from pathlib import Path
 from . import dbmsh
 from . import various
 
-
+def getViewName(view_tag):
+        return gmsh.option.getString(f'View[{gmsh.view.getIndex(view_tag)}].Name')
+                
 class mshWriter:
 
     def __init__(self,
@@ -20,12 +22,13 @@ class mshWriter:
                  elems,
                  fields=None,
                  filename=None,
-                 version=2.2):
+                 version=2.2,
+                 append=False):
         #
         Logger.info('Create msh file using gmsh API')
         self.modelName = "Imported mesh"
         self.itName = 0
-        self.append = True # add all fields to the exported mesh file
+        self.append = append # add all fields to the exported mesh file
         self.filename = Path(filename)
         
         # initial data analysis
@@ -94,7 +97,6 @@ class mshWriter:
         gmsh.model.mesh.reclassifyNodes()
 
         # write msh file
-        self.append=False
         self.write()
         # clean gmsh
         gmsh.finalize()
@@ -113,7 +115,12 @@ class mshWriter:
         else:
             it = 0
             for t in gmsh.view.getTags():
-                newfilename = self.getFilename(suffix='view-{}'.format(it))
+                viewname = getViewName(t)
+                viewname=viewname.replace(' ','_')
+                if len(viewname)>15:
+                    viewname = viewname[0:15]
+                #
+                newfilename = self.getFilename(suffix='_view-{}_{}'.format(it,viewname))
                 starttime = time.perf_counter()
                 gmsh.view.write(t,newfilename.as_posix(),append=False)
                 Logger.info('Data save in {} ({}) - Elapsed {}s'.format(newfilename,

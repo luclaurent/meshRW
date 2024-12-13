@@ -1,6 +1,6 @@
 import pickle
 from pathlib import Path
-
+import pytest
 import numpy
 from meshRW import msh, msh2
 
@@ -44,7 +44,9 @@ def test_MSHwriter():
                     )
     assert outputfile.exists()
 
-def test_MSH2writer():
+@pytest.mark.parametrize("append", [True,False])
+@pytest.mark.parametrize("version", [2.2,4])
+def test_MSH2writer(append,version):
     # open data
     hf = open(datafile, 'rb')
     data = pickle.load(hf)
@@ -62,7 +64,7 @@ def test_MSH2writer():
     dataElemStep = [numpy.random.rand(
         elemsData['TET4'].shape[0]+elemsData['PRI6'].shape[0], 3) for i in range(5)]
     # write msh file
-    outputfile = ArtifactsPath / Path('build2.msh')
+    outputfile = ArtifactsPath / Path('build{}-app{}.msh'.format(version,append))
     msh2.mshWriter(filename=outputfile,
                     nodes=nodes,
                     elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
@@ -70,7 +72,8 @@ def test_MSH2writer():
                     fields=[{'data': dataNodes, 'type': 'nodal', 'dim': 3, 'name': 'nodal3'},  # ,'steps':list of steps,'nbsteps':number of steps],
                             {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}],  # ,'steps':list of steps,'nbsteps':number of steps]
-                    version=2.2)
+                    version=version,                    
+                    append=append)
        
     assert outputfile.exists()
 

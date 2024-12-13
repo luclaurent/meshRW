@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 meshRW/tests/unused_test_data
+meshRW/tests/artifacts/
