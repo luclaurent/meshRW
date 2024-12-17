@@ -9,26 +9,31 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
 from pathlib import Path
+from typing import Union
 
-import numpy
+import numpy as np
 from loguru import logger as Logger
 
-from . import configMESH, dbmsh, fileio
+from . import configMESH
+from . import dbmsh
+from . import fileio
+from . import writerClass
+from . import various
 
 
-class mshWriter:
-    nbNodes = None
-    nbElems = None
-    dimPb = None
-    appendTxt = False
-    fhandle = None
+class mshWriter(writerClass.writer):
+    """ """
 
-    def __init__(self,
-                 filename=None,
-                 nodes=None,
-                 elems=None,
-                 fields=None,
-                 append=False):
+    def __init__(
+        self,
+        filename: Union[str, Path] = None,
+        nodes: Union[list, np.ndarray] = None,
+        elements: Union[list, np.ndarray] = None,
+        fields: Union[list, np.ndarray] = None,
+        append: bool = False,
+        title: str = None,
+        opts: dict = {},
+    ):
         """
         load class to write file
 
@@ -40,7 +45,7 @@ class mshWriter:
                                 may contain a directory name
             nodes    : nodes coordinates
             elements : connectivity tables (could contains many kind of elements)
-                    list of connectivity dict such as [{'connectivity':table1,'type':eltype1,'physgrp':gpr1},{connectivity':table2,'type':eltype1,'physgrp':grp2}...] 
+                    list of connectivity dict such as [{'connectivity':table1,'type':eltype1,'physgrp':gpr1},{connectivity':table2,'type':eltype1,'physgrp':grp2}...]
                     'connectivity': connectivity array
                     'type': type of elements (could be a string or an integer, see getGmshElemType and  gmsh documentation)
                     'physgrp' (optional): physical group (integer or array of integers to declare the physical group of each cell)
@@ -50,47 +55,65 @@ class mshWriter:
                         ...
                         ]
                 append (optional, default: False) : append field to an existing file
-
+                title (optional, default: None) : title of the file
         """
-        #
-        self.filename = Path(filename)
-        self.basename = self.filename.name
+        Logger.info('Start writing msh file')
+        # initialization
+        super().__init__(filename, nodes, elements, fields, append, title, opts)
+
+        # load specific configuration
+        self.db = dbmsh
         # depending on the case
-        Logger.info(f'Start writing {self.basename}')
-        if fields is not None and append and filename.exists():
-            self.fhandle = fileio.fileHandler(
-                filename=filename, right='a', safeMode=False)
-            self.appendTxt = True
+        Logger.info(f'Initialize writing {self.basename}')
+        if fields is not None and self.append and self.filename.exists():
+            self.fhandle = fileio.fileHandler(filename=filename, right='a', safeMode=False)
         else:
-            self.fhandle = fileio.fileHandler(
-                filename=filename, right='w', safeMode=False)
+            self.fhandle = fileio.fileHandler(filename=filename, right='w', safeMode=False)
 
-        if not self.appendTxt:
-            # write header
-            self.fhandle.write('{}\n'.format(
-                dbmsh.DFLT_FILE_OPEN_CLOSE['open']))
-            self.fhandle.write(f'{dbmsh.DFLT_FILE_VERSION}\n')
-            self.fhandle.write('{}\n'.format(
-                dbmsh.DFLT_FILE_OPEN_CLOSE['close']))
-            # write nodes
-            self.writeNodes(nodes)
-            # write elements
-            self.writeElements(elems)
-
-        # write fields
-        if fields is not None:
-            self.writeFields(elems, fields)
+        # write contents
+        self.writeContents(nodes, elements, fields)
 
         # close file
         self.fhandle.close()
         self.fhandle = None
 
-        Logger.info('Done')
+    def setOptions(self, options: dict):
+        """Default options"""
+        pass
 
+    def writeContents(self, nodes, elements, fields=None, numStep=None):
+        """Write contents"""
+        if not self.getAppend():
+            # write header
+            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_OPEN_CLOSE['open']))
+            self.fhandle.write(f'{dbmsh.DFLT_FILE_VERSION}\n')
+            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_OPEN_CLOSE['close']))
+            # write nodes
+            self.writeNodes(nodes)
+            # write elements
+            self.writeElements(elements)
+
+        # write fields
+        if fields is not None:
+            self.writeFields(fields)
+
+    def getAppend(self):
+        """
+        Obtain the adapt flag from the handler (automatic adaptation if the file exists)
+        """
+
+        self.append = self.fhandle.append
+        return self.append
+
+    @various.timeit('Nodes written')
     def writeNodes(self, nodes):
         """
         write nodes coordinates
         """
+        # adapt nodes
+        if isinstance(nodes, list):
+            nodes = np.array(nodes)
+        #
         self.nbNodes = nodes.shape[0]
         Logger.debug(f'Write {self.nbNodes} nodes')
         #
@@ -105,7 +128,7 @@ class mshWriter:
             formatSpec = '{:d} {:9.4g} {:9.4g} 0.0\n'
             # write
             for i in range(self.nbNodes):
-                self.fhandle.write(formatSpec.format(i+1, *nodes[i, :], 0.0))
+                self.fhandle.write(formatSpec.format(i + 1, *nodes[i, :], 0.0))
 
         # (3d)
         if self.dimPb == 3:
@@ -113,11 +136,11 @@ class mshWriter:
             formatSpec = '{:d} {:9.4g} {:9.4g} {:9.4g}\n'
             # write
             for i in range(self.nbNodes):
-                self.fhandle.write(formatSpec.format(i+1, *nodes[i, :]))
+                self.fhandle.write(formatSpec.format(i + 1, *nodes[i, :]))
 
         self.fhandle.write('{}\n'.format(dbmsh.DFLT_NODES_OPEN_CLOSE['close']))
-        Logger.debug('Write nodes: done')
 
+    @various.timeit('Elements written')
     def writeElements(self, elems):
         """
         write elements
@@ -155,8 +178,7 @@ class mshWriter:
             if type(iD[configMESH.DFLT_PHYS_GRP]) is int:
                 iD[configMESH.DFLT_PHYS_GRP] = [iD[configMESH.DFLT_PHYS_GRP]]
             if len(iD[configMESH.DFLT_PHYS_GRP]) == 1:
-                iD[configMESH.DFLT_PHYS_GRP].append(
-                    iD[configMESH.DFLT_PHYS_GRP][0])
+                iD[configMESH.DFLT_PHYS_GRP].append(iD[configMESH.DFLT_PHYS_GRP][0])
         Logger.debug('Done')
 
         # write all meshes
@@ -172,19 +194,25 @@ class mshWriter:
             # 4: physical entity
             # 5: elementary entity
             # 6+: nodes of the elements
-            formatSpec = ' '.join('{:d}' for i in range(
-                3+len(iD[configMESH.DFLT_PHYS_GRP])+iD['nbNodes'])) + '\n'
+            formatSpec = ' '.join('{:d}' for i in range(3 + len(iD[configMESH.DFLT_PHYS_GRP]) + iD['nbNodes'])) + '\n'
             # write
             for e in range(iD['nbElems']):
                 itElem += 1
                 # write in file
-                self.fhandle.write(formatSpec.format(itElem, iD['eltypeGMSH'], len(
-                    iD[configMESH.DFLT_PHYS_GRP]), *iD[configMESH.DFLT_PHYS_GRP], *iD[configMESH.DFLT_MESH][e]))
+                self.fhandle.write(
+                    formatSpec.format(
+                        itElem,
+                        iD['eltypeGMSH'],
+                        len(iD[configMESH.DFLT_PHYS_GRP]),
+                        *iD[configMESH.DFLT_PHYS_GRP],
+                        *iD[configMESH.DFLT_MESH][e],
+                    )
+                )
 
         self.fhandle.write('{}\n'.format(dbmsh.DFLT_ELEMS_OPEN_CLOSE['close']))
-        Logger.debug('Write elements: done')
 
-    def writeFields(self, elems, fields):
+    @various.timeit('Fields written')
+    def writeFields(self, fields):
         """
         write fields
         input:
@@ -209,7 +237,7 @@ class mshWriter:
                     'nbsteps' (optional): number of steps used to declare fields
                     if no 'steps' or 'nbsteps' are declared the field is assumed to be not defined along steps
                     #
-                    'data' could be defined as 
+                    'data' could be defined as
                          - list of a arrays with all nodal or elemental values along steps
                          - a dictionary {'array':ar,'connectivityId':int} in the case of elemental
                             'connectivityId': the data are given associated to a certain list of cells (other is defined as 0)
@@ -242,8 +270,7 @@ class mshWriter:
             else:
                 values = iF[configMESH.DFLT_FIELD_DATA]
             # format specifier to write fields
-            formatSpec = '{:d} ' + \
-                ' '.join('{:9.4f}' for i in range(nbPerEntity))+'\n'
+            formatSpec = '{:d} ' + ' '.join('{:9.4f}' for i in range(nbPerEntity)) + '\n'
             # along steps
             for iS in range(nbSteps):
                 if nbSteps > 1:
@@ -266,32 +293,28 @@ class mshWriter:
                 self.fhandle.write(f'{values[iS].shape[0]:d}\n')
                 #
                 for i in range(values[iS].shape[0]):
-                    self.fhandle.write(
-                        formatSpec.format(i+1, *values[iS][i, :]))
+                    self.fhandle.write(formatSpec.format(i + 1, *values[iS][i, :]))
 
                 self.fhandle.write('{}\n'.format(typeData['close']))
-            Logger.debug('Write field: done')
 
 
 class mshReader:
-
     def __init__(self, filename=None, type='mshv2', dim=3):
         self.initcontent()
         Logger.debug(f'Open file {filename}')
         # open file and get handle
-        self.objFile = fileio.fileHandler(
-            filename=filename, right='r', safeMode=False)
+        self.objFile = fileio.fileHandler(filename=filename, right='r', safeMode=False)
         self.fhandle = self.objFile.getHandler()
         # read file line by line
-        for l in self.fhandle:
+        for line in self.fhandle:
             if not self.readData:
-                self.readData = catchTag(l)
+                self.readData = catchTag(line)
             elif self.readData == 'nodes':
                 # read nodes
-                self.readNodes(dim, l)
+                self.readNodes(dim, line)
             elif self.readData == 'elems':
                 # read elements
-                self.readElements(l)
+                self.readElements(line)
         # finalize data
         self._finalizeElems()
 
@@ -313,13 +336,13 @@ class mshReader:
         self.clean()
 
     def clean(self):
-        """ Clean the object"""
+        """Clean the object"""
         self.initcontent()
 
     def readNodes(self, dim=None, lineStr=None):
         """
         Read nodes in msh file from line
-            imputs: 
+            imputs:
                 - dim (optional): dimension of the nodes (2D/3D)
                 - lineStr: content of the current line
         """
@@ -335,15 +358,14 @@ class mshReader:
             if self.curIt == 1:
                 if not dim:
                     # extract dimension
-                    self.dim = len(contentLine)-1
+                    self.dim = len(contentLine) - 1
                 # create array to store nodes coordinates
-                self.nodes = numpy.zeros((self.nbNodes, self.dim))
+                self.nodes = np.zeros((self.nbNodes, self.dim))
             # store nodes
-            self.nodes[self.curIt-1, :] = numpy.array(
-                contentLine[1:self.dim+1], dtype=float)
+            self.nodes[self.curIt - 1, :] = np.array(contentLine[1 : self.dim + 1], dtype=float)
             self.curIt += 1
             # stop read nodes
-            if self.curIt-1 == self.nbNodes:
+            if self.curIt - 1 == self.nbNodes:
                 self.readData = None
                 self.curIt = 0
                 Logger.debug(f'Nodes read: {self.nbNodes}, dimension: {self.dim}')
@@ -351,7 +373,7 @@ class mshReader:
     def readElements(self, lineStr=None):
         """
         Read elements
-        imput: 
+        imput:
                 - lineStr: content of the current line
         """
 
@@ -367,7 +389,7 @@ class mshReader:
             self._readElementsLine(contentLine)
             self.curIt += 1
             # stop read elements
-            if self.curIt-1 == self.nbElems:
+            if self.curIt - 1 == self.nbElems:
                 #  finalize data
                 self._finalizeElems()
                 # reset
@@ -388,7 +410,7 @@ class mshReader:
         finalize data
         """
         for iT in self.elems:
-            self.elems[iT] = numpy.array(self.elems[iT])
+            self.elems[iT] = np.array(self.elems[iT])
 
     def _readElementsLine(self, arraystr):
         """
@@ -397,22 +419,22 @@ class mshReader:
             - arraystr: content of a line for element (array of string)
         """
         # convert to int
-        arrayint = numpy.array(arraystr, dtype=int)
+        arrayint = np.array(arraystr, dtype=int)
         # get element id
         elementId = arrayint[1]
         elemType = dbmsh.getElemTypeFromMSH(elementId)
         # get number of tags
         nbTags = arrayint[2]
-        tags = arrayint[3:3+nbTags]
+        tags = arrayint[3 : 3 + nbTags]
         # element nodes
-        elementNodes = arrayint[3+nbTags:]
+        elementNodes = arrayint[3 + nbTags :]
         # check if element can be stored
         if elemType not in self.elems.keys():
             self.elems[elemType] = list()
         # store it
         self.elems[elemType].append(elementNodes)
         # get the item of the element
-        iX = len(self.elems[elemType])-1
+        iX = len(self.elems[elemType]) - 1
         # create the list for each tag
         for iT in tags:
             iTs = str(iT)
@@ -431,7 +453,7 @@ class mshReader:
         """
         return self.nodes
 
-    def getElements(self, type = None, tag = None, dictFormat = True):
+    def getElements(self, type=None, tag=None, dictFormat=True):
         """
         Return elements list
         Inputs:
@@ -459,15 +481,15 @@ class mshReader:
             elemsExportUnique = list()
             if type in elemsTag.keys():
                 elemsExport = self.elems[type][elemsTag[type], :]
-                elemsExportUnique = numpy.unique(elemsExport,axis=0)
+                elemsExportUnique = np.unique(elemsExport, axis=0)
         else:
             elemsExport = dict()
             elemsExportUnique = dict()
             for iT in elemsTag.keys():
                 elemsExport[iT] = self.elems[iT][elemsTag[iT], :]
-                elemsExportUnique[iT] = numpy.unique(elemsExport[iT],axis=0)
+                elemsExportUnique[iT] = np.unique(elemsExport[iT], axis=0)
 
-        #specific export
+        # specific export
         if not dictFormat and not type:
             if len(elemsExport) > 1:
                 Logger.warning('Elements exported without the dictionary format: some data are not exported')
@@ -514,9 +536,7 @@ def catchTag(content=None):
     return typeTag
 
 
-def checkContentLine(content=None,
-                     pattern=None,
-                     item=0):
+def checkContentLine(content=None, pattern=None, item=0):
     """
     check if the pattern could be found exactly in content (list)
     """

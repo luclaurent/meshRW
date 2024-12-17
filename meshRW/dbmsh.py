@@ -159,6 +159,11 @@ def getNumberNodesFromNum(elementNum):
     return getNumberNodes(getElemTypeFromMSH(elementNum))
 
 
+# DEFAULT VALUES
+ALLOWED_EXTENSIONS = ['.msh',
+                      '.msh.bz2',
+                      '.msh.gz']
+
 # Keywords MSH
 DFLT_FILE_OPEN_CLOSE = {'open': '$MeshFormat',
                         'close': '$EndMeshFormat'}

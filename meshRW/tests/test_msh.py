@@ -36,7 +36,7 @@ def test_MSHwriter():
     outputfile = ArtifactsPath / Path('build.msh')
     msh.mshWriter(filename=outputfile,
                     nodes=nodes,
-                    elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
+                    elements=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
                             {'connectivity': elemsData[list(elemsData.keys())[1]], 'type':list(elemsData.keys())[1], 'physgrp':[6, 6]}],
                     fields=[{'data': dataNodes, 'type': 'nodal', 'dim': 3, 'name': 'nodal3'},  # ,'steps':list of steps,'nbsteps':number of steps],
                             {'data': dataElem, 'type': 'elemental', 'dim': 1, 'name': 'name_2'},
@@ -67,13 +67,13 @@ def test_MSH2writer(append,version):
     outputfile = ArtifactsPath / Path('build{}-app{}.msh'.format(version,append))
     msh2.mshWriter(filename=outputfile,
                     nodes=nodes,
-                    elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
+                    elements=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
                             {'connectivity': elemsData[list(elemsData.keys())[1]], 'type':list(elemsData.keys())[1], 'physgrp':[6, 6]}],
                     fields=[{'data': dataNodes, 'type': 'nodal', 'dim': 3, 'name': 'nodal3'},  # ,'steps':list of steps,'nbsteps':number of steps],
                             {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}],  # ,'steps':list of steps,'nbsteps':number of steps]
-                    version=version,                    
-                    append=append)
+                    append=append,
+                    opts = {'version':version})
        
     assert outputfile.exists()
 

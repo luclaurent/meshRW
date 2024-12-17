@@ -35,11 +35,10 @@ def test_VTKwriter():
     outputfile = ArtifactsPath / Path('build.vtk')
     vtk.vtkWriter(filename=outputfile,
                     nodes=nodes,
-                    elems=[{'connectivity': elemsData[list(elemsData.keys())[0]]-1, 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
+                    elements=[{'connectivity': elemsData[list(elemsData.keys())[0]]-1, 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
                             {'connectivity': elemsData[list(elemsData.keys())[1]]-1, 'type':list(elemsData.keys())[1], 'physgrp':[6, 6]}],
                     fields=[{'data': dataNodes, 'type': 'nodal', 'dim': 3, 'name': 'nodal3'},  # ,'steps':list of steps,'nbsteps':number of steps],
-                            {'data': dataElem, 'type': 'elemental',
-                            'dim': 2, 'name': 'name_2'},
+                            {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
                             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}]  # ,'steps':list of steps,'nbsteps':number of steps]
                     )
     for i in range(5):
@@ -64,15 +63,14 @@ def test_VTK2writer():
     dataElemStep = [numpy.random.rand(
         elemsData['TET4'].shape[0]+elemsData['PRI6'].shape[0], 3) for i in range(5)]
     # write msh file
-    outputfile = ArtifactsPath / Path('build2.vtk')
+    outputfile = ArtifactsPath / Path('build2.vtu')
     vtk2.vtkWriter(filename=outputfile,
                     nodes=nodes,
-                    elems=[{'connectivity': elemsData[list(elemsData.keys())[0]], 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
-                            {'connectivity': elemsData[list(elemsData.keys())[1]], 'type':list(elemsData.keys())[1], 'physgrp':[6, 6]}],
+                    elements=[{'connectivity': elemsData[list(elemsData.keys())[0]]-1, 'type':list(elemsData.keys())[0], 'physgrp':[5, 5]},
+                            {'connectivity': elemsData[list(elemsData.keys())[1]]-1, 'type':list(elemsData.keys())[1], 'physgrp':[6, 6]}],
                     fields=[{'data': dataNodes, 'type': 'nodal', 'dim': 3, 'name': 'nodal3'},  # ,'steps':list of steps,'nbsteps':number of steps],
-                            {'data': dataElem, 'type': 'elemental',
-                            'dim': 2, 'name': 'name_2'},
-                            {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}]  # ,'steps':list of steps,'nbsteps':number of steps]
-                    )
+                            {'data': dataElem, 'type': 'elemental','dim': 2, 'name': 'name_2'},
+                            {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5}  # ,'steps':list of steps,'nbsteps':number of steps]
+                    ])
     for i in range(5):
         assert outputfile.with_suffix(f'.{i:d}').exists()
