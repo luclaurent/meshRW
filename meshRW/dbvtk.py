@@ -6,8 +6,8 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 """
 
-from loguru import logger as Logger
 import vtk
+from loguru import logger as Logger
 
 
 def loadElementDict():

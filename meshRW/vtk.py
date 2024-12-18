@@ -10,11 +10,7 @@ from typing import Union
 import numpy as np
 from loguru import logger as Logger
 
-from . import configMESH
-from . import dbvtk
-from . import fileio
-from . import various
-from . import writerClass
+from . import configMESH, dbvtk, fileio, various, writerClass
 
 
 class vtkWriter(writerClass.writer):
@@ -235,7 +231,6 @@ def WriteNodesV2(fileHandle, nodes):
 
 def WriteNodesXML(fileHandle, nodes):
     """Write nodes coordinates for unstructured grid"""
-    pass
 
 
 def WriteElemsV2(fileHandle, elements):
@@ -274,7 +269,6 @@ def WriteElemsV2(fileHandle, elements):
 
 def WriteElemsXML(fileHandle, elements):
     """Write elements  for unstructured grid"""
-    pass
 
 
 def WriteFieldsV2(fileHandle, nbNodes, nbElems, fields, numStep=None):
@@ -427,4 +421,3 @@ def writeFieldsDataV2(fileHandle, data, name):
 
 def WriteFieldsXML(fileHandle, nbNodes, nbElems, fields, numStep=None):
     """Write elements"""
-    pass

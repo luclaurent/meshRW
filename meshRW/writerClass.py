@@ -1,12 +1,10 @@
 from abc import ABC, abstractmethod
-
 from datetime import datetime
 from pathlib import Path
 from typing import Union
+
 import numpy as np
-
 from loguru import logger as Logger
-
 
 
 class writer(ABC):
@@ -18,7 +16,7 @@ class writer(ABC):
                  append: bool=False,
                  title: str=None,
                  opts: dict={}):
-        self.append = append        
+        self.append = append
         self.title = self.adaptTitle(txt=title)
         self.filename = Path(filename)
         self.basename = self.filename.name
@@ -36,16 +34,15 @@ class writer(ABC):
         self.nbFields = 0
         # run data analysis
         self.dataAnalysis(nodes,elements,fields)
-        
+
     @abstractmethod
     def setOptions(self, opts):
         """ Set options """
-        pass
-    
+
     @abstractmethod
     def getAppend(self):
-        pass 
-    
+        pass
+
     def adaptTitle(self, txt = '', append=False):
         """ Adapt title with additional information"""
         if append:
@@ -54,33 +51,28 @@ class writer(ABC):
             txtFinal = txt
         if not txtFinal:
             txtFinal = datetime.today().strftime('%Y-%M-%d %H:%M:%s')
-        return txtFinal 
-    
+        return txtFinal
+
     @abstractmethod
     def writeContents(self, nodes, elements, fields=None, numStep = None):
         """ Write contents  """
-        pass
-    
+
     def writeHeader(self):
         """ Write header to the output file """
-        pass
-    
+
     @abstractmethod
     def writeNodes(self, nodes):
         """ write nodes """
-        pass
-    
+
     @abstractmethod
     def writeElements(self, elements):
         """ write elements """
-        pass
-    
+
     @abstractmethod
     def writeFields(self, fields, numStep = None):
         """ write fields """
-        pass
-    
-    
+
+
     def splitFilename(self):
         """
         Get the basename and extension (in list) of the filename
@@ -100,28 +92,30 @@ class writer(ABC):
             if it == 2:
                 self.logBadExtension()
         return path,filename, extension
-        
-    def getFilename(self, prefix=None, suffix=None):
+
+    def getFilename(self, prefix=None, suffix=None, extension=None):
         """
         Add prefix and/or suffix to the filename
         """
-        path, basename, extension = self.splitFilename()
+        path, basename, ext = self.splitFilename()
         if prefix is not None:
             basename = prefix + basename
         if suffix is not None:
             basename = basename + suffix
-        return path / (basename + extension)
-    
+        if extension is not None:
+            ext = extension
+        return path / (basename + ext)
+
     def logBadExtension(self):
         """
         """
         Logger.error('File {}: bad extension (ALLOWED: {})'.format(
             self.filename, ' '.join(self.db.ALLOWED_EXTENSIONS)))
-        
+
     def dataAnalysis(self,nodes,elems,fields):
         """ """
-        self.nbNodes = len(nodes)    
-        self.nbElems = 0    
+        self.nbNodes = len(nodes)
+        self.nbElems = 0
         #
         self.elemPerType = {}
         self.elemPerGrp = {}
@@ -136,7 +130,7 @@ class writer(ABC):
                 self.elemPerType[e.get('type')] = 0
             self.elemPerType[e.get('type')] += len(e.get('connectivity'))
             self.nbElems += len(e.get('connectivity'))
-            name = e.get('name','grp-{}'.format(itGrpE))
+            name = e.get('name',f'grp-{itGrpE}')
             itGrpE += 1
             if e.get('physgrp') is not None:
                 if not isinstance(e.get('physgrp'),list) or not isinstance(e.get('physgrp'),list):
@@ -162,14 +156,14 @@ class writer(ABC):
             current += numit
         self.globPhysGrp = current
         # show stats
-        Logger.debug('Number of nodes: {}'.format(self.nbNodes))
-        Logger.debug('Number of elements: {}'.format(self.nbElems))
-        Logger.debug('Number of physical groups: {}'.format(len(self.listPhysGrp)))
+        Logger.debug(f'Number of nodes: {self.nbNodes}')
+        Logger.debug(f'Number of elements: {self.nbElems}')
+        Logger.debug(f'Number of physical groups: {len(self.listPhysGrp)}')
         for t,e in self.elemPerType.items():
-            Logger.debug('Number of {} elements: {}'.format(t,e))
+            Logger.debug(f'Number of {t} elements: {e}')
         for g in self.listPhysGrp:
-            Logger.debug('Number of elements in group {}: {}'.format(g,self.elemPerGrp.get(g,0)))
-        Logger.debug('Global physical group: {}'.format(self.globPhysGrp))
+            Logger.debug(f'Number of elements in group {g}: {self.elemPerGrp.get(g,0)}')
+        Logger.debug(f'Global physical group: {self.globPhysGrp}')
         # create artificial physical group if necessary
         if len(self.listPhysGrp) == 0:
             self.listPhysGrp = [1]
@@ -189,7 +183,7 @@ class writer(ABC):
         for f in fields:
             itField += 1
             if f.get('type') == 'elemental':
-                self.nbCellFields += 1                
+                self.nbCellFields += 1
             elif f.get('type') == 'nodal':
                 self.nbPointFields += 1
             if f.get('nbsteps') is not None or f.get('steps') is not None:
@@ -198,7 +192,7 @@ class writer(ABC):
                 if f.get('steps') is not None:
                     cSteps = f.get('steps')
                 cNbSteps = f.get('nbsteps',len(cSteps))
-                # adapt steps 
+                # adapt steps
                 if len(self.steps) < cNbSteps:
                     cSteps = np.arange(cNbSteps, dtype=float)
                 if cNbSteps == 0:
@@ -206,16 +200,15 @@ class writer(ABC):
                 # check consistency of definition of steps
                 if len(self.steps) > 0:
                     if not np.allclose(self.steps,cSteps):
-                        name = f.get('name','field-{}'.format(itField))
-                        Logger.error('Inconsistent steps in fields {}'.format(name))
+                        name = f.get('name',f'field-{itField}')
+                        Logger.error(f'Inconsistent steps in fields {name}')
                 else:
                     self.steps = cSteps
                     self.nbSteps = cNbSteps
-                    
+
         # show stats
-        Logger.debug('Number of fields: {}'.format(self.nbFields))
-        Logger.debug('Number of cell fields: {}'.format(self.nbCellFields))
-        Logger.debug('Number of point fields: {}'.format(self.nbPointFields))
-        Logger.debug('Number of temporal fields: {}'.format(self.nbTemporalFields))
-        
-        
+        Logger.debug(f'Number of fields: {self.nbFields}')
+        Logger.debug(f'Number of cell fields: {self.nbCellFields}')
+        Logger.debug(f'Number of point fields: {self.nbPointFields}')
+        Logger.debug(f'Number of temporal fields: {self.nbTemporalFields}')
+

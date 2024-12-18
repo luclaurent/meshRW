@@ -4,8 +4,9 @@ Various useful tools
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
-import numpy
 import time
+
+import numpy
 from loguru import logger as Logger
 
 

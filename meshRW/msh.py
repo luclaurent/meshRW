@@ -14,11 +14,7 @@ from typing import Union
 import numpy as np
 from loguru import logger as Logger
 
-from . import configMESH
-from . import dbmsh
-from . import fileio
-from . import writerClass
-from . import various
+from . import configMESH, dbmsh, fileio, various, writerClass
 
 
 class mshWriter(writerClass.writer):
@@ -79,7 +75,6 @@ class mshWriter(writerClass.writer):
 
     def setOptions(self, options: dict):
         """Default options"""
-        pass
 
     def writeContents(self, nodes, elements, fields=None, numStep=None):
         """Write contents"""

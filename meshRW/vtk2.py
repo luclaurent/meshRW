@@ -5,17 +5,16 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
 
 
+from pathlib import Path
+from typing import Union
+
+import numpy as np
 import vtk
 import vtkmodules.util.numpy_support as ns
 from loguru import logger as Logger
-from pathlib import Path
-from typing import Union
-import numpy as np
+from lxml import etree
 
-from . import configMESH
-from . import dbvtk
-from . import writerClass
-from . import various
+from . import configMESH, dbvtk, various, writerClass
 
 
 class vtkWriter(writerClass.writer):
@@ -45,26 +44,28 @@ class vtkWriter(writerClass.writer):
         self.db = dbvtk
         # write contents depending on the number of steps
         self.writeContentsSteps(nodes, elements, fields)
-        
-    
+
+
     def getAppend(self):
         """
         Obtain the append option
         """
         return self.append
-    
+
     def setOptions(self, options: dict):
         """Default options"""
         self.binary = options.get('binary', False)
         self.ascii = options.get('ascii', False)
-        
+
     def writeContentsSteps(self, nodes, elements, fields=None, numStep=None):
         """Write content along steps"""
+        # create dictionary for preparing pvd file writing
+        if self.nbSteps>0:
+            dataPVD = dict()
         # initialize data
         # create UnstructuredGrid
         self.ugrid = vtk.vtkUnstructuredGrid()
         # add points
-        # points
         self.writeNodes(nodes)
         # elements
         self.writeElements(elements)
@@ -76,11 +77,15 @@ class vtkWriter(writerClass.writer):
                 # adapt the filename
                 filename = self.getFilename(suffix='.' + str(itS).zfill(len(str(self.nbSteps))))
                 # write file
-                self.write(self.ugrid, filename, numStep=itS)
-                
-                
-                # adapt title
-                self.title = self.adaptTitle(txt=f' step num {itS:d}', append=True)
+                self.write(self.ugrid, filename)
+                # update PVD dict
+                dataPVD[self.steps[itS]] = filename.name
+
+
+                # # adapt title
+                # self.title = self.adaptTitle(txt=f' step num {itS:d}', append=True)
+            # write pvd file
+            self.writePVD(dataPVD)
         else:
             # add fieds
             self.writeContents(fields)
@@ -88,19 +93,42 @@ class vtkWriter(writerClass.writer):
             filename = self.getFilename()
             self.write(self.ugrid, filename)
 
+    def writePVD(self, dataPVD):
+        """ Write pvd file """
+        filename = self.getFilename(extension='.pvd')
+        # create root element
+        root = etree.Element("VTKFile", type="Collection", version="0.1")
+
+        # Create collection elements
+        collection = etree.SubElement(root, "Collection")
+
+        # Loop on timesteps and files for dataset
+        for timestep, file in dataPVD.items():
+            dataset = etree.Element("DataSet", timestep=str(timestep), part="0", file=file)
+            collection.append(dataset)
+
+        # convert xml tree to string
+        xml_str = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+
+        # write in file
+        with open(filename, "wb") as f:
+            f.write(xml_str)
+
+        Logger.debug(f"PVD file '{filename}' successfully written")
+
     @various.timeit('Fields declared')
     def writeContents(self, fields, numStep=None):
         """
         Add fields depending on version
         """
         self.writeFields(fields, numStep=numStep)
-    
+
     def writeFields(self, fields, numStep=None):
         """ Write fields """
         if fields is not None:
             if not isinstance(fields, list):
                 fields = [fields]
-            Logger.info('Add {} fields'.format(len(fields)))
+            Logger.info(f'Add {len(fields)} fields')
             for f in fields:
                 data,typedata = self.setField(f , numStep=numStep)
                 if typedata == 'nodal':
@@ -117,7 +145,7 @@ class vtkWriter(writerClass.writer):
         for i in range(len(nodes)):
             points.InsertNextPoint(nodes[i,:])
         self.ugrid.SetPoints(points)
-        
+
     @various.timeit('Elements declared')
     def writeElements(self, elements):
         """
@@ -129,14 +157,14 @@ class vtkWriter(writerClass.writer):
             connectivity = m.get('connectivity')
             physgrp = m.get('physgrp',None)
             # load element's vtk class
-            cell, nbnodes = dbvtk.getVTKObj(typeElem)            
-            Logger.debug('Set {} elements of type {}'.format(len(connectivity),typeElem))
+            cell, nbnodes = dbvtk.getVTKObj(typeElem)
+            Logger.debug(f'Set {len(connectivity)} elements of type {typeElem}')
             #
             for t in connectivity:
                 for i in range(nbnodes):
                     cell.GetPointIds().SetId(i,t[i])
                 self.ugrid.InsertNextCell(cell.GetCellType(),cell.GetPointIds())
-            
+
     def createNewFields(self, elems):
         """
         Prepare new fields from elems data (for instance physical group)
@@ -165,7 +193,7 @@ class vtkWriter(writerClass.writer):
             newFields.extend([{'data': data, 'type': 'elemental', 'dim': 1, 'name': configMESH.DFLT_PHYS_GRP}])
 
         return newFields
-    
+
     def setField(self, field, numStep=None):
         """ """
         # load field data
@@ -183,7 +211,7 @@ class vtkWriter(writerClass.writer):
         # initialize VTK's array
         dataVtk = ns.numpy_to_vtk(data)
         # dataVtk = vtk.vtkDoubleArray()
-        dataVtk.SetName(name) 
+        dataVtk.SetName(name)
         # if len(data.shape) == 1:
         #     dim = 1
         # else:
@@ -202,90 +230,24 @@ class vtkWriter(writerClass.writer):
         #     elif dim == 9:
         #         dataVtk.InsertNextTuple9(*c)
         # #
-        return dataVtk,typeField        
-        
+        return dataVtk,typeField
 
-    
-    def write(self, ugrid = None, filename=None, numStep=None):
-        """_summary_
+
+
+    def write(self, ugrid = None, filename=None):
+        """
+        Write Paraview's files along time steps
         """
         # initialization
         if self.writer is None:
             self.writer = vtk.vtkXMLUnstructuredGridWriter()
-            self.writer.SetFileName(filename)
-            # add data to the writer
             self.writer.SetInputDataObject(self.ugrid)
             if self.binary:
                 self.writer.SetFileType(vtk.VTK_BINARY)
             if self.ascii:
                 self.writer.SetDataModeToAscii()
-            if len(self.steps)>0:
-                self.writer.SetNumberOfTimeSteps(len(self.steps))
-                self.writer.Start()
-            
-        if numStep is not None:
-            self.ugrid.ShallowCopy(ugrid)
-            self.writer.WriteNextTime(numStep)
-        else:
-            self.writer.Write()
-        if numStep is not None:
-            if numStep >= len(self.steps)-1:
-                self.writer.Stop()
-
-    # def dataAnalysis(self,nodes,elems,fields):
-    #     """ """
-    #     self.nbNodes = len(nodes)    
-    #     self.nbElems = 0    
-    #     #
-    #     self.elemPerType = {}
-    #     self.elemPerGrp = {}
-    #     self.nameGrp = {}
-    #     #
-    #     if isinstance(elems,dict):
-    #         elems = [elems]
-    #     #
-    #     itGrpE = 0
-    #     for e in elems:
-    #         if e.get('type') not in self.elemPerType:
-    #             self.elemPerType[e.get('type')] = 0
-    #         self.elemPerType[e.get('type')] += len(e.get('connectivity'))
-    #         self.nbElems += len(e.get('connectivity'))
-    #         name = e.get('name','grp-{}'.format(itGrpE))
-    #         itGrpE += 1
-    #         if e.get('physgrp') is not None:
-    #             if not isinstance(e.get('physgrp'),list) or not isinstance(e.get('physgrp'),list):
-    #                 physgrp = [e.get('physgrp')]
-    #             else:
-    #                 physgrp = e.get('physgrp')
-    #             for p in np.unique(physgrp):
-    #                 if p not in self.elemPerGrp:
-    #                     self.elemPerGrp[p] = 0
-    #                 self.elemPerGrp[p] += len(e.get('connectivity'))
-    #                 #
-    #                 if p not in self.nameGrp:
-    #                     self.nameGrp[p] = name
-    #                 else:
-    #                     self.nameGrp[p] += '-' + name
-    #     #
-    #     self.listPhysGrp = list(self.elemPerGrp.keys())
-    #     # generate global physical group
-    #     numinit = 1000
-    #     numit = 50
-    #     current = numinit
-    #     while current in self.listPhysGrp:
-    #         current += numit
-    #     self.globPhysGrp = current
-    #     # show stats
-    #     Logger.debug('Number of nodes: {}'.format(self.nbNodes))
-    #     Logger.debug('Number of elements: {}'.format(self.nbElems))
-    #     Logger.debug('Number of physical groups: {}'.format(len(self.listPhysGrp)))
-    #     for t,e in self.elemPerType.items():
-    #         Logger.debug('Number of {} elements: {}'.format(t,e))
-    #     for g in self.listPhysGrp:
-    #         Logger.debug('Number of elements in group {}: {}'.format(g,self.elemPerGrp.get(g,0)))
-    #     Logger.debug('Global physical group: {}'.format(self.globPhysGrp))
-    #     # create artificial physical group if necessary
-    #     if len(self.listPhysGrp) == 0:
-    #         self.listPhysGrp = [1]
-    #     #
-            
+        self.writer.SetFileName(filename)
+        self.writer.Update()
+        # self.writer.SetDebug(True)
+        # self.writer.SetWriteTimeValue(True)
+        self.writer.Write()

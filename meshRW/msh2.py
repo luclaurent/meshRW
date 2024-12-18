@@ -4,19 +4,19 @@ This class is a part of the meshRW library and will write a msh file from a mesh
 Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
 import time
+from pathlib import Path
+from typing import Union
+
 import gmsh
 import numpy as np
-from typing import Union
 from loguru import logger as Logger
-from pathlib import Path
 
-from . import dbmsh
-from . import various
-from . import writerClass
+from . import dbmsh, various, writerClass
+
 
 def getViewName(view_tag):
         return gmsh.option.getString(f'View[{gmsh.view.getIndex(view_tag)}].Name')
-                
+
 class mshWriter(writerClass.writer):
 
     def __init__(self,
@@ -37,20 +37,20 @@ class mshWriter(writerClass.writer):
         if self.title is None:
             self.title = 'Imported mesh'
         self.modelName = self.title
-        
+
         # write contents
         self.writeContents(nodes,elements,fields)
-    
+
     def getAppend(self):
         """
         Obtain the adapt flag from the handler (automatic adaptation if the file exists)
         """
         return self.append
-        
+
     def setOptions(self, options: dict):
         """ Default options """
         self.version = options.get('version',2.2)
-        
+
     def writeContents(self,nodes,elements,fields):
         """ Write contents """
         # initialize gmsh
@@ -60,7 +60,7 @@ class mshWriter(writerClass.writer):
         # create empty entities
         gmsh.model.add(self.modelName)
         self.entities = {}
-        Logger.info('Create {} entities for physical group'.format(len(self.listPhysGrp)))
+        Logger.info(f'Create {len(self.listPhysGrp)} entities for physical group')
         for g in self.listPhysGrp:
             self.entities[g] = gmsh.model.addDiscreteEntity(3)
             gmsh.model.addPhysicalGroup(3,
@@ -79,11 +79,11 @@ class mshWriter(writerClass.writer):
 
         # add elements
         self.writeElements(elements)
-                
+
         # add fields
         if fields is not None:
             self.writeFields(fields)
-                
+
         # run internal gmsh function to reclassify nodes
         gmsh.model.mesh.reclassifyNodes()
 
@@ -91,7 +91,7 @@ class mshWriter(writerClass.writer):
         self.writeFiles()
         # clean gmsh
         gmsh.finalize()
-        
+
     @various.timeit('Nodes declared')
     def writeNodes(self, nodes):
         """
@@ -111,7 +111,7 @@ class mshWriter(writerClass.writer):
                                  self.entities[numFgrp],
                                  nodesNum,
                                  nodes.flatten())
-    
+
     @various.timeit('Elements declared')
     def writeElements(self, elements):
         """
@@ -132,7 +132,7 @@ class mshWriter(writerClass.writer):
         else:
             elemsRun = elements
         #
-        Logger.info('Add {} elements'.format(self.nbElems))
+        Logger.info(f'Add {self.nbElems} elements')
         for m in elemsRun:
             # get connectivity data
             typeElem = m.get('type')
@@ -140,7 +140,7 @@ class mshWriter(writerClass.writer):
             physgrp = m.get('physgrp',None)
             codeElem = dbmsh.getMSHElemType(typeElem)
             #
-            Logger.info('Set {} elements of type {}'.format(len(connectivity),typeElem))
+            Logger.info(f'Set {len(connectivity)} elements of type {typeElem}')
             gmsh.model.mesh.addElementsByType(self.globEntity,
                                               codeElem,
                                               [],
@@ -153,16 +153,16 @@ class mshWriter(writerClass.writer):
                                                       codeElem,
                                                       [],
                                                       connectivity.flatten())
-                    
+
     @various.timeit('Fields declared')
     def writeFields(self,fields):
         """ write all fields"""
         if not isinstance(fields, list):
             fields = [fields]
-        Logger.info('Add {} fields'.format(len(fields)))
+        Logger.info(f'Add {len(fields)} fields')
         for f in fields:
             self.writeField(f)
-            
+
     def writeField(self,field):
         """ write one field """
         # load field data
@@ -222,9 +222,7 @@ class mshWriter(writerClass.writer):
                 viewname = getViewName(t)
                 starttime = time.perf_counter()
                 gmsh.view.write(t,self.filename.as_posix(),append=True)
-                Logger.info('Field {} save in {} ({})'.format(viewname,
-                                                              self.filename,
-                                                                various.convert_size(self.filename.stat().st_size)))
+                Logger.info(f'Field {viewname} save in {self.filename} ({various.convert_size(self.filename.stat().st_size)})')
         else:
             it = 0
             for t in gmsh.view.getTags():
@@ -233,21 +231,19 @@ class mshWriter(writerClass.writer):
                 if len(viewname)>15:
                     viewname = viewname[0:15]
                 #
-                newfilename = self.getFilename(suffix='_view-{}_{}'.format(it,viewname))
+                newfilename = self.getFilename(suffix=f'_view-{it}_{viewname}')
                 starttime = time.perf_counter()
                 gmsh.view.write(t,newfilename.as_posix(),append=False)
-                Logger.info('Data save in {} ({}) - Elapsed {} s'.format(newfilename,
-                                                     various.convert_size(newfilename.stat().st_size),
-                                                     time.perf_counter()-starttime))
-    
-    
-        
-        
-        
+                Logger.info(f'Data save in {newfilename} ({various.convert_size(newfilename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s')
+
+
+
+
+
     # def dataAnalysis(self,nodes,elems,fields):
     #     """ """
-    #     self.nbNodes = len(nodes)    
-    #     self.nbElems = 0    
+    #     self.nbNodes = len(nodes)
+    #     self.nbElems = 0
     #     #
     #     self.elemPerType = {}
     #     self.elemPerGrp = {}
@@ -299,6 +295,6 @@ class mshWriter(writerClass.writer):
     #     # create artificial physical group if necessary
     #     if len(self.listPhysGrp) == 0:
     #         self.listPhysGrp = [1]
-    
-    
+
+
 
