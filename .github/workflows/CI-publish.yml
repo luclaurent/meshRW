@@ -120,8 +120,6 @@ jobs:
         gh release upload
         '${{ github.event.workflow_run.head_branch }}' dist/**
         --repo '${{ github.repository }}'
-        --generate-notes
-        --title 'meshRW ${{ github.event.workflow_run.head_branch }}'
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
