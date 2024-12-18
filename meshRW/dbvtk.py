@@ -109,6 +109,7 @@ def getVTKtoElem():
     }
     return VTKtoElem
 
+
 def getVTKObj(txtEltype):
     """
     Get the vtk class from libvtk from text declaration
@@ -231,12 +232,14 @@ def getNumberNodesFromNum(elementNum):
 
 
 # DEFAULT VALUES
-ALLOWED_EXTENSIONS = ['.vtk',
-                      '.vtk.bz2',
-                      '.vtk.gz',
-                      '.vtu',
-                      '.vtu.bz2',
-                      '.vtu.gz',]
+ALLOWED_EXTENSIONS = [
+    '.vtk',
+    '.vtk.bz2',
+    '.vtk.gz',
+    '.vtu',
+    '.vtu.bz2',
+    '.vtu.gz',
+]
 
 
 # Keywords MSH

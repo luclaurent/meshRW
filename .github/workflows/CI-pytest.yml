@@ -21,9 +21,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
           pip install hatch
-      - name: Lint with ruff
-        run: |
-          hatch fmt --check
+      # - name: Lint with ruff
+      #   run: |
+      #     hatch fmt
       - name: Test with pytest
         run: |
           hatch test

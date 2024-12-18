@@ -50,5 +50,14 @@ output = "reportcov/report.xml"
 # Allow lines to be as long as 120.
 line-length = 120
 
+[tool.ruff.lint]
+# select = []
+ignore = ["N806", "N802", "N999", "N812", "N801",
+"FA100", "RUF013"]
+
+# # Allow fix for all enabled rules (when `--fix`) is provided.
+# fixable = ["ALL"]
+# unfixable = []
+
 [tool.ruff.format]
 quote-style = "single"

@@ -4,7 +4,6 @@ This class is a part of the meshRW library and will write a vtk file from a mesh
 Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
 
-
 from pathlib import Path
 from typing import Union
 
@@ -18,15 +17,16 @@ from . import configMESH, dbvtk, various, writerClass
 
 
 class vtkWriter(writerClass.writer):
-
-    def __init__(self,
-                 filename: Union[str, Path]=None,
-                 nodes: Union[list, np.ndarray]=None,
-                 elements: dict=None,
-                 fields: Union[list, np.ndarray]=None,
-                 append: bool=False,
-                 title: str=None,
-                 opts: dict={'binary': False, 'ascii': True}):
+    def __init__(
+        self,
+        filename: Union[str, Path] = None,
+        nodes: Union[list, np.ndarray] = None,
+        elements: dict = None,
+        fields: Union[list, np.ndarray] = None,
+        append: bool = False,
+        title: str = None,
+        opts: dict = {'binary': False, 'ascii': True},
+    ):
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
         # prepare new fields (from physical groups for instance)
@@ -45,7 +45,6 @@ class vtkWriter(writerClass.writer):
         # write contents depending on the number of steps
         self.writeContentsSteps(nodes, elements, fields)
 
-
     def getAppend(self):
         """
         Obtain the append option
@@ -60,7 +59,7 @@ class vtkWriter(writerClass.writer):
     def writeContentsSteps(self, nodes, elements, fields=None, numStep=None):
         """Write content along steps"""
         # create dictionary for preparing pvd file writing
-        if self.nbSteps>0:
+        if self.nbSteps > 0:
             dataPVD = dict()
         # initialize data
         # create UnstructuredGrid
@@ -81,7 +80,6 @@ class vtkWriter(writerClass.writer):
                 # update PVD dict
                 dataPVD[self.steps[itS]] = filename.name
 
-
                 # # adapt title
                 # self.title = self.adaptTitle(txt=f' step num {itS:d}', append=True)
             # write pvd file
@@ -94,24 +92,24 @@ class vtkWriter(writerClass.writer):
             self.write(self.ugrid, filename)
 
     def writePVD(self, dataPVD):
-        """ Write pvd file """
+        """Write pvd file"""
         filename = self.getFilename(extension='.pvd')
         # create root element
-        root = etree.Element("VTKFile", type="Collection", version="0.1")
+        root = etree.Element('VTKFile', type='Collection', version='0.1')
 
         # Create collection elements
-        collection = etree.SubElement(root, "Collection")
+        collection = etree.SubElement(root, 'Collection')
 
         # Loop on timesteps and files for dataset
         for timestep, file in dataPVD.items():
-            dataset = etree.Element("DataSet", timestep=str(timestep), part="0", file=file)
+            dataset = etree.Element('DataSet', timestep=str(timestep), part='0', file=file)
             collection.append(dataset)
 
         # convert xml tree to string
-        xml_str = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+        xml_str = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding='UTF-8')
 
         # write in file
-        with open(filename, "wb") as f:
+        with open(filename, 'wb') as f:
             f.write(xml_str)
 
         Logger.debug(f"PVD file '{filename}' successfully written")
@@ -124,13 +122,13 @@ class vtkWriter(writerClass.writer):
         self.writeFields(fields, numStep=numStep)
 
     def writeFields(self, fields, numStep=None):
-        """ Write fields """
+        """Write fields"""
         if fields is not None:
             if not isinstance(fields, list):
                 fields = [fields]
             Logger.info(f'Add {len(fields)} fields')
             for f in fields:
-                data,typedata = self.setField(f , numStep=numStep)
+                data, typedata = self.setField(f, numStep=numStep)
                 if typedata == 'nodal':
                     self.ugrid.GetPointData().AddArray(data)
                 elif typedata == 'elemental':
@@ -143,7 +141,7 @@ class vtkWriter(writerClass.writer):
         """
         points = vtk.vtkPoints()
         for i in range(len(nodes)):
-            points.InsertNextPoint(nodes[i,:])
+            points.InsertNextPoint(nodes[i, :])
         self.ugrid.SetPoints(points)
 
     @various.timeit('Elements declared')
@@ -155,15 +153,15 @@ class vtkWriter(writerClass.writer):
             # get connectivity data
             typeElem = m.get('type')
             connectivity = m.get('connectivity')
-            physgrp = m.get('physgrp',None)
+            physgrp = m.get('physgrp', None)
             # load element's vtk class
             cell, nbnodes = dbvtk.getVTKObj(typeElem)
             Logger.debug(f'Set {len(connectivity)} elements of type {typeElem}')
             #
             for t in connectivity:
                 for i in range(nbnodes):
-                    cell.GetPointIds().SetId(i,t[i])
-                self.ugrid.InsertNextCell(cell.GetCellType(),cell.GetPointIds())
+                    cell.GetPointIds().SetId(i, t[i])
+                self.ugrid.InsertNextCell(cell.GetCellType(), cell.GetPointIds())
 
     def createNewFields(self, elems):
         """
@@ -199,14 +197,14 @@ class vtkWriter(writerClass.writer):
         # load field data
         data = field.get('data')
         name = field.get('name')
-        numEntities = field.get('numEntities',None)
-        nbsteps = field.get('nbsteps',1)
-        steps = field.get('steps',None)
-        dim = field.get('dim',0)
+        numEntities = field.get('numEntities', None)
+        nbsteps = field.get('nbsteps', 1)
+        steps = field.get('steps', None)
+        dim = field.get('dim', 0)
         typeField = field.get('type')
         # for time dependent data
         if numStep is not None:
-            if nbsteps>1 or steps is not None:
+            if nbsteps > 1 or steps is not None:
                 data = data[numStep]
         # initialize VTK's array
         dataVtk = ns.numpy_to_vtk(data)
@@ -230,11 +228,9 @@ class vtkWriter(writerClass.writer):
         #     elif dim == 9:
         #         dataVtk.InsertNextTuple9(*c)
         # #
-        return dataVtk,typeField
+        return dataVtk, typeField
 
-
-
-    def write(self, ugrid = None, filename=None):
+    def write(self, ugrid=None, filename=None):
         """
         Write Paraview's files along time steps
         """

@@ -8,14 +8,16 @@ from loguru import logger as Logger
 
 
 class writer(ABC):
-    def __init__(self,
-                 filename: Union[str, Path]=None,
-                 nodes: Union[list, np.ndarray]=None,
-                 elements: dict=None,
-                 fields: Union[list, np.ndarray]=None,
-                 append: bool=False,
-                 title: str=None,
-                 opts: dict={}):
+    def __init__(
+        self,
+        filename: Union[str, Path] = None,
+        nodes: Union[list, np.ndarray] = None,
+        elements: dict = None,
+        fields: Union[list, np.ndarray] = None,
+        append: bool = False,
+        title: str = None,
+        opts: dict = {},
+    ):
         self.append = append
         self.title = self.adaptTitle(txt=title)
         self.filename = Path(filename)
@@ -33,18 +35,18 @@ class writer(ABC):
         self.steps = []
         self.nbFields = 0
         # run data analysis
-        self.dataAnalysis(nodes,elements,fields)
+        self.dataAnalysis(nodes, elements, fields)
 
     @abstractmethod
     def setOptions(self, opts):
-        """ Set options """
+        """Set options"""
 
     @abstractmethod
     def getAppend(self):
         pass
 
-    def adaptTitle(self, txt = '', append=False):
-        """ Adapt title with additional information"""
+    def adaptTitle(self, txt='', append=False):
+        """Adapt title with additional information"""
         if append:
             txtFinal = self.title + txt
         else:
@@ -54,24 +56,23 @@ class writer(ABC):
         return txtFinal
 
     @abstractmethod
-    def writeContents(self, nodes, elements, fields=None, numStep = None):
-        """ Write contents  """
+    def writeContents(self, nodes, elements, fields=None, numStep=None):
+        """Write contents"""
 
     def writeHeader(self):
-        """ Write header to the output file """
+        """Write header to the output file"""
 
     @abstractmethod
     def writeNodes(self, nodes):
-        """ write nodes """
+        """write nodes"""
 
     @abstractmethod
     def writeElements(self, elements):
-        """ write elements """
+        """write elements"""
 
     @abstractmethod
-    def writeFields(self, fields, numStep = None):
-        """ write fields """
-
+    def writeFields(self, fields, numStep=None):
+        """write fields"""
 
     def splitFilename(self):
         """
@@ -91,7 +92,7 @@ class writer(ABC):
                 it += 1
             if it == 2:
                 self.logBadExtension()
-        return path,filename, extension
+        return path, filename, extension
 
     def getFilename(self, prefix=None, suffix=None, extension=None):
         """
@@ -107,12 +108,10 @@ class writer(ABC):
         return path / (basename + ext)
 
     def logBadExtension(self):
-        """
-        """
-        Logger.error('File {}: bad extension (ALLOWED: {})'.format(
-            self.filename, ' '.join(self.db.ALLOWED_EXTENSIONS)))
+        """ """
+        Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename, ' '.join(self.db.ALLOWED_EXTENSIONS)))
 
-    def dataAnalysis(self,nodes,elems,fields):
+    def dataAnalysis(self, nodes, elems, fields):
         """ """
         self.nbNodes = len(nodes)
         self.nbElems = 0
@@ -121,7 +120,7 @@ class writer(ABC):
         self.elemPerGrp = {}
         self.nameGrp = {}
         #
-        if isinstance(elems,dict):
+        if isinstance(elems, dict):
             elems = [elems]
         #
         itGrpE = 0
@@ -130,10 +129,10 @@ class writer(ABC):
                 self.elemPerType[e.get('type')] = 0
             self.elemPerType[e.get('type')] += len(e.get('connectivity'))
             self.nbElems += len(e.get('connectivity'))
-            name = e.get('name',f'grp-{itGrpE}')
+            name = e.get('name', f'grp-{itGrpE}')
             itGrpE += 1
             if e.get('physgrp') is not None:
-                if not isinstance(e.get('physgrp'),list) or not isinstance(e.get('physgrp'),list):
+                if not isinstance(e.get('physgrp'), list) or not isinstance(e.get('physgrp'), list):
                     physgrp = [e.get('physgrp')]
                 else:
                     physgrp = e.get('physgrp')
@@ -159,7 +158,7 @@ class writer(ABC):
         Logger.debug(f'Number of nodes: {self.nbNodes}')
         Logger.debug(f'Number of elements: {self.nbElems}')
         Logger.debug(f'Number of physical groups: {len(self.listPhysGrp)}')
-        for t,e in self.elemPerType.items():
+        for t, e in self.elemPerType.items():
             Logger.debug(f'Number of {t} elements: {e}')
         for g in self.listPhysGrp:
             Logger.debug(f'Number of elements in group {g}: {self.elemPerGrp.get(g,0)}')
@@ -169,12 +168,12 @@ class writer(ABC):
             self.listPhysGrp = [1]
         ## analyse fields
         if fields is not None:
-            if isinstance(fields,dict):
+            if isinstance(fields, dict):
                 fields = [fields]
             self.fieldAnalysis(fields)
 
-    def fieldAnalysis(self,fields: list):
-        """ Analyse fields """
+    def fieldAnalysis(self, fields: list):
+        """Analyse fields"""
         self.nbFields = len(fields)
         self.nbCellFields = 0
         self.nbPointFields = 0
@@ -191,7 +190,7 @@ class writer(ABC):
                 cSteps = []
                 if f.get('steps') is not None:
                     cSteps = f.get('steps')
-                cNbSteps = f.get('nbsteps',len(cSteps))
+                cNbSteps = f.get('nbsteps', len(cSteps))
                 # adapt steps
                 if len(self.steps) < cNbSteps:
                     cSteps = np.arange(cNbSteps, dtype=float)
@@ -199,8 +198,8 @@ class writer(ABC):
                     cNbSteps = len(self.steps)
                 # check consistency of definition of steps
                 if len(self.steps) > 0:
-                    if not np.allclose(self.steps,cSteps):
-                        name = f.get('name',f'field-{itField}')
+                    if not np.allclose(self.steps, cSteps):
+                        name = f.get('name', f'field-{itField}')
                         Logger.error(f'Inconsistent steps in fields {name}')
                 else:
                     self.steps = cSteps
@@ -211,4 +210,3 @@ class writer(ABC):
         Logger.debug(f'Number of cell fields: {self.nbCellFields}')
         Logger.debug(f'Number of point fields: {self.nbPointFields}')
         Logger.debug(f'Number of temporal fields: {self.nbTemporalFields}')
-
