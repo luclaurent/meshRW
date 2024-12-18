@@ -79,7 +79,7 @@ jobs:
     #   env:
     #      GITHUB_TOKEN: ${{ github.token }}
     - name: Create GitHub Release
-      if: startsWith(github.event.workflow_run.head_branch, 'refs/tags/')
+      if: startsWith(github.event.workflow_run.head_branch, 'v[0-9]+')
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: >-
@@ -93,7 +93,7 @@ jobs:
 
 
     - name: Upload artifact signatures to GitHub Release
-      if: startsWith(github.event.workflow_run.head_branch, 'refs/tags/')
+      if: startsWith(github.event.workflow_run.head_branch, 'v[0-9]+')
       env:
         GITHUB_TOKEN: ${{ github.token }}
       # Upload to GitHub Release using the `gh` CLI.
@@ -131,7 +131,7 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.event.workflow_run.head_branch, 'refs/tags/')  # only publish to PyPI on tag pushes
+    if: startsWith(github.event.workflow_run.head_branch, 'v[0-9]+')  # only publish to PyPI on tag pushes
     needs:
     - publish-to-testpypi
     runs-on: ubuntu-latest

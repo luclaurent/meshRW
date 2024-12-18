@@ -37,25 +37,21 @@ jobs:
       # - name: Lint with ruff
       #   run: |
       #     hatch fmt
-      - name: Test with pytest
+      - name: Test with pytest and generate coverage
         run: |
-          hatch test
+          hatch test --cover
+          hatch run coverage xml
       - name: Run tests based on installed package
         run: |
           export cwd=$(pwd)
           cd $(mktemp -d) # switch to 
           python -m pytest --pyargs meshRW.tests
           cd $cwd
-      - name: Generate coverage report
-        if: ${{ matrix.python-version == '3.13' }}
-        run: |
-          hatch test --cover
-          hatch run coverage xml
       - name: Creating coverage folder
         if: ${{ matrix.python-version == '3.13' }}
         run: |
           mkdir -p coverage
-      - name: Coverage Bagdge
+      - name: Coverage Badge
         if: ${{ matrix.python-version == '3.13' }}
         uses: tj-actions/coverage-badge-py@v2
         with:
