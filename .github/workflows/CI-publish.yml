@@ -32,7 +32,7 @@ jobs:
     name: Build distribution 📦
     needs: allowrun
     runs-on: ubuntu-latest
-    if: ${{ needs.allowrun.outputs.status }}
+    if: ${{ needs.allowrun.outputs.status == 'true' }}
     steps:   
     - name: Show event info
       run: |
