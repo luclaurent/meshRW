@@ -22,9 +22,10 @@ jobs:
         text: ${{ github.event.workflow_run.head_branch }}
         regex: '^v[0-9]+'
     - name: Show event info
-      run: echo ${{ steps.regex-match.outputs.match}}
-    env: 
-      status_custom: ${{ (steps.regex-match.outputs.match = '') && (github.event.workflow_run.conclusion == 'success')}}
+      id: info
+      run: echo ${{ steps.regex-match.outputs.match }}
+      env: 
+        status_custom: ${{ (steps.regex-match.outputs.match = '') && (github.event.workflow_run.conclusion == 'success')}}
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
