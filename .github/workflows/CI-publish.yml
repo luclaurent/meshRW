@@ -56,17 +56,17 @@ jobs:
 #     - name: Publish distribution 📦 to PyPI
 #       uses: pypa/gh-action-pypi-publish@release/v1
 
-#   github-release:
-#     name: >-
-#       Sign the Python 🐍 distribution 📦 with Sigstore
-#       and upload them to GitHub Release
-#     needs:
-#     - publish-to-pypi
-#     runs-on: ubuntu-latest
+  github-release:
+    name: >-
+      Sign the Python 🐍 distribution 📦 with Sigstore
+      and upload them to GitHub Release
+    needs:
+    - publish-to-pypi
+    runs-on: ubuntu-latest
 
-#     permissions:
-#       contents: write  # IMPORTANT: mandatory for making GitHub Releases
-#       id-token: write  # IMPORTANT: mandatory for sigstore
+    permissions:
+      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write  # IMPORTANT: mandatory for sigstore
 
     steps:
     - name: Download all the dists
