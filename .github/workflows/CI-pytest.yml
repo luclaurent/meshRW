@@ -38,6 +38,12 @@ jobs:
       - name: Test with pytest
         run: |
           hatch test
+      - name: Run tests based on installed package
+        run: |
+          export cwd=$(pwd)
+          cd $(mktemp -d) # switch to 
+          python -m pytest --pyargs meshRW.tests
+          cd $cwd
       - name: Generate coverage report
         if: ${{ matrix.python-version == '3.13' }}
         run: |
