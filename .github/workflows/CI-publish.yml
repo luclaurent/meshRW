@@ -5,8 +5,8 @@ on:
     workflows: [meshRW tests]
     types: [completed]
   push:
-    branches:
-      - 'main'
+    # branches:
+    #   - 'main'
     tags:
       - 'v*'
   
