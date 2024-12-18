@@ -84,6 +84,16 @@ jobs:
         inputs: >-
           ./dist/*.tar.gz
           ./dist/*.whl
+    # - name: Release
+    #   uses: softprops/action-gh-release@master
+    #   if: startsWith(github.ref, 'refs/tags/')
+    #   with:
+    #     # tag_name: SILEXlight-${{ github.event.release.tag_name }}
+    #     name: meshRW release ${{ github.event.release.tag_name }}
+    #     prerelease: false
+    #     files: dist/*
+    #   env:
+    #      GITHUB_TOKEN: ${{ github.token }}
     - name: Create GitHub Release
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -92,6 +102,7 @@ jobs:
         '${{ github.ref_name }}'
         --repo '${{ github.repository }}'
         --generate-notes
+        --title 'meshRW ${{ github.ref_name }}'
 
 
     - name: Upload artifact signatures to GitHub Release
