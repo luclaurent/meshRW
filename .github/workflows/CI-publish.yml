@@ -5,17 +5,31 @@ on:
     workflows: [meshRW tests]
     types: [completed]
   push:
-    # branches:
-    #   - 'main'
+    branches:
+      - 'main'
     tags:
       - 'v*'
   
 jobs:
+  allowrun:
+    name: Check if the workflow can be ran
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check if head branch if version tag
+      uses: actions-ecosystem/action-regex-match@v2
+      id: regex-match
+      with:
+        text: ${{ github.event.workflow_run.head_branch }}
+        regex: '^v[0-9]+'
+    - name: Show event info
+      run: echo ${{ steps.regex-match.outputs.match}}
+    env: 
+      status_custom: ${{ (steps.regex-match.outputs.match = '') && (github.event.workflow_run.conclusion == 'success')}}
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
-    if: ${{ (github.event.workflow_run.conclusion == 'success') && (github.event.workflow_run.head_branch == 'v[0-9]+') }}
-    steps:
+    if: ${{ jobs.allowrun.outputs.status_custom }}
+    steps:   
     - name: Show event info
       run: |
         echo "Event info: ${{ toJson(github.event) }}"
@@ -104,47 +118,47 @@ jobs:
         --generate-notes
         --title 'meshRW ${{ github.event.workflow_run.head_branch }}'
 
-  publish-to-testpypi:
-    name: Publish Python 🐍 distribution 📦 to TestPyPI
-    needs:
-    - build
-    runs-on: ubuntu-latest
+  # publish-to-testpypi:
+  #   name: Publish Python 🐍 distribution 📦 to TestPyPI
+  #   needs:
+  #   - build
+  #   runs-on: ubuntu-latest
 
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/p/meshRW
+  #   environment:
+  #     name: testpypi
+  #     url: https://test.pypi.org/p/meshRW
 
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+  #   permissions:
+  #     id-token: write  # IMPORTANT: mandatory for trusted publishing
 
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
+  #   steps:
+  #   - name: Download all the dists
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: python-package-distributions
+  #       path: dist/
+  #   - name: Publish distribution 📦 to TestPyPI
+  #     uses: pypa/gh-action-pypi-publish@release/v1
+  #     with:
+  #       repository-url: https://test.pypi.org/legacy/
 
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-    - publish-to-testpypi
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/meshRW  # Replace <package-name> with your PyPI project name
-    permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+  # publish-to-pypi:
+  #   name: >-
+  #     Publish Python 🐍 distribution 📦 to PyPI
+  #   needs:
+  #   - publish-to-testpypi
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: pypi
+  #     url: https://pypi.org/p/meshRW  # Replace <package-name> with your PyPI project name
+  #   permissions:
+  #     id-token: write  # IMPORTANT: mandatory for trusted publishing
 
-    steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+  #   steps:
+  #   - name: Download all the dists
+  #     uses: actions/download-artifact@v4
+  #     with:
+  #       name: python-package-distributions
+  #       path: dist/
+  #   - name: Publish distribution 📦 to PyPI
+  #     uses: pypa/gh-action-pypi-publish@release/v1
