@@ -27,8 +27,7 @@ jobs:
       id: info
       run: |
         echo ${{ steps.regex-match.outputs.match }}
-        # echo "status=${{(github.event.workflow_run.conclusion == 'success') && (steps.regex-match.outputs.match != '') }}" >> "$GITHUB_OUTPUT"
-        echo "status=${{steps.regex-match.outputs.match == '' }}" >> "$GITHUB_OUTPUT"
+        echo "status=${{(github.event.workflow_run.conclusion == 'success') && (steps.regex-match.outputs.match != '') }}" >> "$GITHUB_OUTPUT"
   build:
     name: Build distribution 📦
     needs: allowrun
