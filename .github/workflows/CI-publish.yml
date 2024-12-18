@@ -14,7 +14,7 @@ jobs:
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ (github.event.workflow_run.conclusion == 'success') && (github.event.workflow_run.head_branch == 'v[0-9]+') }}
     steps:
     - name: Show event info
       run: |
@@ -79,7 +79,6 @@ jobs:
     #   env:
     #      GITHUB_TOKEN: ${{ github.token }}
     - name: Create GitHub Release
-      if: startsWith(github.event.workflow_run.head_branch, 'v[0-9]+')
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: >-
@@ -93,7 +92,6 @@ jobs:
 
 
     - name: Upload artifact signatures to GitHub Release
-      if: startsWith(github.event.workflow_run.head_branch, 'v[0-9]+')
       env:
         GITHUB_TOKEN: ${{ github.token }}
       # Upload to GitHub Release using the `gh` CLI.
@@ -103,6 +101,8 @@ jobs:
         gh release upload
         '${{ github.event.workflow_run.head_branch }}' dist/**
         --repo '${{ github.repository }}'
+        --generate-notes
+        --title 'meshRW ${{ github.event.workflow_run.head_branch }}'
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
@@ -131,7 +131,6 @@ jobs:
   publish-to-pypi:
     name: >-
       Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.event.workflow_run.head_branch, 'v[0-9]+')  # only publish to PyPI on tag pushes
     needs:
     - publish-to-testpypi
     runs-on: ubuntu-latest
