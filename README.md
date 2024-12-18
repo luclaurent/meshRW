@@ -1,6 +1,6 @@
 # meshRW
 
-![GitHub](https://img.shields.io/github/license/luclaurent/meshRW?style=flat-square) [![pypi release](https://img.shields.io/pypi/v/meshrw.svg)](https://pypi.org/project/meshrw/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14514790.svg)](https://doi.org/10.5281/zenodo.14514790) ![CI-pytest](https://github.com/luclaurent/meshRW/actions/workflows/CI-pytest.yml/badge.svg) ![code coverage](https://raw.githubusercontent.com/luclaurent/meshRW/refs/heads/coverage-badge/coverage.svg)
+![GitHub](https://img.shields.io/github/license/luclaurent/meshRW?style=flat-square) [![pypi release](https://img.shields.io/pypi/v/meshrw.svg)](https://pypi.org/project/meshrw/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14514789.svg)](https://doi.org/10.5281/zenodo.14514789) ![CI-pytest](https://github.com/luclaurent/meshRW/actions/workflows/CI-pytest.yml/badge.svg) ![code coverage](https://raw.githubusercontent.com/luclaurent/meshRW/refs/heads/coverage-badge/coverage.svg)
 
 <!-- ![GitHub release (latest by date)](https://img.shields.io/github/v/release/luclaurent/meshRW?style=flat-square) ![GitHub all releases](https://img.shields.io/github/downloads/luclaurent/meshRW/total?style=flat-square)  -->
 
