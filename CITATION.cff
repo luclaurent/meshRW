@@ -3,30 +3,23 @@
 
 cff-version: 1.2.0
 title: meshRW
-message: >-
-  Basic tool to read legacy gmsh mesh files and write
-  gmsh/vtk (Paraview compatible) mesh files using gmsh API
-  and libvtk
 type: software
 authors:
   - given-names: Luc
     family-names: Laurent
     email: luc.laurent@lecnam.net
-    affiliation: 'LMSSC, Cnam'
-    orcid: 'https://orcid.org/0000-0002-8935-5929'
+    affiliation: "Laboratoire de Mécanique des structures et des systèmes couplés, Conservatoire national des arts et métiers, Paris, France"
+    orcid: "https://orcid.org/0000-0002-8935-5929"
 identifiers:
   - type: doi
     value: 10.5281/zenodo.14514790
-repository-code: 'https://github.com/luclaurent/meshRW'
-repository: 'https://pypi.org/project/meshRW/'
+repository-code: "https://github.com/luclaurent/meshRW"
+repository: "https://pypi.org/project/meshRW/"
 abstract: >-
   meshRW is a Python module that proposes basic readers and
   writers for msh`(gmsh) and vtk/vtu/pvd (Paraview). It
-  proposes:
-
-  * to read basic legacy gmsh mesh files (version: 2.2)
-
-  * to write mesh files including time series fields to any
+  proposes: (1) to read basic legacy gmsh mesh files (version: 2.2)
+  and (2) to write mesh files including time series fields to any
   version of gmsh mesh files and legacy (.vtk) and XML
   (.vtu, with .pvd) VTK mesh file compatible with Paraview.
 keywords:
