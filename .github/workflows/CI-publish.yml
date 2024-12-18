@@ -16,6 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+    - name: Show event info
+      run: |
+        echo "Event info: ${{ toJson(github.event) }}"
+        echo "Workflow run info: ${{ toJson(github.event.workflow_run) }}"
+        echo "Workflow job info: ${{ github.event.workflow_run.head_branch }}"
     - uses: actions/checkout@main
     - name: Set up Python
       uses: actions/setup-python@main
@@ -79,7 +84,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: >-
         gh release create        
-        '${{ github.event.workflow_run.head_branch }}''
+        '${{ github.event.workflow_run.head_branch }}'
         --repo '${{ github.repository }}'
         --generate-notes
         --title 'meshRW ${{ github.event.workflow_run.head_branch }}'
@@ -96,7 +101,7 @@ jobs:
       # sigstore-produced signatures and certificates.
       run: >-
         gh release upload
-        '${{ github.ref_name }}' dist/**
+        '${{ github.event.workflow_run.head_branch }}' dist/**
         --repo '${{ github.repository }}'
 
   publish-to-testpypi:
