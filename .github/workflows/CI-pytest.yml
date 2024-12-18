@@ -1,4 +1,4 @@
-name: meshRW CI
+name: meshRW tests
 
 on: 
   push:

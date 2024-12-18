@@ -1,17 +1,20 @@
 name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
 on:
-    push:
-      branches:
-        - 'main'
-    #   tags:
-    #     - 'v*'
+  workflow_run:
+    workflows: [meshRW tests]
+    types: [completed]
+  push:
+    branches:
+      - 'main'
+  #   tags:
+  #     - 'v*'
   
 jobs:
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - uses: actions/checkout@main
     - name: Set up Python
