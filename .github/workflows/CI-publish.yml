@@ -36,6 +36,7 @@ jobs:
     steps:   
     - name: Show event info
       run: |
+      echo "value: ${{ needs.allowrun.outputs.status }}"
         echo "Event info: ${{ toJson(github.event) }}"
         echo "Workflow run info: ${{ toJson(github.event.workflow_run) }}"
         echo "Workflow job info: ${{ github.event.workflow_run.head_branch }}"
