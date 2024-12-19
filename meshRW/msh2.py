@@ -222,7 +222,7 @@ class mshWriter(writerClass.writer):
                 starttime = time.perf_counter()
                 gmsh.view.write(t, newfilename.as_posix(), append=False)
                 Logger.info(
-                    f'Data save in {newfilename} ({various.convert_size(newfilename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s'
+                    f'Data save in {newfilename} ({various.convert_size(newfilename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s'
                 )
 
     # def dataAnalysis(self,nodes,elems,fields):
