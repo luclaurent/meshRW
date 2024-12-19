@@ -117,7 +117,7 @@ class vtkWriter(writerClass.writer):
         with open(filename, 'wb') as f:
             f.write(xml_str)
         Logger.info(
-                f'PVD file written {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s'
+                f'PVD file written {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s'
             )
 
 
@@ -256,4 +256,4 @@ class vtkWriter(writerClass.writer):
         
         starttime = time.perf_counter()
         self.writer.Write()
-        Logger.info(f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s')
+        Logger.info(f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s')
