@@ -37,6 +37,7 @@ class writer(ABC):
         # run data analysis
         self.dataAnalysis(nodes, elements, fields)
 
+
     @abstractmethod
     def setOptions(self, opts):
         """Set options"""
@@ -210,3 +211,36 @@ class writer(ABC):
         Logger.debug(f'Number of cell fields: {self.nbCellFields}')
         Logger.debug(f'Number of point fields: {self.nbPointFields}')
         Logger.debug(f'Number of temporal fields: {self.nbTemporalFields}')
+
+
+def adaptInputs(nodes, elements, fields):
+    """ Adapt inputs for the writer """
+    # adapt nodes
+    if nodes is not None:
+        if isinstance(nodes, list):
+            nodes = np.array(nodes)
+    else:
+        Logger.error('No nodes provided')
+    # adapt elements
+    if elements is not None:
+        if isinstance(elements, dict):
+            elements = [elements]
+        for e in elements:
+            if e.get('connectivity') is not None:
+                e['connectivity'] = np.array(e.get('connectivity'))
+    else:
+        Logger.error('No elements provided')
+    # adapt fields
+    if fields is not None:
+        if isinstance(fields, dict):
+            fields = [fields]
+        for f in fields:
+            if f.get('steps') is not None:
+                f['steps'] = np.array(f.get('steps'))
+            if f.get('data') is not None:
+                if isinstance(f.get('data'), list):
+                    f['data'] = np.array(f.get('data'))
+    else:
+        Logger.warning('No fields provided')
+
+    return nodes, elements, fields

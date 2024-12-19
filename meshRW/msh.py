@@ -54,6 +54,8 @@ class mshWriter(writerClass.writer):
                 title (optional, default: None) : title of the file
         """
         Logger.info('Start writing msh file')
+        # adapt inputs
+        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
         super().__init__(filename, nodes, elements, fields, append, title, opts)
 

@@ -29,6 +29,8 @@ class vtkWriter(writerClass.writer):
     ):
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
+        # adapt inputs
+        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # prepare new fields (from physical groups for instance)
         newFields = self.createNewFields(elements)
         if newFields:

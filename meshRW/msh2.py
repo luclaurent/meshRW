@@ -32,6 +32,8 @@ class mshWriter(writerClass.writer):
     ):
         #
         Logger.info('Create msh file using gmsh API')
+        # adapt inputs
+        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
         super().__init__(filename, nodes, elements, fields, append, title, opts)
         # load specific configuration
