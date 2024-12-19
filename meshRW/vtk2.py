@@ -93,11 +93,7 @@ class vtkWriter(writerClass.writer):
             self.writeContents(fields)
             # write file
             filename = self.getFilename()
-            starttime = time.perf_counter()
             self.write(self.ugrid, filename)
-            Logger.info(
-                    f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s'
-                )
 
     def writePVD(self, dataPVD):
         """Write pvd file"""
@@ -257,4 +253,7 @@ class vtkWriter(writerClass.writer):
         self.writer.Update()
         # self.writer.SetDebug(True)
         # self.writer.SetWriteTimeValue(True)
+        
+        starttime = time.perf_counter()
         self.writer.Write()
+        Logger.info(f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s')
