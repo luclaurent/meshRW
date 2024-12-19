@@ -7,6 +7,8 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 from pathlib import Path
 from typing import Union
 
+import time
+
 import numpy as np
 import vtk
 import vtkmodules.util.numpy_support as ns
@@ -91,7 +93,11 @@ class vtkWriter(writerClass.writer):
             self.writeContents(fields)
             # write file
             filename = self.getFilename()
+            starttime = time.perf_counter()
             self.write(self.ugrid, filename)
+            Logger.info(
+                    f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s'
+                )
 
     def writePVD(self, dataPVD):
         """Write pvd file"""
@@ -111,10 +117,13 @@ class vtkWriter(writerClass.writer):
         xml_str = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding='UTF-8')
 
         # write in file
+        starttime = time.perf_counter()
         with open(filename, 'wb') as f:
             f.write(xml_str)
+        Logger.info(
+                f'PVD file written {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {time.perf_counter()-starttime} s'
+            )
 
-        Logger.debug(f"PVD file '{filename}' successfully written")
 
     @various.timeit('Fields declared')
     def writeContents(self, fields, numStep=None):
