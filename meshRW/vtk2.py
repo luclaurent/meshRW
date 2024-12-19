@@ -140,6 +140,8 @@ class vtkWriter(writerClass.writer):
                     self.ugrid.GetPointData().AddArray(data)
                 elif typedata == 'elemental':
                     self.ugrid.GetCellData().AddArray(data)
+                else:
+                    Logger.error(f'Field type {typedata} not recognized')
 
     @various.timeit('Nodes declared')
     def writeNodes(self, nodes):
