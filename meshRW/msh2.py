@@ -69,9 +69,13 @@ class mshWriter(writerClass.writer):
         for g in self.listPhysGrp:
             self.entities[g] = gmsh.model.addDiscreteEntity(3)
             gmsh.model.addPhysicalGroup(3, [self.entities[g]], g, name=self.nameGrp.get(g, None))
+        # get dimension of all elements
+        dimElem = set([self.db.getDim(e.get('type')) for e in elements])
         # add global physical group
-        self.globEntity = gmsh.model.addDiscreteEntity(3)
-        gmsh.model.addPhysicalGroup(3, [self.globEntity], self.globPhysGrp, name='Global')
+        self.globEntity = dict()
+        for d in dimElem:
+            self.globEntity[d] = gmsh.model.addDiscreteEntity(d)
+            gmsh.model.addPhysicalGroup(d, [self.globEntity[d]], self.globPhysGrp, name='Global')
 
         # add nodes
         self.writeNodes(nodes)
@@ -134,10 +138,11 @@ class mshWriter(writerClass.writer):
             typeElem = m.get('type')
             connectivity = m.get('connectivity')
             physgrp = m.get('physgrp', None)
-            codeElem = dbmsh.getMSHElemType(typeElem)
+            codeElem = self.db.getMSHElemType(typeElem)
+            dimElem = self.db.getDim(typeElem)
             #
             Logger.info(f'Set {len(connectivity)} elements of type {typeElem}')
-            gmsh.model.mesh.addElementsByType(self.globEntity, codeElem, [], connectivity.flatten())
+            gmsh.model.mesh.addElementsByType(self.globEntity[dimElem], codeElem, [], connectivity.flatten())
             if physgrp is not None:
                 if not isinstance(physgrp, np.ndarray) and not isinstance(physgrp, list):
                     physgrp = [physgrp]

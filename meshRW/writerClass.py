@@ -150,7 +150,7 @@ class writer(ABC):
         #
         self.listPhysGrp = list(self.elemPerGrp.keys())
         # generate global physical group
-        numinit = 1000
+        numinit = configMESH.DFLT_NEW_PHYSGRP_GLOBAL_NUM
         numit = 50
         current = numinit
         while current in self.listPhysGrp:
@@ -222,6 +222,9 @@ def adaptInputs(nodes, elements, fields):
     if nodes is not None:
         if isinstance(nodes, list):
             nodes = np.array(nodes)
+        # fix size in case of 2D nodes array
+        if nodes.shape[1] == 2:
+            nodes = np.hstack((nodes, np.zeros((nodes.shape[0],1))))
     else:
         Logger.error('No nodes provided')
     # adapt elements

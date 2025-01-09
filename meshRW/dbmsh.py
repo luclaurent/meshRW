@@ -145,6 +145,30 @@ def getNumberNodes(txtElemtype):
         Logger.error(f'Element type {txtElemtype} not defined')
     return nbNodes
 
+def getDim(txtElemtype):
+    """
+    Get the dimension for a specific element type type (declare as string)
+        syntax:
+            getNumberNodes(txtElemtype)
+
+       input:
+            txtElemtype: element declared using string (if number is used the function wil return it)
+        output:
+            space dimension for txtEltype
+    """
+    # load the dictionary
+    elementDict = loadElementDict()
+    nbNodes = 0
+    # check if the type of element exists
+    if txtElemtype in elementDict.keys():
+        # get the number of nodes for the type of element
+        if elementDict[txtElemtype]:
+            nbNodes = elementDict[txtElemtype].get('dim', None)
+    else:
+        # show error message if the type of element does not exist
+        Logger.error(f'Element type {txtElemtype} not defined')
+    return nbNodes
+
 
 def getNumberNodesFromNum(elementNum):
     """
