@@ -6,6 +6,7 @@ from typing import Union
 import numpy as np
 from loguru import logger as Logger
 
+from . import configMESH
 
 class writer(ABC):
     def __init__(
@@ -33,7 +34,7 @@ class writer(ABC):
         self.listPhysGrp = []
         self.nbSteps = 0
         self.steps = []
-        self.nbFields = 0
+        self.nbFields = 0        
         # run data analysis
         self.dataAnalysis(nodes, elements, fields)
 
@@ -211,6 +212,8 @@ class writer(ABC):
         Logger.debug(f'Number of cell fields: {self.nbCellFields}')
         Logger.debug(f'Number of point fields: {self.nbPointFields}')
         Logger.debug(f'Number of temporal fields: {self.nbTemporalFields}')
+    
+    
 
 
 def adaptInputs(nodes, elements, fields):
@@ -221,6 +224,12 @@ def adaptInputs(nodes, elements, fields):
             nodes = np.array(nodes)
     else:
         Logger.error('No nodes provided')
+    # get all physical groups
+    allPhysGrp = []
+    for e in elements:
+        if e.get('physgrp') is not None:
+            allPhysGrp.extend(e.get('physgrp'))
+    allPhysGrp = set(allPhysGrp)
     # adapt elements
     if elements is not None:
         if isinstance(elements, dict):
@@ -228,6 +237,11 @@ def adaptInputs(nodes, elements, fields):
         for e in elements:
             if e.get('connectivity') is not None:
                 e['connectivity'] = np.array(e.get('connectivity'))
+            if e.get('physgrp',None) is None:
+                # manual setting of physical group
+                idgrp = getNewPhysGrp(allPhysGrp)
+                e['physgrp'] = [idgrp]
+                allPhysGrp.add(idgrp)
     else:
         Logger.error('No elements provided')
     # adapt fields
@@ -244,3 +258,11 @@ def adaptInputs(nodes, elements, fields):
         Logger.warning('No fields provided')
 
     return nodes, elements, fields
+
+    
+def getNewPhysGrp(existing: set):
+    """ Generate new physical group Id """
+    idtstart = configMESH.DFLT_NEW_PHYSGRP_NUM
+    while idtstart in existing:
+        idtstart += 1
+    return idtstart

@@ -157,6 +157,36 @@ def test_MSH2writerTemporal(append, version):
 
     assert outputfile.exists()
 
+@pytest.mark.parametrize('append', [True, False])
+@pytest.mark.parametrize('version', [2.2, 4])
+def test_MSH2writerNoPhysGrp(append, version):
+    # open data
+    hf = open(datafile, 'rb')
+    data = pickle.load(hf)
+    hf.close()
+    # extract nodes list
+    nodes = data['n']
+    # extract elements list and data
+    elemsData = data['e']
+    # write msh file
+    outputfile = ArtifactsPath / Path(f'build{version}-app{append}-temp.msh')
+    msh2.mshWriter(
+        filename=outputfile,
+        nodes=nodes,
+        elements=[
+            {
+                'connectivity': elemsData[list(elemsData.keys())[0]],
+                'type': list(elemsData.keys())[0]                
+            },
+            {
+                'connectivity': elemsData[list(elemsData.keys())[1]],
+                'type': list(elemsData.keys())[1]
+            },
+        ]
+    )
+
+    assert outputfile.exists()
+
 
 @pytest.mark.parametrize('append', [True, False])
 @pytest.mark.parametrize('version', [2.2, 4])

@@ -32,13 +32,13 @@ class vtkWriter(writerClass.writer):
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
         # adapt inputs
-        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
+        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)   
         # prepare new fields (from physical groups for instance)
         newFields = self.createNewFields(elements)
         if newFields:
             if not fields:
                 fields = list()
-            fields.extend(newFields)
+            fields.extend(newFields)     
         # initialization
         super().__init__(filename, nodes, elements, fields, append, title, opts)
         # vtk data
@@ -200,7 +200,7 @@ class vtkWriter(writerClass.writer):
             newFields.extend([{'data': data, 'type': 'elemental', 'dim': 1, 'name': configMESH.DFLT_PHYS_GRP}])
 
         return newFields
-
+    
     def setField(self, field, numStep=None):
         """ """
         # load field data
