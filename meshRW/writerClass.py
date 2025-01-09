@@ -224,6 +224,9 @@ def adaptInputs(nodes, elements, fields):
             nodes = np.array(nodes)
     else:
         Logger.error('No nodes provided')
+    # adapt elements
+    if isinstance(elements, dict):
+        elements = [elements]
     # get all physical groups
     allPhysGrp = []
     for e in elements:
