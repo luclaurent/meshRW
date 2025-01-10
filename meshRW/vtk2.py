@@ -6,6 +6,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 
 from pathlib import Path
 from typing import Union
+import sys
 
 import time
 
@@ -27,8 +28,13 @@ class vtkWriter(writerClass.writer):
         fields: Union[list, np.ndarray] = None,
         append: bool = False,
         title: str = None,
+        verbose: bool = False,
         opts: dict = {'binary': False, 'ascii': True},
     ):
+        # adapt verbosity logger
+        if not verbose:
+            Logger.remove()
+            Logger.add(sys.stderr, level="INFO") 
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
         # adapt inputs

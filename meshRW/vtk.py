@@ -6,6 +6,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 from pathlib import Path
 from typing import Union
+import sys
 
 import numpy as np
 from loguru import logger as Logger
@@ -22,6 +23,7 @@ class vtkWriter(writerClass.writer):
         fields: Union[list, np.ndarray] = None,
         append: bool = False,
         title: str = None,
+        verbose: bool = False,
         opts: dict = {'version': 'v2'},
     ):
         """
@@ -49,6 +51,10 @@ class vtkWriter(writerClass.writer):
             opts (optional): dictionary of options (version: VTK's format (v2 (default) or XML)
 
         """
+        # adapt verbosity logger
+        if not verbose:
+            Logger.remove()
+            Logger.add(sys.stderr, level="INFO") 
         Logger.info('Start writing vtk file')
         # adapt inputs
         nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
