@@ -7,6 +7,7 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 import time
 from pathlib import Path
 from typing import Union
+import sys
 
 import gmsh
 import numpy as np
@@ -28,10 +29,16 @@ class mshWriter(writerClass.writer):
         fields: Union[list, np.ndarray] = None,
         append: bool = False,
         title: str = None,
+        verbose: bool = False,
         opts: dict = {'version': 2.2},
     ):
+        # adapt verbosity logger
+        if not verbose:
+            Logger.remove()
+            log.add(sys.stderr, level="INFO") 
         #
         Logger.info('Create msh file using gmsh API')
+        self.itName = 0 # name iterators
         # adapt inputs
         nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
