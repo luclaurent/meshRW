@@ -35,7 +35,7 @@ class mshWriter(writerClass.writer):
         # adapt verbosity logger
         if not verbose:
             Logger.remove()
-            log.add(sys.stderr, level="INFO") 
+            Logger.add(sys.stderr, level="INFO") 
         #
         Logger.info('Create msh file using gmsh API')
         self.itName = 0 # name iterators
@@ -71,18 +71,23 @@ class mshWriter(writerClass.writer):
         gmsh.option.setNumber('PostProcessing.SaveMesh', 1)  # export mesh when save fields
         # create empty entities
         gmsh.model.add(self.modelName)
-        self.entities = {}
-        Logger.info(f'Create {len(self.listPhysGrp)} entities for physical group')
-        for g in self.listPhysGrp:
-            self.entities[g] = gmsh.model.addDiscreteEntity(3)
-            gmsh.model.addPhysicalGroup(3, [self.entities[g]], g, name=self.nameGrp.get(g, None))
-        # get dimension of all elements
-        dimElem = set([self.db.getDim(e.get('type')) for e in elements])
         # add global physical group
         self.globEntity = dict()
+        # get dimension of all elements
+        dimElem = set([self.db.getDim(e.get('type')) for e in elements])
         for d in dimElem:
             self.globEntity[d] = gmsh.model.addDiscreteEntity(d)
             gmsh.model.addPhysicalGroup(d, [self.globEntity[d]], self.globPhysGrp, name='Global')
+        self.entities = {}
+        # create physical groups for each dimension
+        Logger.info(f'Create {len(self.listPhysGrp)} entities for physical group')
+        for g in self.listPhysGrp:
+            self.entities[g] = list()
+            for d in range(4):
+                self.entities[g].append(gmsh.model.addDiscreteEntity(d))
+                gmsh.model.addPhysicalGroup(d, [self.entities[g][-1]], g, name=self.nameGrp.get(g, None))
+        
+        
 
         # add nodes
         self.writeNodes(nodes)
@@ -117,7 +122,7 @@ class mshWriter(writerClass.writer):
         nodesNum = np.arange(1, len(nodes) + 1)
         numFgrp = self.listPhysGrp[0]
         # add nodes to first volume entity
-        gmsh.model.mesh.addNodes(3, self.entities[numFgrp], nodesNum, nodes.flatten())
+        gmsh.model.mesh.addNodes(3, self.entities[numFgrp][-1], nodesNum, nodes.flatten())
 
     @various.timeit('Elements declared')
     def writeElements(self, elements):
@@ -154,7 +159,7 @@ class mshWriter(writerClass.writer):
                 if not isinstance(physgrp, np.ndarray) and not isinstance(physgrp, list):
                     physgrp = [physgrp]
                 for p in physgrp:
-                    gmsh.model.mesh.addElementsByType(self.entities[p], codeElem, [], connectivity.flatten())
+                    gmsh.model.mesh.addElementsByType(self.entities[p][dimElem-1], codeElem, [], connectivity.flatten())
 
     @various.timeit('Fields declared')
     def writeFields(self, fields):
