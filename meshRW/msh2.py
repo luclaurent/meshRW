@@ -176,7 +176,7 @@ class mshWriter(writerClass.writer):
         data = field.get('data')
         name = field.get('name')
         numEntities = field.get('numEntities', None)
-        nbsteps = field.get('nbsteps', 1)
+        nbsteps = field.get('nbsteps', None)
         steps = field.get('steps', None)
         timesteps = field.get('timesteps', None)
         dim = field.get('dim', 0)
@@ -185,7 +185,14 @@ class mshWriter(writerClass.writer):
         if not name:
             name = f'{typeField}_{self.itName}'
             self.itName += 1
-        if not steps and nbsteps:
+            
+        # manage steps
+        if steps is not None:
+            nbsteps = len(steps)
+        if timesteps is not None:
+            nbsteps = len(timesteps)
+        #
+        if not steps:
             steps = np.arange(nbsteps, dtype=int)
         if not timesteps:
             timesteps = np.zeros(nbsteps)
@@ -210,7 +217,13 @@ class mshWriter(writerClass.writer):
             dataView = data[s]
             if len(dataView.shape) == 1:
                 dataView = dataView.reshape((-1, 1))
-            gmsh.view.addModelData(tagView, s, self.modelName, nameTypeData, numEntities, dataView)
+            gmsh.view.addModelData(tag=tagView, 
+                                   step=s, 
+                                   modelName=self.modelName, 
+                                   dataType=nameTypeData, 
+                                   tags=numEntities, 
+                                   data=dataView,
+                                   time=t)
             # ,
             # numComponents=dim,
             # partition=0)
