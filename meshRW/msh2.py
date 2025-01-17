@@ -191,6 +191,8 @@ class mshWriter(writerClass.writer):
             nbsteps = len(steps)
         if timesteps is not None:
             nbsteps = len(timesteps)
+        if nbsteps is None:
+            nbsteps = 1
         #
         if not steps:
             steps = np.arange(nbsteps, dtype=int)
