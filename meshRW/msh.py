@@ -55,10 +55,10 @@ class mshWriter(writerClass.writer):
                 append (optional, default: False) : append field to an existing file
                 title (optional, default: None) : title of the file
         """
-        # adapt verbosity logger
-        if not verbose:
-            Logger.remove()
-            Logger.add(sys.stderr, level="INFO") 
+        # # adapt verbosity logger
+        # if not verbose:
+        #     Logger.remove()
+        #     Logger.add(sys.stderr, level="INFO") 
         Logger.info('Start writing msh file')
         # adapt inputs
         nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)

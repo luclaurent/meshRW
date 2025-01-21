@@ -31,10 +31,10 @@ class vtkWriter(writerClass.writer):
         verbose: bool = False,
         opts: dict = {'binary': False, 'ascii': True},
     ):
-        # adapt verbosity logger
-        if not verbose:
-            Logger.remove()
-            Logger.add(sys.stderr, level="INFO") 
+        # # adapt verbosity logger
+        # if not verbose:
+        #     Logger.remove()
+        #     Logger.add(sys.stderr, level="INFO") 
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
         # adapt inputs
@@ -66,7 +66,7 @@ class vtkWriter(writerClass.writer):
         self.binary = options.get('binary', False)
         self.ascii = options.get('ascii', False)
 
-    def writeContentsSteps(self, nodes, elements, fields=None, numStep=None):
+    def writeContentsSteps(self, nodes, elements, fields=None):
         """Write content along steps"""
         # create dictionary for preparing pvd file writing
         if self.nbSteps > 0:
@@ -216,9 +216,23 @@ class vtkWriter(writerClass.writer):
         nbsteps = field.get('nbsteps', 1)
         steps = field.get('steps', None)
         dim = field.get('dim', 0)
+        timesteps = field.get('timesteps', None)
         typeField = field.get('type')
         # for time dependent data
         if numStep is not None:
+            # manage steps
+            if steps is not None:
+                nbsteps = len(steps)
+            if timesteps is not None:
+                nbsteps = len(timesteps)
+            if nbsteps is None:
+                nbsteps = 1
+            #
+            if not steps and nbsteps>1:
+                steps = np.arange(nbsteps, dtype=int)
+            if not timesteps and nbsteps>1:
+                timesteps = np.zeros(nbsteps)
+
             if nbsteps > 1 or steps is not None:
                 data = data[numStep]
         # initialize VTK's array

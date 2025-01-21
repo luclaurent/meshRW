@@ -32,10 +32,10 @@ class mshWriter(writerClass.writer):
         verbose: bool = False,
         opts: dict = {'version': 2.2},
     ):
-        # adapt verbosity logger
-        if not verbose:
-            Logger.remove()
-            Logger.add(sys.stderr, level="INFO") 
+        # # adapt verbosity logger
+        # if not verbose:
+        #     Logger.remove()
+        #     Logger.add(sys.stderr, level="INFO") 
         #
         Logger.info('Create msh file using gmsh API')
         self.itName = 0 # name iterators
