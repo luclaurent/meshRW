@@ -187,22 +187,32 @@ class writer(ABC):
                 self.nbCellFields += 1
             elif f.get('type') == 'nodal':
                 self.nbPointFields += 1
-            if f.get('nbsteps') is not None or f.get('steps') is not None:
+            if f.get('nbsteps') is not None \
+                or f.get('steps') is not None \
+                or f.get('timesteps') is not None:
+                #
                 self.nbTemporalFields += 1
-                cSteps = []
-                if f.get('steps') is not None:
-                    cSteps = f.get('steps')
-                cNbSteps = f.get('nbsteps', len(cSteps))
-                # adapt steps
-                if len(self.steps) < cNbSteps:
+                # load available data
+                cSteps = f.get('steps',None)
+                cTimeSteps = f.get('timesteps',None)    
+                cNbSteps = f.get('nbsteps', None)
+                #
+                if cNbSteps is None:
+                    if cTimeSteps is not None:
+                        cNbSteps = len(cTimeSteps)
+                    if cSteps is not None:
+                        cNbSteps = len(cSteps)
+                #
+                if cSteps is None:
                     cSteps = np.arange(cNbSteps, dtype=float)
-                if cNbSteps == 0:
-                    cNbSteps = len(self.steps)
+                #
+                if cTimeSteps is None:
+                    cTimeSteps = cSteps
                 # check consistency of definition of steps
                 if len(self.steps) > 0:
                     if not np.allclose(self.steps, cSteps):
                         name = f.get('name', f'field-{itField}')
-                        Logger.error(f'Inconsistent steps in fields {name}')
+                        Logger.warning(f'Inconsistent steps in fields {name}')
                 else:
                     self.steps = cSteps
                     self.nbSteps = cNbSteps
