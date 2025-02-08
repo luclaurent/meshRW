@@ -200,6 +200,9 @@ class mshWriter(writerClass.writer):
             timesteps = np.zeros(nbsteps)
         if nbsteps == 1 and len(data) > 1:
             data = [data]
+        else:
+            if len(data) != nbsteps:
+                data = np.array(data).transpose()
 
         # add field
         if typeField == 'nodal':
