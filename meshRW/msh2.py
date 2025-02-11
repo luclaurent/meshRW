@@ -239,6 +239,8 @@ class mshWriter(writerClass.writer):
         """Advanced writing to export mesh and fields"""
         if self.binary:
             gmsh.option.setNumber('Mesh.Binary ', 1)
+        else:
+            gmsh.option.setNumber('Mesh.Binary ', 0)
         gmsh.write(self.filename.as_posix())
         if self.getAppend():
             for t in gmsh.view.getTags():
