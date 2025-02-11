@@ -17,12 +17,14 @@ class writer(ABC):
         fields: Union[list, np.ndarray] = None,
         append: bool = False,
         title: str = None,
+        binary: bool = False,
         opts: dict = {},
     ):
         self.append = append
         self.title = self.adaptTitle(txt=title)
         self.filename = Path(filename)
         self.basename = self.filename.name
+        self.binary = binary
         # set options
         self.setOptions(opts)
         #

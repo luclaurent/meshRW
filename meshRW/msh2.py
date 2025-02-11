@@ -30,6 +30,7 @@ class mshWriter(writerClass.writer):
         append: bool = False,
         title: str = None,
         verbose: bool = False,
+        binary = False,
         opts: dict = {'version': 2.2},
     ):
         # # adapt verbosity logger
@@ -42,7 +43,7 @@ class mshWriter(writerClass.writer):
         # adapt inputs
         nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, opts)
+        super().__init__(filename, nodes, elements, fields, append, title, binary, opts)
         # load specific configuration
         self.db = dbmsh
         #
@@ -236,6 +237,8 @@ class mshWriter(writerClass.writer):
     @various.timeit('File(s) written')
     def writeFiles(self):
         """Advanced writing to export mesh and fields"""
+        if self.binary:
+            gmsh.option.setNumber('Mesh.Binary ', 1)
         gmsh.write(self.filename.as_posix())
         if self.getAppend():
             for t in gmsh.view.getTags():
