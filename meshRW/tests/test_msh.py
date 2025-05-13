@@ -241,6 +241,7 @@ def test_MSHreader3D():
     # open file and read it
     mesh = msh.mshReader(filename=inputfile)
     assert mesh.getNodes().shape == (21050, 3)
+    assert mesh.getNodes(tag=5).shape == (20442, 3)
     assert mesh.getTags() == [5, 6]
     assert mesh.getElements().get('TET4').shape == (96925, 4)
     assert mesh.getElements().get('PRI6').shape == (1667, 6)

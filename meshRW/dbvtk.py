@@ -1,18 +1,42 @@
-""" "
+""" 
+This file is part of the meshRW package
+---
 This file includes the definition and tools to manipulate MSH format
 Documentation available here: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 """
-
+from typing import Union
 import vtk
 from loguru import logger as Logger
 
 
-def loadElementDict():
+def loadElementDict()-> dict:
     """
-    dictionary from element (string) to VTK number
+    Load a dictionary mapping element types to their corresponding VTK properties.
+
+    This function returns a dictionary where the keys are element type strings 
+    (e.g., 'LIN2', 'TRI3', 'HEX8') and the values are dictionaries containing 
+    information about the element type, including its VTK code, number of nodes, 
+    dimensionality, and associated VTK object.
+
+    Returns:
+        dict: A dictionary with the following structure:
+            {
+                'ELEMENT_TYPE': {
+                    'code': int,          # VTK code for the element type
+                    'nodes': int,         # Number of nodes in the element (-1 for variable)
+                    'dim': int,           # Dimensionality of the element (0, 1, 2, or 3)
+                    'vtkobj': vtkObject   # Corresponding VTK object
+                },
+                ...
+
+    Notes:
+        - Some element types are defined but have a value of `None`, indicating 
+          that they are not yet implemented or supported.
+        - The VTK objects (e.g., vtk.vtkLine, vtk.vtkTriangle) must be imported 
+          from the VTK library for this function to work.
     """
     elementDict = {
         # 2-nodes line
@@ -81,10 +105,20 @@ def loadElementDict():
     return elementDict
 
 
-def getVTKtoElem():
+def getVTKtoElem()-> dict:
     """
-    dictionary from VTK element to name of element (string)
+    Returns a dictionary mapping VTK element types to their corresponding 
+    element type codes used in another system.
+
+    The mapping includes standard VTK element types, quadratic elements, 
+    and some special cases like polygons and voxel types.
+
+    Returns:
+        dict: A dictionary where the keys are VTK element type strings 
+                (e.g., 'VTK_VERTEX', 'VTK_TRIANGLE') and the values are 
+                corresponding element type codes (e.g., 'NOD1', 'TRI3').
     """
+
     VTKtoElem = {
         'VTK_VERTEX': 'NOD1',
         'VTK_LINE': 'LIN2',
@@ -137,16 +171,30 @@ def getVTKObj(txtEltype):
     return vtkobj, numPerElement
 
 
-def getVTKElemType(txtEltype):
+def getVTKElemType(txtEltype: Union[str, int])-> tuple:
     """
-    Get the element type defined as in vtk (refer to VTK documentation for numbering) from text declaration
-    syntax:
-        getVTKElemType(txtEltype)
+    Get the VTK element type and the number of nodes per element.
 
-    input:
-        txtEltype: element declared using VTK string (if number is used the function wil return it)
-    output:
-        element type defined as VTK number
+    This function retrieves the VTK element type number and the number of nodes per element 
+    based on the provided text declaration or integer. The VTK element type number corresponds 
+    to the numbering defined in the VTK documentation.
+
+    Args:
+        txtEltype (Union[str, int]): The element type, either as a string (VTK string declaration) 
+                                     or as an integer (VTK element type number).
+
+    Returns:
+        tuple: A tuple containing:
+            - elementNum (int): The VTK element type number.
+            - numPerElement (int): The number of nodes per element. Returns -1 if not applicable.
+
+    Raises:
+        Logger.error: If the provided element type is not implemented or invalid.
+
+    Note:
+        - If a string is provided, it is converted to the corresponding VTK element type number.
+        - If an integer is provided, it is returned directly as the element type number.
+        - Refer to the VTK documentation for the numbering and details of element types.
     """
 
     VTKtoElem = getVTKtoElem()
@@ -166,16 +214,22 @@ def getVTKElemType(txtEltype):
     return elementNum, numPerElement
 
 
-def getElemTypeFromVTK(elementNum):
+def getElemTypeFromVTK(elementNum: int) -> str:
     """
-    Get the element type from id (integer) defined in gmsh (refer to gmsh documentation for numbering)
-    syntax:
-        getElemTypeFromVTK(elementNum)
+    Get the global name of an element type based on its numerical ID as defined in Gmsh.
 
-    input:
-        elementNum: integer used in gmsh to declare element
-    output:
-        global name of the element
+    This function retrieves the element type name corresponding to the given numerical ID
+    by searching through a dictionary of element definitions. The dictionary is loaded
+    using the `loadElementDict` function. If the ID is not found, an error is logged.
+
+    Args:
+        elementNum (int): The numerical ID of the element type as defined in Gmsh.
+
+    Returns:
+        str: The global name of the element type if found, otherwise `None`.
+
+    Raises:
+        Logs an error if the element type ID is not found in the dictionary.
     """
     # load the dictionary
     elementDict = loadElementDict()
@@ -192,16 +246,25 @@ def getElemTypeFromVTK(elementNum):
     return globalName
 
 
-def getNumberNodes(txtElemtype):
+def getNumberNodes(txtElemtype: str) -> int:
     """
-    Get the number of nodes for a specific element type type (declare as string)
-        syntax:
-            getNumberNodes(txtElemtype)
+    Get the number of nodes for a specific element type.
 
-       input:
-            txtElemtype: element declared using string (if number is used the function wil return it)
-        output:
-            number of nodes for txtEltype
+    Args:
+        txtElemtype (str): The element type as a string. If a number is used, 
+                           the function will return it.
+
+    Returns:
+        int: The number of nodes for the specified element type, or None if 
+             the element type is not defined.
+
+    Raises:
+        Logs an error if the specified element type does not exist in the 
+        element dictionary.
+
+    Notes:
+        The function relies on `loadElementDict()` to retrieve the dictionary 
+        of element types and their properties.
     """
 
     elementDict = loadElementDict()
@@ -216,16 +279,19 @@ def getNumberNodes(txtElemtype):
     return nbNodes
 
 
-def getNumberNodesFromNum(elementNum):
+def getNumberNodesFromNum(elementNum: int) -> int:
     """
-    Get the number of nodfs for a specific element type type (declare as string)
-        syntax:
-            getNumberNodesFromNum(elementNum)
+    Get the number of nodes for a specific element type based on its numerical identifier.
 
-        input:
-            elementNum: integer used in gmsh to declare element
-        output:
-            number of nodes for txtEltype
+    This function determines the number of nodes associated with a given element type
+    by first converting the numerical identifier to its corresponding element type
+    and then retrieving the number of nodes for that element type.
+
+    Args:
+        elementNum (int): The numerical identifier of the element type as used in Gmsh.
+
+    Returns:
+        int: The number of nodes associated with the specified element type.
     """
 
     return getNumberNodes(getElemTypeFromVTK(elementNum))

@@ -1,4 +1,6 @@
-""" "
+"""
+This file is part of the meshRW package
+---
 This file includes the definition
 and tools to manipulate MSH format
 Documentation available here:
@@ -7,14 +9,28 @@ https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 """
-
+from typing import Union
 from loguru import logger as Logger
 
 
-def loadElementDict():
+def loadElementDict()-> dict:
     """
-    dictionary from element (string) to msh element number
+    Load a dictionary mapping element types to their corresponding properties.
+
+    This function returns a dictionary where the keys are element type strings 
+    (e.g., 'LIN2', 'TRI3', 'HEX8') and the values are dictionaries containing 
+    the following properties of the element:
+    - 'code': The numerical code representing the element type.
+    - 'nodes': The number of nodes associated with the element.
+    - 'dim': The spatial dimension of the element.
+
+    Some element types may have a value of `None`, indicating that their 
+    properties are not defined.
+
+    Returns:
+        dict: A dictionary mapping element type strings to their properties.
     """
+    
     elementDict = {
         # 2-nodes line
         'LIN2': {'code': 1, 'nodes': 2, 'dim': 1},
@@ -69,16 +85,26 @@ def loadElementDict():
     return elementDict
 
 
-def getMSHElemType(txtEltype):
+def getMSHElemType(txtEltype: Union[str, int])-> int:
     """
-    Get the element type defined as in gmsh (refer to gmsh documentation for numbering) from text declaration
-    syntax:
-        getMshElemType(txtEltype)
+    Get the Gmsh element type number from a textual declaration or return the number directly if provided.
 
-    input:
-        txtEltype: element declared using string (if number is used the function will return it)
-    output:
-        element type defined as gmsh number
+    This function retrieves the element type number as defined in the Gmsh documentation. If the input is a string, 
+    it looks up the corresponding number in a predefined dictionary. If the input is already an integer, it simply 
+    returns the input value.
+
+    Args:
+        txtEltype (Union[str, int]): The element type, either as a string (e.g., "triangle", "quad") or as an integer.
+
+    Returns:
+        int: The Gmsh element type number corresponding to the input.
+
+    Raises:
+        KeyError: If the string input does not match any known element type in the dictionary.
+        ValueError: If the input is invalid or the element type is not implemented.
+
+    Note:
+        Refer to the Gmsh documentation for the numbering scheme of element types.
     """
     elementDict = loadElementDict()
 
@@ -95,16 +121,22 @@ def getMSHElemType(txtEltype):
     return elementNum
 
 
-def getElemTypeFromMSH(elementNum):
+def getElemTypeFromMSH(elementNum: int) -> str:
     """
-    Get the element type from id (integer) defined in gmsh (refer to gmsh documentation for numbering)
-    syntax:
-        getElemTypeFromMSH(elementNum)
+    Get the global name of an element type based on its numerical ID as defined in Gmsh.
 
-    input:
-        elementNum: integer used in gmsh to declare element
-    output:
-        global name of the element
+    This function retrieves the element type name corresponding to the given numerical ID 
+    from a dictionary of element types. The dictionary is loaded using the `loadElementDict` 
+    function. If the ID is not found, an error is logged.
+
+    Args:
+        elementNum (int): The numerical ID of the element type as defined in Gmsh.
+
+    Returns:
+        str: The global name of the element type if found, otherwise `None`.
+
+    Raises:
+        Logs an error if the element type ID is not found in the dictionary.
     """
     # load the dictionary
     elementDict = loadElementDict()
@@ -121,16 +153,24 @@ def getElemTypeFromMSH(elementNum):
     return globalName
 
 
-def getNumberNodes(txtElemtype):
+def getNumberNodes(txtElemtype: str) -> int:
     """
-    Get the number of nodes for a specific element type type (declare as string)
-        syntax:
-            getNumberNodes(txtElemtype)
+    Get the number of nodes for a specific element type.
 
-       input:
-            txtElemtype: element declared using string (if number is used the function wil return it)
-        output:
-            number of nodes for txtEltype
+    This function retrieves the number of nodes associated with a given element type 
+    from a predefined dictionary. The element type is provided as a string.
+
+    Args:
+        txtElemtype (str): The element type as a string. If a number is used, 
+                           the function will return it.
+
+    Returns:
+        int: The number of nodes for the specified element type. Returns 0 if the 
+             element type is not found or if the dictionary does not contain 
+             the 'nodes' key for the given type.
+
+    Raises:
+        Logs an error message if the specified element type is not defined in the dictionary.
     """
     # load the dictionary
     elementDict = loadElementDict()
@@ -145,16 +185,22 @@ def getNumberNodes(txtElemtype):
         Logger.error(f'Element type {txtElemtype} not defined')
     return nbNodes
 
-def getDim(txtElemtype):
-    """
-    Get the dimension for a specific element type type (declare as string)
-        syntax:
-            getNumberNodes(txtElemtype)
+def getDim(txtElemtype: str) -> int:
+    """    
+    Get the spatial dimension for a specific element type.
 
-       input:
-            txtElemtype: element declared using string (if number is used the function wil return it)
-        output:
-            space dimension for txtEltype
+    This function retrieves the spatial dimension associated with a given element type,
+    which is specified as a string. If the element type is not found in the dictionary,
+    an error message is logged.
+
+    Args:
+        txtElemtype (str): The element type specified as a string.
+
+    Returns:
+        int: The spatial dimension of the element type, or 0 if the element type is not found.
+
+    Raises:
+        None: This function does not raise exceptions but logs an error if the element type is undefined.
     """
     # load the dictionary
     elementDict = loadElementDict()
@@ -170,16 +216,19 @@ def getDim(txtElemtype):
     return nbNodes
 
 
-def getNumberNodesFromNum(elementNum):
+def getNumberNodesFromNum(elementNum: int) -> int:
     """
-    Get the number of nodfs for a specific element type type (declare as string)
-        syntax:
-            getNumberNodesFromNum(elementNum)
+    Get the number of nodes for a specific element type based on its numerical identifier.
 
-        input:
-            elementNum: integer used in gmsh to declare element
-        output:
-            number of nodes for txtEltype
+    This function determines the number of nodes associated with a given element type
+    in Gmsh by first retrieving the element type as a string and then mapping it to
+    the corresponding number of nodes.
+
+    Args:
+        elementNum (int): The numerical identifier of the element type in Gmsh.
+
+    Returns:
+        int: The number of nodes associated with the specified element type.
     """
     return getNumberNodes(getElemTypeFromMSH(elementNum))
 

@@ -1,7 +1,11 @@
+"""
+This file is part of the meshRW package
+"""
+
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 import numpy as np
 from loguru import logger as Logger
@@ -9,7 +13,79 @@ from loguru import logger as Logger
 from . import configMESH
 
 class writer(ABC):
-    def __init__(
+    """
+    Abstract base class for writing mesh data to files.
+
+    This class provides a framework for writing mesh data, including nodes, elements, 
+    and fields, to a file. It includes methods for setting options, analyzing data, 
+    and writing various components of the mesh. Subclasses must implement the 
+    abstract methods to define specific behavior for different file formats.
+
+    Attributes:
+        append (bool): Whether to append to an existing file.
+        title (str): Title of the file, adapted with additional information if needed.
+        filename (Path): Path to the output file.
+        basename (str): Base name of the output file.
+        binary (bool): Whether to write the file in binary format.
+        db: Database object for managing allowed extensions.
+        nbNodes (int): Number of nodes in the mesh.
+        nbElems (int): Number of elements in the mesh.
+        listPhysGrp (list): List of physical groups in the mesh.
+        nbSteps (int): Number of time steps in the fields.
+        steps (list): List of time steps.
+        nbFields (int): Number of fields in the mesh.
+        elemPerType (dict): Dictionary mapping element types to their counts.
+        elemPerGrp (dict): Dictionary mapping physical groups to their element counts.
+        nameGrp (dict): Dictionary mapping physical group IDs to their names.
+        globPhysGrp (int): Global physical group identifier.
+        nbCellFields (int): Number of cell-based fields.
+        nbPointFields (int): Number of point-based fields.
+        nbTemporalFields (int): Number of temporal fields.
+
+    Methods:
+        __init__(filename, nodes, elements, fields, append, title, binary, opts):
+            Initialize the writer with file and mesh data.
+
+        setOptions(opts):
+            Abstract method to set options for the writer.
+
+        getAppend():
+            Abstract method to get the append mode.
+
+        adaptTitle(txt, append):
+            Adapt the title with additional information.
+
+        writeContents(nodes, elements, fields, numStep):
+            Abstract method to write the contents of the mesh.
+
+        writeHeader():
+            Write the header to the output file.
+
+        writeNodes(nodes):
+            Abstract method to write the nodes.
+
+        writeElements(elements):
+            Abstract method to write the elements.
+
+        writeFields(fields, numStep):
+            Abstract method to write the fields.
+
+        splitFilename():
+            Split the filename into path, basename, and extension.
+
+        getFilename(prefix, suffix, extension):
+            Generate a new filename with optional prefix, suffix, and extension.
+
+        logBadExtension():
+            Log an error for unsupported file extensions.
+
+        dataAnalysis(nodes, elems, fields):
+            Analyze the mesh data, including nodes, elements, and fields.
+
+        fieldAnalysis(fields):
+            Analyze the fields, including their types and temporal properties.
+    """
+    def __init__(        
         self,
         filename: Union[str, Path] = None,
         nodes: Union[list, np.ndarray] = None,
@@ -19,7 +95,37 @@ class writer(ABC):
         title: str = None,
         binary: bool = False,
         opts: dict = {},
-    ):
+    )-> None:
+        """
+        Initialize the writer class with the provided parameters.
+
+        Parameters:
+            filename (Union[str, Path], optional): The name of the file to write to. Defaults to None.
+            nodes (Union[list, np.ndarray], optional): The list or array of nodes. Defaults to None.
+            elements (dict, optional): A dictionary containing element data. Defaults to None.
+            fields (Union[list, np.ndarray], optional): The list or array of fields. Defaults to None.
+            append (bool, optional): Whether to append to the file if it exists. Defaults to False.
+            title (str, optional): The title of the file or dataset. Defaults to None.
+            binary (bool, optional): Whether to write the file in binary format. Defaults to False.
+            opts (dict, optional): Additional options for the writer. Defaults to an empty dictionary.
+
+        Attributes:
+            append (bool): Indicates if the file should be appended.
+            title (str): The adapted title of the file or dataset.
+            filename (Path): The file path object for the filename.
+            basename (str): The base name of the file.
+            binary (bool): Indicates if the file is in binary format.
+            db (None): Placeholder for database-related functionality.
+            nbNodes (int): The number of nodes.
+            nbElems (int): The number of elements.
+            listPhysGrp (list): A list of physical groups.
+            nbSteps (int): The number of steps.
+            steps (list): A list of steps.
+            nbFields (int): The number of fields.
+
+        Notes:
+            This method also performs data analysis on the provided nodes, elements, and fields.
+        """
         self.append = append
         self.title = self.adaptTitle(txt=title)
         self.filename = Path(filename)
@@ -42,15 +148,46 @@ class writer(ABC):
 
 
     @abstractmethod
-    def setOptions(self, opts):
-        """Set options"""
+    def setOptions(self, opts: dict)-> None:
+        """
+        Set the options for the writer.
 
-    @abstractmethod
-    def getAppend(self):
+        Args:
+            opts (dict): A dictionary containing configuration options 
+                         to customize the writer's behavior.
+
+        Returns:
+            None
+        """
         pass
 
-    def adaptTitle(self, txt='', append=False):
-        """Adapt title with additional information"""
+
+    @abstractmethod
+    def getAppend(self)-> None:
+        """
+        Retrieves the append operation or functionality.
+
+        This method is intended to be implemented to define how data or elements
+        should be appended in the context of the class.
+
+        Returns:
+            None: This is a placeholder method and does not return any value.
+        """
+        pass
+
+    def adaptTitle(self, txt: str='', append: bool=False)-> str:
+        """
+        Adapt the title by appending or replacing it with additional information.
+
+        Args:
+            txt (str, optional): The text to append or replace the title with. Defaults to an empty string.
+            append (bool, optional): If True, appends `txt` to the existing title. 
+                                     If False, replaces the title with `txt`. Defaults to False.
+
+        Returns:
+            str: The adapted title. If no text is provided and `append` is False, 
+                 the current date and time in the format 'YYYY-MM-DD HH:MM:SS' is returned.
+        """
         if append:
             txtFinal = self.title + txt
         else:
@@ -60,27 +197,105 @@ class writer(ABC):
         return txtFinal
 
     @abstractmethod
-    def writeContents(self, nodes, elements, fields=None, numStep=None):
-        """Write contents"""
-
-    def writeHeader(self):
-        """Write header to the output file"""
-
-    @abstractmethod
-    def writeNodes(self, nodes):
-        """write nodes"""
-
-    @abstractmethod
-    def writeElements(self, elements):
-        """write elements"""
-
-    @abstractmethod
-    def writeFields(self, fields, numStep=None):
-        """write fields"""
-
-    def splitFilename(self):
+    def writeContents(self, 
+                      nodes: Union[list, np.ndarray], 
+                      elements: Union[list, np.ndarray], 
+                      fields: Optional[dict] = None, 
+                      numStep: Optional[int] = None)-> None:
         """
-        Get the basename and extension (in list) of the filename
+        Writes the contents of the mesh data to a file.
+
+        Args:
+            nodes (list): A list of nodes, where each node is represented by its coordinates.
+            elements (list): A list of elements, where each element is defined by its connectivity.
+            fields (dict, optional): A dictionary containing field data associated with the nodes or elements. 
+                         Defaults to None.
+            numStep (int, optional): The step number for which the data is being written. Defaults to None.
+
+        Returns:
+            None
+        """
+        pass
+
+    def writeHeader(self)-> None:
+        """
+        Writes the header section of the mesh file.
+
+        This method is responsible for generating and writing the header
+        information required for the mesh file format. The specific details
+        of the header depend on the file format being used.
+
+        Returns:
+            None
+        """
+        pass
+
+    @abstractmethod
+    def writeNodes(self, nodes: Union[list, np.ndarray]) -> None:
+        """
+        Writes the given nodes to a file or data structure.
+
+        Args:
+            nodes (Union[list, np.ndarray]): A collection of nodes to be written. 
+            This can be a list or a NumPy array, where each node typically 
+            represents a point or vertex in a mesh.
+
+        Returns:
+            None
+        """
+        pass
+
+    @abstractmethod
+    def writeElements(self, elements: Union[list, np.ndarray]) -> None:
+        """
+        Writes the provided elements to a file or data structure.
+
+        Args:
+            elements (Union[list, np.ndarray]): A collection of elements to be written. 
+            This can be a list or a NumPy array.
+
+        Returns:
+            None
+        """
+        pass
+
+    @abstractmethod
+    def writeFields(self, 
+                    fields: Optional[dict] = None, 
+                    numStep: Optional[int] = None) -> None:
+        """
+        Writes the provided fields to a file or data structure.
+
+        Args:
+            fields (Optional[dict]): A dictionary containing the fields to be written. 
+                         Keys represent field names, and values represent field data.
+            numStep (Optional[int]): An optional integer representing the step number 
+                         associated with the fields being written.
+
+        Returns:
+            None
+        """
+        pass
+
+    def splitFilename(self)-> tuple:
+        """
+        Splits the filename into its path, base name, and extension.
+
+        This method extracts the path, base name, and extension of the file 
+        associated with the `self.filename` attribute. It iteratively checks 
+        if the file extension is allowed based on the `self.db.ALLOWED_EXTENSIONS` 
+        list. If the extension is not valid after two iterations, it logs the 
+        bad extension using the `self.logBadExtension()` method.
+
+        Returns:
+            tuple: A tuple containing:
+                - path (Path): The parent directory of the file.
+                - filename (str): The base name of the file without the extension.
+                - extension (str): The concatenated file extension(s).
+
+        Raises:
+            None: This method does not explicitly raise exceptions but relies on 
+            the `self.logBadExtension()` method to handle invalid extensions.
         """
         extension = ''
         filename = self.filename
@@ -98,9 +313,20 @@ class writer(ABC):
                 self.logBadExtension()
         return path, filename, extension
 
-    def getFilename(self, prefix=None, suffix=None, extension=None):
+    def getFilename(self, 
+                    prefix: Optional[str] = None, 
+                    suffix: Optional[str] = None, 
+                    extension: Optional[str] = None) -> str:
         """
-        Add prefix and/or suffix to the filename
+        Constructs a filename by optionally adding a prefix, suffix, and/or changing the file extension.
+
+        Args:
+            prefix (Optional[str]): A string to prepend to the base filename. Defaults to None.
+            suffix (Optional[str]): A string to append to the base filename. Defaults to None.
+            extension (Optional[str]): A string to replace the current file extension. Defaults to None.
+
+        Returns:
+            str: The modified filename with the specified prefix, suffix, and/or extension.
         """
         path, basename, ext = self.splitFilename()
         if prefix is not None:
@@ -111,12 +337,56 @@ class writer(ABC):
             ext = extension
         return path / (basename + ext)
 
-    def logBadExtension(self):
-        """ """
+    def logBadExtension(self)-> None:
+        """
+        Logs an error message indicating that the file has a bad extension.
+
+        This method uses the Logger to log an error message specifying the
+        filename and the allowed extensions.
+
+        Returns:
+            None
+        """
+
         Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename, ' '.join(self.db.ALLOWED_EXTENSIONS)))
 
-    def dataAnalysis(self, nodes, elems, fields):
-        """ """
+    def dataAnalysis(self, 
+                     nodes: Union[list, np.ndarray], 
+                     elems: Union[list, np.ndarray], 
+                     fields: Optional[dict] = None)-> None:
+        """
+        Analyzes the provided mesh data, including nodes, elements, and optional fields.
+        This method computes various statistics about the mesh, such as the number of nodes,
+        elements, element types, and physical groups. It also generates a global physical
+        group if necessary and logs the analysis results.
+        Args:
+            nodes (Union[list, np.ndarray]): A list or numpy array of nodes in the mesh.
+            elems (Union[list, np.ndarray]): A list, numpy array, or dictionary of elements
+                in the mesh. If a dictionary is provided, it should contain keys such as
+                'type', 'connectivity', 'name', and 'physgrp'.
+            fields (Optional[dict]): Optional dictionary or list of dictionaries containing
+                field data associated with the mesh.
+        Attributes:
+            nbNodes (int): The total number of nodes in the mesh.
+            nbElems (int): The total number of elements in the mesh.
+            elemPerType (dict): A dictionary mapping element types to their counts.
+            elemPerGrp (dict): A dictionary mapping physical group IDs to the number of
+                elements in each group.
+            nameGrp (dict): A dictionary mapping physical group IDs to their names.
+            listPhysGrp (list): A list of unique physical group IDs in the mesh.
+            globPhysGrp (int): The ID of the global physical group, generated if necessary.
+        Logs:
+            - Number of nodes.
+            - Number of elements.
+            - Number of physical groups.
+            - Number of elements per type.
+            - Number of elements per physical group.
+            - Global physical group ID.
+        Notes:
+            - If no physical groups are provided, an artificial physical group is created.
+            - If `fields` is provided, the `fieldAnalysis` method is called to analyze the fields.
+        """
+        
         self.nbNodes = len(nodes)
         self.nbElems = 0
         #
@@ -176,7 +446,43 @@ class writer(ABC):
                 fields = [fields]
             self.fieldAnalysis(fields)
 
-    def fieldAnalysis(self, fields: list):
+    def fieldAnalysis(self, fields: list)-> None:
+        """
+        Analyse the provided fields and compute statistics about them.
+
+        This method processes a list of fields and determines the number of 
+        fields, the number of cell-based fields, point-based fields, and 
+        temporal fields. It also validates and loads temporal data such as 
+        steps and timesteps, ensuring consistency across fields.
+
+        Args:
+            fields (list): A list of dictionaries where each dictionary 
+                           represents a field. Each field dictionary may 
+                           contain the following keys:
+                           - 'type': Specifies the type of the field 
+                             ('elemental' for cell-based or 'nodal' for 
+                             point-based).
+                           - 'nbsteps': Number of time steps (optional).
+                           - 'steps': Array of step indices (optional).
+                           - 'timesteps': Array of time step values (optional).
+                           - 'name': Name of the field (optional).
+
+        Attributes Updated:
+            self.nbFields (int): Total number of fields.
+            self.nbCellFields (int): Number of cell-based fields.
+            self.nbPointFields (int): Number of point-based fields.
+            self.nbTemporalFields (int): Number of temporal fields.
+            self.steps (numpy.ndarray): Array of step indices for temporal fields.
+            self.nbSteps (int): Number of steps for temporal fields.
+
+        Logs:
+            - Warnings if there are inconsistencies in the step definitions 
+              across fields.
+            - Debug information about the number of fields and their types.
+
+        Raises:
+            None
+        """
         """Analyse fields"""
         self.nbFields = len(fields)
         self.nbCellFields = 0
@@ -228,8 +534,38 @@ class writer(ABC):
     
 
 
-def adaptInputs(nodes, elements, fields):
-    """ Adapt inputs for the writer """
+def adaptInputs(nodes: Union[list, np.ndarray], 
+                elements: Union[list, np.ndarray, dict], 
+                fields: Union[list, np.ndarray, dict]=None)-> tuple:
+    """
+    Adapt the input data for the writer by ensuring proper formatting and structure.
+
+    Parameters:
+    -----------
+    nodes : Union[list, np.ndarray]
+        A list or numpy array representing the nodes. If the nodes are in 2D, 
+        they will be converted to 3D by appending a zero z-coordinate.
+    elements : Union[list, np.ndarray, dict]
+        A list, numpy array, or dictionary representing the elements. If a dictionary 
+        is provided, it will be wrapped in a list. Physical groups will be assigned 
+        if not already present.
+    fields : Union[list, np.ndarray, dict], optional
+        A list, numpy array, or dictionary representing the fields. If a dictionary 
+        is provided, it will be wrapped in a list. Steps and data will be converted 
+        to numpy arrays if they are lists. Defaults to None.
+
+    Returns:
+    --------
+    tuple
+        A tuple containing the adapted nodes, elements, and fields.
+
+    Notes:
+    ------
+    - If `nodes` is None, an error will be logged.
+    - If `elements` is None, an error will be logged.
+    - If `fields` is None, a warning will be logged.
+    - Physical groups for elements will be automatically assigned if missing.
+    """
     # adapt nodes
     if nodes is not None:
         if isinstance(nodes, list):
@@ -278,8 +614,17 @@ def adaptInputs(nodes, elements, fields):
     return nodes, elements, fields
 
     
-def getNewPhysGrp(existing: set):
-    """ Generate new physical group Id """
+def getNewPhysGrp(existing: set)-> int:
+    """
+    Generate a new physical group ID that does not conflict with existing IDs.
+
+    Args:
+        existing (set): A set of integers representing the IDs of existing physical groups.
+
+    Returns:
+        int: A new unique physical group ID starting from a default value and incrementing
+             until an unused ID is found.
+    """
     idtstart = configMESH.DFLT_NEW_PHYSGRP_NUM
     while idtstart in existing:
         idtstart += 1

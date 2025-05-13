@@ -1,6 +1,8 @@
 """
+This file is part of the meshRW package
+---
 This file contains the default
-declaration of the keywords
+declaration of the keywords 
 used to declare/manipulate a mesh in Python
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2021
