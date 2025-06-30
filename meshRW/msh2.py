@@ -83,32 +83,31 @@ class mshWriter(writerClass.writer):
         append: bool = False,
         title: str = None,
         verbose: bool = False,
-        binary = False,
-        opts: dict = {'version': 2.2},
+        opts: dict = {'version': 2.2, 'binary': False, 'nodes_reclassify': True},
     )-> None:
         """
-        Initialize the mesh object using the Gmsh API.
+        Initialize the mesh writer object using the Gmsh API.
 
         Parameters:
             filename (Union[str, Path], optional): The file path for the mesh file. Defaults to None.
-            nodes (Union[list, np.ndarray], optional): List or array of nodes. Defaults to None.
-            elements (dict, optional): Dictionary of elements. Defaults to None.
+            nodes (Union[list, np.ndarray], optional): List or array of node coordinates. Defaults to None.
+            elements (dict, optional): Dictionary of element definitions. Defaults to None.
             fields (Union[list, np.ndarray], optional): List or array of fields. Defaults to None.
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): Title of the mesh. Defaults to None.
             verbose (bool, optional): Enable verbose logging. Defaults to False.
-            binary (bool, optional): Whether to write the file in binary format. Defaults to False.
-            opts (dict, optional): Additional options for the mesh, such as version. Defaults to {'version': 2.2}.
+            opts (dict, optional): Additional options for the mesh. Defaults to 
+                      {'version': 2.2, 'binary': False, 'nodes_reclassify': True}.
 
         Attributes:
-            itName (int): Iterator for naming.
+            itName (int): Iterator for naming fields.
             db (module): Database module for mesh configurations.
             title (str): Title of the mesh, defaults to 'Imported mesh' if not provided.
             modelName (str): Name of the model, derived from the title.
 
         Notes:
-            - The method adapts the verbosity of the logger based on the `verbose` parameter.
             - Inputs are adapted using the `writerClass.adaptInputs` method.
+            - The binary option is extracted from the opts dictionary.
             - The `writeContents` method is called to write the mesh contents.
         """
         # # adapt verbosity logger
@@ -121,7 +120,7 @@ class mshWriter(writerClass.writer):
         # adapt inputs
         nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, binary, opts)
+        super().__init__(filename, nodes, elements, fields, append, title, opts)
         # load specific configuration
         self.db = dbmsh
         #
@@ -153,6 +152,8 @@ class mshWriter(writerClass.writer):
             None
         """
         self.version = options.get('version', 2.2)
+        self.binary = options.get('binary', False)
+        self.nodes_reclassify = options.get('nodes_reclassify', True)
 
     def writeContents(self, 
                       nodes: Union[list, np.ndarray], 
@@ -194,8 +195,6 @@ class mshWriter(writerClass.writer):
             for d in range(4):
                 self.entities[g].append(gmsh.model.addDiscreteEntity(d))
                 gmsh.model.addPhysicalGroup(d, [self.entities[g][-1]], g, name=self.nameGrp.get(g, None))
-        
-        
 
         # add nodes
         self.writeNodes(nodes)
@@ -203,12 +202,14 @@ class mshWriter(writerClass.writer):
         # add elements
         self.writeElements(elements)
 
+        # run internal gmsh function to reclassify nodes
+        if self.nodes_reclassify:
+            Logger.info('Reclassify nodes')
+            gmsh.model.mesh.reclassifyNodes()
+        
         # add fields
         if fields is not None:
             self.writeFields(fields)
-
-        # run internal gmsh function to reclassify nodes
-        gmsh.model.mesh.reclassifyNodes()
 
         # write msh file
         self.writeFiles()
@@ -406,17 +407,28 @@ class mshWriter(writerClass.writer):
         else:
             raise ValueError('typeField must be nodal or elemental')
         #
+        # in the case of reclassification of the nodes, some of them can be removed
+        # filter the input data
+        eId = []
+        if typeField == 'nodal':
+            eId = gmsh.model.mesh.getNodes()[0]
+            numEntities = numEntities[eId-1]
         tagView = gmsh.view.add(name)
         for s, t in zip(steps, timesteps):
             dataView = data[s]
-            if len(dataView.shape) == 1:
-                dataView = dataView.reshape((-1, 1))
-            gmsh.view.addModelData(tag=tagView, 
+            # if len(dataView.shape) == 1:
+            #     dataView = dataView.reshape((-1, 1))
+            # filter data
+            if len(eId) > 0:
+                dataView = dataView[eId-1]
+            # add homogeneous model data
+            gmsh.view.addHomogeneousModelData(tag=tagView, 
                                    step=s, 
                                    modelName=self.modelName, 
                                    dataType=nameTypeData, 
                                    tags=numEntities, 
-                                   data=dataView,
+                                   data=np.hstack(dataView.transpose()),
+                                   numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                    time=t)
             # ,
             # numComponents=dim,
@@ -458,10 +470,12 @@ class mshWriter(writerClass.writer):
             - Field names longer than 15 characters are truncated.
             - Spaces in field names are replaced with underscores.
         """
+        gmsh.option.setNumber('PostProcessing.SaveMesh', 0)  # save mesh for each view
         if self.binary:
             gmsh.option.setNumber('Mesh.Binary', 1)
         else:
             gmsh.option.setNumber('Mesh.Binary', 0)
+        # if len( gmsh.view.getTags())==0 or not self.getAppend(): 
         gmsh.write(self.filename.as_posix())
         if self.getAppend():
             for t in gmsh.view.getTags():
@@ -485,6 +499,9 @@ class mshWriter(writerClass.writer):
                 Logger.info(
                     f'Data save in {newfilename} ({various.convert_size(newfilename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s'
                 )
+                
+                
+writer = mshWriter  # for backward compatibility
 
     # def dataAnalysis(self,nodes,elems,fields):
     #     """ """

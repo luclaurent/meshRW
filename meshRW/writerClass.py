@@ -26,7 +26,6 @@ class writer(ABC):
         title (str): Title of the file, adapted with additional information if needed.
         filename (Path): Path to the output file.
         basename (str): Base name of the output file.
-        binary (bool): Whether to write the file in binary format.
         db: Database object for managing allowed extensions.
         nbNodes (int): Number of nodes in the mesh.
         nbElems (int): Number of elements in the mesh.
@@ -43,7 +42,7 @@ class writer(ABC):
         nbTemporalFields (int): Number of temporal fields.
 
     Methods:
-        __init__(filename, nodes, elements, fields, append, title, binary, opts):
+        __init__(filename, nodes, elements, fields, append, title, opts):
             Initialize the writer with file and mesh data.
 
         setOptions(opts):
@@ -93,7 +92,6 @@ class writer(ABC):
         fields: Union[list, np.ndarray] = None,
         append: bool = False,
         title: str = None,
-        binary: bool = False,
         opts: dict = {},
     )-> None:
         """
@@ -130,7 +128,6 @@ class writer(ABC):
         self.title = self.adaptTitle(txt=title)
         self.filename = Path(filename)
         self.basename = self.filename.name
-        self.binary = binary
         # set options
         self.setOptions(opts)
         #

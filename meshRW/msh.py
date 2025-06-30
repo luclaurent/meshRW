@@ -140,6 +140,7 @@ class mshWriter(writerClass.writer):
         Returns:
             None
         """
+        self.opts = options
 
     def writeContents(self,                     
                       nodes: Union[list, np.ndarray], 
