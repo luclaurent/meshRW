@@ -64,7 +64,7 @@ class mshWriter(writerClass.writer):
         append: bool = False,
         title: str = None,
         verbose: bool = False,
-        opts: dict = {},
+        opts: dict = {'createPath': True},
     )-> None:
         """
        Initialize the mshWriter class to write a GMSH file.
@@ -91,7 +91,7 @@ class mshWriter(writerClass.writer):
             append (bool, optional): Whether to append fields to an existing file. Defaults to False.
             title (str, optional): Title of the file. Defaults to None.
             verbose (bool, optional): If True, enables verbose logging. Defaults to False.
-            opts (dict, optional): Additional options for the writer. Defaults to an empty dictionary.
+            opts (dict, optional): Additional options for the writer. Defaults: {'createPath': True},.
 
         Raises:
             Exception: If any error occurs during file handling or writing.

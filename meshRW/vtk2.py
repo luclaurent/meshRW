@@ -135,6 +135,7 @@ class vtkWriter(writerClass.writer):
         """
         self.binary = options.get('binary', False)
         self.ascii = options.get('ascii', False)
+        self.opts = options
 
     def writeContentsSteps(self, 
                            nodes: Union[list, np.ndarray], 

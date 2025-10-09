@@ -64,7 +64,7 @@ class vtkWriter(writerClass.writer):
         append: bool = False,
         title: str = None,
         verbose: bool = False,
-        opts: dict = {'version': 'v2'},
+        opts: dict = {'version': 'v2', 'createPath': True},
     ):
         """
         Initialize the VTK writer class.
@@ -76,7 +76,7 @@ class vtkWriter(writerClass.writer):
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): Title of the VTK file. Defaults to None.
             verbose (bool, optional): Enable verbose logging if True. Defaults to False.
-            opts (dict, optional): Additional options for the writer, such as version. Defaults to {'version': 'v2'}.
+            opts (dict, optional): Additional options for the writer, such as version. Defaults to {'version': 'v2', 'createPath': True}.
         Notes:
             - Adapts verbosity of the logger based on the `verbose` flag.
             - Prepares new fields from physical groups if applicable.
@@ -121,6 +121,7 @@ class vtkWriter(writerClass.writer):
             None
         """
         self.version = options.get('version', 'v2')
+        self.opts = options
 
     def writeContentsSteps(self, 
                            nodes: Union[list, np.ndarray], 

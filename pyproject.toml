@@ -15,7 +15,7 @@ classifiers = [
 ]
 license = { file = "LICENSE" }
 dependencies = ['numpy', 
-'vtk==9.4.0', 
+'vtk', 
 'gmsh', 
 'pytest', 
 'pytest-cov',

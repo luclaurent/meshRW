@@ -142,6 +142,8 @@ class writer(ABC):
         self.nbFields = 0        
         # run data analysis
         self.dataAnalysis(nodes, elements, fields)
+        # check path exists
+        self.checkPath(self.filename.parent)
 
 
     @abstractmethod
@@ -192,6 +194,20 @@ class writer(ABC):
         if not txtFinal:
             txtFinal = datetime.today().strftime('%Y-%M-%d %H:%M:%s')
         return txtFinal
+    
+    def checkPath(self, path: Path)-> None:
+        """
+        Check if the specified path exists, and create it if it does not.
+
+        Args:
+            path (Path): The path to check and potentially create.
+        """
+        status = path.exists()
+        if self.opts.get('createPath', True):
+            if not status:
+                path.mkdir(parents=True, exist_ok=True)
+                Logger.info(f'Path {path} created')
+        return status
 
     @abstractmethod
     def writeContents(self, 

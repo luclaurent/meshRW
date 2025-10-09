@@ -83,7 +83,7 @@ class mshWriter(writerClass.writer):
         append: bool = False,
         title: str = None,
         verbose: bool = False,
-        opts: dict = {'version': 2.2, 'binary': False, 'nodes_reclassify': True},
+        opts: dict = {'version': 2.2, 'binary': False, 'nodes_reclassify': True, 'createPath': True},
     )-> None:
         """
         Initialize the mesh writer object using the Gmsh API.
@@ -97,7 +97,7 @@ class mshWriter(writerClass.writer):
             title (str, optional): Title of the mesh. Defaults to None.
             verbose (bool, optional): Enable verbose logging. Defaults to False.
             opts (dict, optional): Additional options for the mesh. Defaults to 
-                      {'version': 2.2, 'binary': False, 'nodes_reclassify': True}.
+                      {'version': 2.2, 'binary': False, 'nodes_reclassify': True, 'createPath': True}.
 
         Attributes:
             itName (int): Iterator for naming fields.
@@ -154,6 +154,7 @@ class mshWriter(writerClass.writer):
         self.version = options.get('version', 2.2)
         self.binary = options.get('binary', False)
         self.nodes_reclassify = options.get('nodes_reclassify', True)
+        self.opts = options
 
     def writeContents(self, 
                       nodes: Union[list, np.ndarray], 
