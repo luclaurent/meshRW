@@ -95,7 +95,7 @@ The common syntax for writers is the following
     * for classical legacy file (not use the gmsh's libAPI) could be accessed by choosing `XXXX = msh` and `zzzz=msh` (`msh.mshWriter(...)`)
     * for any kind of  legacy file (not use the gmsh's libAPI) could be accessed by choosing `XXXX = msh2` and `zzzz=msh` (`msh2.mshWriter(...)`)
   
-**NB:** 
+**NB for `.msh` files:** 
 * `filename` must contain `.msh` extension
 * `opts` could be (for `msh2` only) `{'version': VV}` (`VV` could be equal to `2, 2.2, 4, 4.1` that corresponds to `gmsh` mesh files version - `MshFileVersion`) 
 * in the case of time series data, all the fields are given by default in the output file (to obtain one field per file, pass option `append = True` to the writer).
@@ -105,7 +105,7 @@ The common syntax for writers is the following
     * for classical legacy file (not use the VTK library) could be accessed by choosing `XXXX = vtk` and `zzzz=vtk` (`vtk.vtkWriter(...)`)
     * for any kind of  legacy file (not use the gmsh's libAPI) could be accessed by choosing `XXXX = vtk2` and `zzzz=vtk` (`vtk2.vtkWriter(...)`)
   
-**NB:** 
+**NB for `.vtk|.vtu|.pvd` files:** 
 * `filename` must contain `.vtk`, `.vtu` (recommanded) extension
 * `opts` could be (for `vtk2` only) `{'binary': True/False, 'ascii': True/False}` (these options force data format in `.vtu` files) 
 * in the case of time series fields, the fields are written separated series files with the following format : `basename.NNN.vtu` (NNN correspond the number of the step starting at 0). In this case, a [Paraview](https://www.paraview.org/Wiki/ParaView/Data_formats#PVD_File_Format) `.pvd` file is also generated to declare all the steps and associated mesh files with the time step values.
