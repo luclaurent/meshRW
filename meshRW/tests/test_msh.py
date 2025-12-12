@@ -121,7 +121,7 @@ def test_MSH2writerTemporal(append, version):
     # generate data on nodes
     dataNodes = numpy.random.rand(nodes.shape[0], nodes.shape[1])
     # generate data on elements
-    dataElem = numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 2)
+    dataElem = numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 3)
     # generate steps
     dataElemStep = [numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 3) for i in range(5)]
     # write msh file
@@ -148,7 +148,7 @@ def test_MSH2writerTemporal(append, version):
                 'dim': 3,
                 'name': 'nodal3',
             },  # ,'steps':list of steps,'nbsteps':number of steps],
-            {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
+            {'data': dataElem, 'type': 'elemental', 'dim': 3, 'name': 'name_2'},
             {'data': dataElemStep, 'type': 'elemental', 'dim': 3, 'name': 'alongsteps', 'nbsteps': 5},
         ],  # ,'steps':list of steps,'nbsteps':number of steps]
         append=append,
@@ -187,10 +187,10 @@ def test_MSH2writerNoPhysGrp(append, version):
 
     assert outputfile.exists()
 
-
+@pytest.mark.parametrize('homogeneous', [True, False])
 @pytest.mark.parametrize('append', [True, False])
 @pytest.mark.parametrize('version', [2.2, 4])
-def test_MSH2writerStatic(append, version):
+def test_MSH2writerStatic(append, homogeneous, version):
     # open data
     hf = open(datafile, 'rb')
     data = pickle.load(hf)
@@ -202,7 +202,7 @@ def test_MSH2writerStatic(append, version):
     # generate data on nodes
     dataNodes = numpy.random.rand(nodes.shape[0], nodes.shape[1])
     # generate data on elements
-    dataElem = numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 2)
+    dataElem = numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 3)
     # write msh file
     outputfile = ArtifactsPath / Path(f'build{version}-app{append}.msh')
     msh2.mshWriter(
@@ -213,11 +213,13 @@ def test_MSH2writerStatic(append, version):
                 'connectivity': elemsData[list(elemsData.keys())[0]],
                 'type': list(elemsData.keys())[0],
                 'physgrp': [5, 5],
+                'homogeneous': homogeneous
             },
             {
                 'connectivity': elemsData[list(elemsData.keys())[1]],
                 'type': list(elemsData.keys())[1],
                 'physgrp': [6, 6],
+                'homogeneous': homogeneous
             },
         ],
         fields=[
@@ -227,7 +229,7 @@ def test_MSH2writerStatic(append, version):
                 'dim': 3,
                 'name': 'nodal3',
             },  # ,'steps':list of steps,'nbsteps':number of steps],
-            {'data': dataElem, 'type': 'elemental', 'dim': 2, 'name': 'name_2'},
+            {'data': dataElem, 'type': 'elemental', 'dim': 3, 'name': 'name_2'},
         ],
         append=append,
         opts={'version': version},

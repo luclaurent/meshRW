@@ -331,29 +331,34 @@ class mshWriter(writerClass.writer):
             fields = [fields]
         Logger.info(f'Add {len(fields)} fields')
         for f in fields:
-            self.writeField(f)
+            self.writeField(f, homogeneous=f.get('homogeneous', False))
 
-    def writeField(self, field: dict)-> None:
+    def writeField(self, field: dict, homogeneous: bool=False)-> None:
         """
         Writes a field to a Gmsh view.
+
         Parameters:
             field (dict): A dictionary containing the field data with the following keys:
-                - 'data' (list or np.ndarray): The field data values. If multiple steps are present, 
-                  this should be a list or a 2D array where each row corresponds to a step.
-                - 'name' (str, optional): The name of the field. If not provided, a default name 
-                  will be generated based on the field type and an internal counter.
-                - 'numEntities' (np.ndarray, optional): The entity tags (e.g., node or element IDs) 
-                  associated with the field data. If not provided, it defaults to all nodes or elements.
-                - 'nbsteps' (int, optional): The number of time steps. If not provided, it will be 
-                  inferred from 'steps' or 'timesteps'.
-                - 'steps' (list or np.ndarray, optional): The step indices. If not provided, it defaults 
-                  to a range from 0 to 'nbsteps'.
-                - 'timesteps' (list or np.ndarray, optional): The time values corresponding to each step. 
-                  If not provided, it defaults to zeros.
-                - 'dim' (int, optional): The dimensionality of the field data. Defaults to 0.
-                - 'type' (str): The type of the field, either 'nodal' or 'elemental'.
+            - 'data' (list or np.ndarray): The field data values. If multiple steps are present, 
+              this should be a list or a 2D array where each row corresponds to a step.
+            - 'name' (str, optional): The name of the field. If not provided, a default name 
+              will be generated based on the field type and an internal counter.
+            - 'numEntities' (np.ndarray, optional): The entity tags (e.g., node or element IDs) 
+              associated with the field data. If not provided, it defaults to all nodes or elements.
+            - 'nbsteps' (int, optional): The number of time steps. If not provided, it will be 
+              inferred from 'steps' or 'timesteps'.
+            - 'steps' (list or np.ndarray, optional): The step indices. If not provided, it defaults 
+              to a range from 0 to 'nbsteps'.
+            - 'timesteps' (list or np.ndarray, optional): The time values corresponding to each step. 
+              If not provided, it defaults to zeros.
+            - 'dim' (int, optional): The dimensionality of the field data. Defaults to 0.
+            - 'type' (str): The type of the field, either 'nodal' or 'elemental'.
+            - 'homogeneous' (bool, optional): If True, the field data is treated as homogeneous 
+              across all entities. Defaults to False.
+
         Raises:
             ValueError: If 'typeField' is not 'nodal' or 'elemental'.
+
         Notes:
             - For 'nodal' fields, the data is associated with nodes, and 'numEntities' defaults to 
               all node IDs.
@@ -361,6 +366,8 @@ class mshWriter(writerClass.writer):
               to all element IDs.
             - The function uses Gmsh's API to add the field data to a view, with support for multiple 
               time steps.
+            - If 'homogeneous' is True, the data is flattened and added using the 
+              `addHomogeneousModelData` method.
         """
         
         # load field data
@@ -423,12 +430,22 @@ class mshWriter(writerClass.writer):
             if len(eId) > 0:
                 dataView = dataView[eId-1]
             # add homogeneous model data
-            gmsh.view.addHomogeneousModelData(tag=tagView, 
+            if not homogeneous:
+                gmsh.view.addModelData(tag=tagView, 
+                                    step=s, 
+                                    modelName=self.modelName, 
+                                    dataType=nameTypeData, 
+                                    tags=numEntities, 
+                                    data=dataView, # in the case of use of addHomogeneousModelData (this data must be flatten: np.hstack(dataView.transpose()) )
+                                    numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
+                                    time=t)
+            else:
+                gmsh.view.addHomogeneousModelData(tag=tagView, 
                                    step=s, 
                                    modelName=self.modelName, 
                                    dataType=nameTypeData, 
                                    tags=numEntities, 
-                                   data=np.hstack(dataView.transpose()),
+                                   data=np.hstack(dataView.transpose()), 
                                    numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                    time=t)
             # ,

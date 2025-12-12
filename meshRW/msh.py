@@ -938,3 +938,6 @@ def checkContentLine(content: list=None, pattern: str=None, item: int=0)-> bool:
         if content[0] != pattern:
             status = False
     return status
+
+writer = mshWriter
+reader = mshReader

@@ -547,3 +547,6 @@ class vtkWriter(writerClass.writer):
         starttime = time.perf_counter()
         self.writer.Write()
         Logger.info(f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s')
+
+
+writer = vtkWriter

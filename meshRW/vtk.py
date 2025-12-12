@@ -791,3 +791,6 @@ def writeFieldsDataV2(fileHandle: fileio.fileHandler,
 def WriteFieldsXML(fileHandle, nbNodes, nbElems, fields, numStep=None):
     """Write elements"""
     pass
+
+
+writer = vtkWriter
