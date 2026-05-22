@@ -5,6 +5,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14514789.svg)](https://doi.org/10.5281/zenodo.14514789)
 ![CI tests](https://github.com/luclaurent/meshRW/actions/workflows/CI-pytest.yml/badge.svg)
 ![code coverage](https://raw.githubusercontent.com/luclaurent/meshRW/refs/heads/coverage-badge/coverage.svg)
+[![Documentation](https://app.readthedocs.org/projects/meshrw/badge/?version=latest)](https://meshrw.readthedocs.io/en/latest/)
 
 meshRW is a lightweight Python library to read/write mesh files for Gmsh and VTK-based workflows.
 
@@ -68,6 +69,7 @@ All writers follow the same data structure:
 
 ## Documentation
 
+- Hosted documentation on Read the Docs: [meshrw.readthedocs.io](https://meshrw.readthedocs.io/en/latest/)
 - Project docs index: [docs/index.md](docs/index.md)
 - Getting started: [docs/getting-started.md](docs/getting-started.md)
 - API overview: [docs/api-overview.md](docs/api-overview.md)
