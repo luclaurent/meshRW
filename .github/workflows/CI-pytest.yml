@@ -1,63 +1,72 @@
 name: meshRW tests
 
-on: 
+on:
   push:
-    branches: [ '*' ]
-    paths-ignore:         # Don't trigger on files that are updated by the CI
-      - README.md
+    branches: ['**']
     tags:
       - 'v*'
   pull_request:
-    branches: [ '*' ]
+    branches: ['**']
+  workflow_dispatch:
   schedule:
-    # * is a special character in YAML so you have to quote this string
-    # run at 02:01 on every 15th day-of-month.
-    - cron:  '1 2 */15 * *'
+    - cron: '1 2 */15 * *'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@main
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install system dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libglu1-mesa
+
       - name: Install dependencies
         run: |
-          sudo apt-get install libglu1-mesa
           python -m pip install --upgrade pip
-          pip install .
           pip install hatch
-      # - name: Lint with ruff
-      #   run: |
-      #     hatch fmt
-      - name: Test with pytest and generate coverage
+          pip install -e .[dev]
+
+      - name: Lint with ruff
+        run: |
+          ruff check meshRW
+
+      - name: Test with hatch and generate coverage
         run: |
           hatch test --cover
           hatch run coverage xml
-      - name: Run tests based on installed package
+
+      - name: Run tests from installed package context
         run: |
-          export cwd=$(pwd)
-          cd $(mktemp -d) # switch to 
+          cwd=$(pwd)
+          cd "$(mktemp -d)"
           python -m pytest --pyargs meshRW.tests
-          cd $cwd
-      - name: Creating coverage folder
+          cd "$cwd"
+
+      - name: Prepare coverage badge folder
         if: ${{ matrix.python-version == '3.13' }}
-        run: |
-          mkdir -p coverage
-      - name: Coverage Badge
+        run: mkdir -p coverage
+
+      - name: Generate coverage badge
         if: ${{ matrix.python-version == '3.13' }}
         uses: tj-actions/coverage-badge-py@v2
         with:
           output: coverage/coverage.svg
-      - name: Publish coverage report to coverage-badge branch
-        if: ${{ matrix.python-version == '3.13' }}
+
+      - name: Publish coverage badge branch
+        if: ${{ matrix.python-version == '3.13' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: coverage-badge

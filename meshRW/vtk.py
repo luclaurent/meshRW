@@ -414,6 +414,17 @@ def headerVTKv2(fileHandle: fileio.fileHandler, commentTxt: str ='')-> None:
 
 
 def headerVTKXML(fileHandle, commentTxt=''):
+    """Placeholder XML header writer.
+
+    Parameters:
+        fileHandle: File-like handler used by legacy writer helpers.
+        commentTxt (str): Optional comment associated with the mesh.
+
+    Notes:
+        XML-based VTK output is currently handled by the VTK-backed writer in
+        ``meshRW.vtk2``. This function is intentionally kept as a no-op for
+        API compatibility.
+    """
     pass
 
 

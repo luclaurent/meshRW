@@ -23,6 +23,16 @@ dependencies = ['numpy',
 'lxml']
 requires-python = '>=3.8'
 
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7.4",
+    "furo>=2024.8.6",
+    "myst-parser>=3.0",
+]
+dev = [
+    "ruff>=0.8",
+]
+
 
 [project.urls]
 Homepage = "https://github.com/luclaurent/meshRW"
@@ -40,6 +50,12 @@ ignore-vcs = false
 
 [tool.hatch.envs.hatch-test]
 default-args = ["meshRW/tests/"]
+
+[tool.hatch.envs.docs]
+features = ["docs"]
+
+[tool.hatch.envs.docs.scripts]
+build = "sphinx-build -W --keep-going -b html docs docs/_build/html"
 
 
 [tool.coverage.run]

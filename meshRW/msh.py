@@ -843,6 +843,9 @@ class mshReader:
         if not dictFormat and not type:
             if len(elemsExport) > 1:
                 Logger.warning('Elements exported without the dictionary format: some data are not exported')
+            if len(elemsExport) == 0:
+                Logger.warning('No element to export')
+                return np.array([])
             idElems = list(elemsExport.keys())[0]
             elemsExport = elemsExport[idElems]
             elemsExportUnique = elemsExportUnique[idElems]

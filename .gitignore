@@ -130,3 +130,5 @@ dmypy.json
 
 meshRW/tests/unused_test_data
 meshRW/tests/artifacts/
+*.msh
+*.ipynb
