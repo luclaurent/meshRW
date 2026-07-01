@@ -436,7 +436,8 @@ class mshWriter(writerClass.writer):
                                     modelName=self.modelName, 
                                     dataType=nameTypeData, 
                                     tags=numEntities, 
-                                    data=dataView, # in the case of use of addHomogeneousModelData (this data must be flatten: np.hstack(dataView.transpose()) )
+                                    data=dataView if len(dataView.shape) > 1 \
+                                        else dataView.reshape(-1, 1),, # in the case of use of addHomogeneousModelData (this data must be flatten: np.hstack(dataView.transpose()) )
                                     numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                     time=t)
             else:

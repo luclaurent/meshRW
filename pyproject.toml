@@ -84,3 +84,43 @@ ignore = ["N806", "N802", "N999", "N812", "N801",
 
 [tool.ruff.format]
 quote-style = "single"
+
+[tool.pylint.main]
+py-version = "3.8"
+jobs = 0
+ignore-paths = [
+    "^docs/_build/.*$",
+]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "invalid-name",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-statements",
+    "too-few-public-methods",
+    "duplicate-code",
+    "fixme",
+]
+
+[tool.pylint.design]
+max-args = 12
+max-locals = 35
+max-branches = 20
+max-statements = 80
+
+[tool.pylint.logging]
+logging-modules = ["logging", "loguru"]
+
+[tool.pylint.similarities]
+min-similarity-lines = 8
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = true
