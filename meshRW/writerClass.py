@@ -84,15 +84,15 @@ class writer(ABC):
         fieldAnalysis(fields):
             Analyze the fields, including their types and temporal properties.
     """
-    def __init__(        
+    def __init__(
         self,
-        filename: Union[str, Path] = None,
-        nodes: Union[list, np.ndarray] = None,
-        elements: dict = None,
-        fields: Union[list, np.ndarray] = None,
+        filename: Optional[Union[str, Path]] = None,
+        nodes: Optional[Union[list, np.ndarray]] = None,
+        elements: Optional[Union[list, np.ndarray, dict]] = None,
+        fields: Optional[Union[list, np.ndarray, dict]] = None,
         append: bool = False,
-        title: str = None,
-        opts: dict = {},
+        title: Optional[str] = None,
+        opts: Optional[dict] = None,
     )-> None:
         """
         Initialize the writer class with the provided parameters.
@@ -125,11 +125,14 @@ class writer(ABC):
             This method also performs data analysis on the provided nodes, elements, and fields.
         """
         self.append = append
-        self.title = self.adaptTitle(txt=title)
+        self.title = self.adaptTitle(txt=title or '')
+        if filename is None:
+            raise ValueError('filename is required')
         self.filename = Path(filename)
         self.basename = self.filename.name
+        self.opts = {}
         # set options
-        self.setOptions(opts)
+        self.setOptions(opts or {})
         #
         self.db = None
         #
@@ -139,7 +142,10 @@ class writer(ABC):
         self.listPhysGrp = []
         self.nbSteps = 0
         self.steps = []
-        self.nbFields = 0        
+        self.nbFields = 0
+        self.nbCellFields = 0
+        self.nbPointFields = 0
+        self.nbTemporalFields = 0
         # run data analysis
         self.dataAnalysis(nodes, elements, fields)
         # check path exists
@@ -158,11 +164,11 @@ class writer(ABC):
         Returns:
             None
         """
-        pass
+        raise NotImplementedError
 
 
     @abstractmethod
-    def getAppend(self)-> None:
+    def getAppend(self)-> bool:
         """
         Retrieves the append operation or functionality.
 
@@ -172,7 +178,7 @@ class writer(ABC):
         Returns:
             None: This is a placeholder method and does not return any value.
         """
-        pass
+        raise NotImplementedError
 
     def adaptTitle(self, txt: str='', append: bool=False)-> str:
         """
@@ -195,7 +201,7 @@ class writer(ABC):
             txtFinal = datetime.today().strftime('%Y-%M-%d %H:%M:%s')
         return txtFinal
     
-    def checkPath(self, path: Path)-> None:
+    def checkPath(self, path: Path)-> bool:
         """
         Check if the specified path exists, and create it if it does not.
 
@@ -228,7 +234,7 @@ class writer(ABC):
         Returns:
             None
         """
-        pass
+        raise NotImplementedError
 
     def writeHeader(self)-> None:
         """
@@ -241,7 +247,7 @@ class writer(ABC):
         Returns:
             None
         """
-        pass
+        return None
 
     @abstractmethod
     def writeNodes(self, nodes: Union[list, np.ndarray]) -> None:
@@ -256,7 +262,7 @@ class writer(ABC):
         Returns:
             None
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def writeElements(self, elements: Union[list, np.ndarray]) -> None:
@@ -270,7 +276,7 @@ class writer(ABC):
         Returns:
             None
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def writeFields(self, 
@@ -288,7 +294,7 @@ class writer(ABC):
         Returns:
             None
         """
-        pass
+        raise NotImplementedError
 
     def splitFilename(self)-> tuple:
         """
@@ -313,12 +319,13 @@ class writer(ABC):
         extension = ''
         filename = self.filename
         it = 0
+        allowed_extensions = getattr(self.db, 'ALLOWED_EXTENSIONS', [])
         while it < 2:
             path = self.filename.parent
             filename = self.filename.stem
             ext = self.filename.suffix
             extension += ext
-            if extension in self.db.ALLOWED_EXTENSIONS:
+            if extension in allowed_extensions:
                 it = 3
             else:
                 it += 1
@@ -329,7 +336,7 @@ class writer(ABC):
     def getFilename(self, 
                     prefix: Optional[str] = None, 
                     suffix: Optional[str] = None, 
-                    extension: Optional[str] = None) -> str:
+                    extension: Optional[str] = None) -> Path:
         """
         Constructs a filename by optionally adding a prefix, suffix, and/or changing the file extension.
 
@@ -361,12 +368,13 @@ class writer(ABC):
             None
         """
 
-        Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename, ' '.join(self.db.ALLOWED_EXTENSIONS)))
+        allowed_extensions = getattr(self.db, 'ALLOWED_EXTENSIONS', [])
+        Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename, ' '.join(allowed_extensions)))
 
-    def dataAnalysis(self, 
-                     nodes: Union[list, np.ndarray], 
-                     elems: Union[list, np.ndarray], 
-                     fields: Optional[dict] = None)-> None:
+    def dataAnalysis(self,
+                     nodes: Optional[Union[list, np.ndarray]],
+                     elems: Optional[Union[list, np.ndarray, dict]],
+                     fields: Optional[Union[list, np.ndarray, dict]] = None)-> None:
         """
         Analyzes the provided mesh data, including nodes, elements, and optional fields.
         This method computes various statistics about the mesh, such as the number of nodes,
@@ -400,13 +408,15 @@ class writer(ABC):
             - If `fields` is provided, the `fieldAnalysis` method is called to analyze the fields.
         """
         
-        self.nbNodes = len(nodes)
+        self.nbNodes = len(nodes) if nodes is not None else 0
         self.nbElems = 0
         #
         self.elemPerType = {}
         self.elemPerGrp = {}
         self.nameGrp = {}
         #
+        if elems is None:
+            elems = []
         if isinstance(elems, dict):
             elems = [elems]
         #
@@ -455,6 +465,8 @@ class writer(ABC):
             self.listPhysGrp = [1]
         ## analyse fields
         if fields is not None:
+            if isinstance(fields, np.ndarray):
+                fields = list(fields)
             if isinstance(fields, dict):
                 fields = [fields]
             self.fieldAnalysis(fields)
@@ -496,7 +508,6 @@ class writer(ABC):
         Raises:
             None
         """
-        """Analyse fields"""
         self.nbFields = len(fields)
         self.nbCellFields = 0
         self.nbPointFields = 0
@@ -547,9 +558,9 @@ class writer(ABC):
     
 
 
-def adaptInputs(nodes: Union[list, np.ndarray], 
-                elements: Union[list, np.ndarray, dict], 
-                fields: Union[list, np.ndarray, dict]=None)-> tuple:
+def adaptInputs(nodes: Optional[Union[list, np.ndarray]],
+                elements: Optional[Union[list, np.ndarray, dict]],
+                fields: Optional[Union[list, np.ndarray, dict]] = None)-> tuple:
     """
     Adapt the input data for the writer by ensuring proper formatting and structure.
 
@@ -593,7 +604,7 @@ def adaptInputs(nodes: Union[list, np.ndarray],
         elements = [elements]
     # get all physical groups
     allPhysGrp = []
-    for e in elements:
+    for e in elements or []:
         if e.get('physgrp') is not None:
             allPhysGrp.extend(e.get('physgrp'))
     allPhysGrp = set(allPhysGrp)

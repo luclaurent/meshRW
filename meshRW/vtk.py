@@ -8,7 +8,6 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 from pathlib import Path
 from typing import Union, Optional
-import sys
 
 import numpy as np
 from loguru import logger as Logger
@@ -55,16 +54,16 @@ class vtkWriter(writerClass.writer):
         writeFields(fields, numStep):
             Writes the fields to the VTK file based on the version.
     """
-    def __init__(        
+    def __init__(
         self,
-        filename: Union[str, Path] = None,
-        nodes: Union[list, np.ndarray] = None,
-        elements: dict = None,
-        fields: Union[list, np.ndarray] = None,
+        filename: Optional[Union[str, Path]] = None,
+        nodes: Optional[Union[list, np.ndarray]] = None,
+        elements: Optional[Union[list, np.ndarray, dict]] = None,
+        fields: Optional[Union[list, np.ndarray, dict]] = None,
         append: bool = False,
-        title: str = None,
+        title: Optional[str] = None,
         verbose: bool = False,
-        opts: dict = {'version': 'v2', 'createPath': True},
+        opts: Optional[dict] = None,
     ):
         """
         Initialize the VTK writer class.
@@ -89,23 +88,30 @@ class vtkWriter(writerClass.writer):
         # if not verbose:
         #     Logger.remove()
         #     Logger.add(sys.stderr, level="INFO") 
+        _ = verbose
         Logger.info('Start writing vtk file')
         # adapt inputs
         nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
         # prepare new fields (from physical groups for instance)
         newFields = self.createNewFields(elements)
         if newFields:
-            if not fields:
-                fields = list()
+            if fields is None:
+                fields = []
+            elif isinstance(fields, dict):
+                fields = [fields]
+            elif isinstance(fields, np.ndarray):
+                fields = list(fields)
             fields.extend(newFields)
+        if nodes is None or elements is None:
+            raise ValueError('nodes and elements are required')
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, opts)
+        super().__init__(filename, nodes, elements, fields, append, title, opts or {'version': 'v2', 'createPath': True})
         # load specific configuration
         self.db = dbvtk
         # write contents depending on the number of steps
         self.writeContentsSteps(nodes, elements, fields)
 
-    def setOptions(self, options: dict)-> None:
+    def setOptions(self, opts: dict)-> None:
         """
         Set the options for the object.
 
@@ -120,13 +126,13 @@ class vtkWriter(writerClass.writer):
         Returns:
             None
         """
-        self.version = options.get('version', 'v2')
-        self.opts = options
+        self.version = opts.get('version', 'v2')
+        self.opts = opts
 
     def writeContentsSteps(self, 
                            nodes: Union[list, np.ndarray], 
-                           elements: dict, 
-                           fields: Optional[Union[list, np.ndarray]] = None)-> None:
+                           elements: Union[list, np.ndarray, dict], 
+                           fields: Optional[Union[list, np.ndarray, dict]] = None)-> None:
         """
         Write content along multiple steps or a single step.
 
@@ -179,8 +185,8 @@ class vtkWriter(writerClass.writer):
 
     def writeContents(self, 
                       nodes: Union[list, np.ndarray], 
-                      elements: dict, 
-                      fields: Optional[Union[list, np.ndarray]] = None, 
+                      elements: Union[list, np.ndarray, dict], 
+                      fields: Optional[Union[list, np.ndarray, dict]] = None, 
                       numStep: Optional[int] = None) -> None:
         """
         Writes the contents of a mesh, including nodes, elements, and optional fields, to a file.
@@ -221,7 +227,7 @@ class vtkWriter(writerClass.writer):
             bool: The value of the 'append' flag indicating whether to append data.
         """
         self.append = self.customHandler.append
-        return self.append
+        return bool(self.append)
 
     def logBadExtension(self)-> None:
         """
@@ -255,12 +261,12 @@ class vtkWriter(writerClass.writer):
             AttributeError: If `self.version` is not set to a supported value.
         """
         if self.version == 'v2':
-            headerVTKv2(self.customHandler.fhandle, commentTxt=self.title)
+            headerVTKv2(self.customHandler, commentTxt=self.title)
         elif self.version == 'xml':
-            headerVTKXML(self.customHandler.fhandle)
+            headerVTKXML(self.customHandler)
 
     @various.timeit('Nodes written')
-    def writeNodes(self, nodes: np.ndarray) -> None:
+    def writeNodes(self, nodes: Union[list, np.ndarray]) -> None:
         """
         Writes the provided nodes to a file based on the specified version.
 
@@ -281,14 +287,15 @@ class vtkWriter(writerClass.writer):
         - The file handle for writing is accessed via `self.customHandler.fhandle`.
         """
         # count number of nodes
-        self.nbNodes = nodes.shape[0]
+        nodes_run = np.array(nodes)
+        self.nbNodes = nodes_run.shape[0]
         if self.version == 'v2':
-            WriteNodesV2(self.customHandler.fhandle, nodes)
+            WriteNodesV2(self.customHandler, nodes_run)
         elif self.version == 'xml':
-            WriteNodesXML(self.customHandler.fhandle, nodes)
+            WriteNodesXML(self.customHandler, nodes_run)
 
     @various.timeit('Elements written')
-    def writeElements(self, elems: Union[list, np.ndarray, dict]) -> None:
+    def writeElements(self, elements: Union[list, np.ndarray, dict]) -> None:
         """
         Writes elements to a file based on the specified version.
 
@@ -312,21 +319,23 @@ class vtkWriter(writerClass.writer):
         None
         """
         # convert to list if dict
-        if type(elems) is dict:
-            elemsRun = [elems]
+        if isinstance(elements, dict):
+            elemsRun = [elements]
+        elif isinstance(elements, np.ndarray):
+            elemsRun = list(elements)
         else:
-            elemsRun = elems
+            elemsRun = list(elements)
         # count number of elements
         self.nbElems = 0
         for e in elemsRun:
             self.nbElems += e[configMESH.DFLT_MESH].shape[0]
 
         if self.version == 'v2':
-            WriteElemsV2(self.customHandler.fhandle, elems)
+            WriteElemsV2(self.customHandler, elemsRun)
         elif self.version == 'xml':
-            WriteElemsXML(self.customHandler.fhandle, elems)
+            WriteElemsXML(self.customHandler, elemsRun)
 
-    def createNewFields(self, elems: Union[list, np.ndarray, dict]) -> Optional[list]:
+    def createNewFields(self, elems: Optional[Union[list, np.ndarray, dict]]) -> Optional[list]:
         """
         Create new fields based on the provided elements data.
 
@@ -349,6 +358,12 @@ class vtkWriter(writerClass.writer):
                 - 'name': The name of the field, typically `configMESH.DFLT_PHYS_GRP`.
             Returns `None` if no physical group data is found.
         """
+        if elems is None:
+            return None
+        if isinstance(elems, np.ndarray):
+            elems = list(elems)
+        if isinstance(elems, dict):
+            elems = [elems]
         # check if physgroup exists
         physGrp = False
         newFields = None
@@ -375,7 +390,7 @@ class vtkWriter(writerClass.writer):
         return newFields
 
     @various.timeit('Fields written')
-    def writeFields(self, fields: Optional[Union[list, np.ndarray]] = None, numStep: Optional[int] = None)-> None:
+    def writeFields(self, fields: Optional[Union[list, np.ndarray, dict]] = None, numStep: Optional[int] = None)-> None:
         """
         Writes field data to a file based on the specified version.
 
@@ -388,10 +403,16 @@ class vtkWriter(writerClass.writer):
         Returns:
             None
         """
+        if fields is None:
+            return
+        if isinstance(fields, dict):
+            fields = [fields]
+        if isinstance(fields, np.ndarray):
+            fields = list(fields)
         if self.version == 'v2':
-            WriteFieldsV2(self.customHandler.fhandle, self.nbNodes, self.nbElems, fields, numStep)
+            WriteFieldsV2(self.customHandler, self.nbNodes, self.nbElems, fields, numStep)
         elif self.version == 'xml':
-            WriteFieldsXML(self.customHandler.fhandle, self.nbNodes, self.nbElems, fields, numStep)
+            WriteFieldsXML(self.customHandler, self.nbNodes, self.nbElems, fields, numStep)
 
 
 # classical function to write contents
@@ -425,7 +446,8 @@ def headerVTKXML(fileHandle, commentTxt=''):
         ``meshRW.vtk2``. This function is intentionally kept as a no-op for
         API compatibility.
     """
-    pass
+    _ = (fileHandle, commentTxt)
+    return None
 
 
 def WriteNodesV2(fileHandle: fileio.fileHandler, 
@@ -461,6 +483,8 @@ def WriteNodesV2(fileHandle: fileio.fileHandler,
         formatSpec = '{:9.4g} {:9.4g}\n'
     elif dimPb == 3:
         formatSpec = '{:9.4g} {:9.4g} {:9.4g}\n'
+    if formatSpec is None:
+        raise ValueError('Unsupported node dimension')
     # write coordinates
     for i in range(nbNodes):
         fileHandle.write(formatSpec.format(*nodes[i, :]))
@@ -468,7 +492,8 @@ def WriteNodesV2(fileHandle: fileio.fileHandler,
 
 def WriteNodesXML(fileHandle, nodes):
     """Write nodes coordinates for unstructured grid"""
-    pass
+    _ = (fileHandle, nodes)
+    return None
 
 
 def WriteElemsV2(fileHandle: fileio.fileHandler, elements: list) -> None:
@@ -542,10 +567,11 @@ def WriteElemsV2(fileHandle: fileio.fileHandler, elements: list) -> None:
 
 def WriteElemsXML(fileHandle, elements):
     """Write elements  for unstructured grid"""
-    pass
+    _ = (fileHandle, elements)
+    return None
 
 
-def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fields: list, numStep: int = None)-> None:
+def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fields: list, numStep: Optional[int] = None)-> None:
     """
     Writes nodal and elemental field data to a file in a specific format.
 
@@ -664,7 +690,7 @@ def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fi
                 writeFieldsDataV2(fileHandle, data, fields[iX]['name'])
 
 
-def getData(data: dict, num: int) -> np.ndarray:
+def getData(data: dict, num: Optional[int]) -> np.ndarray:
     """
     Retrieve data for a specific step from the provided dictionary.
 
@@ -692,16 +718,14 @@ def getData(data: dict, num: int) -> np.ndarray:
           data from the `DFLT_FIELD_DATA` key.
     """
     # create array of data
-    dataOut = None
+    dataOut = data.get(configMESH.DFLT_FIELD_DATA)
     if configMESH.DFLT_FIELD_STEPS in data.keys():
-        if len(data[configMESH.DFLT_FIELD_STEPS]) > 1:
+        if len(data[configMESH.DFLT_FIELD_STEPS]) > 1 and num is not None:
             dataOut = data[configMESH.DFLT_FIELD_DATA][num]
     elif configMESH.DFLT_FIELD_NBSTEPS in data.keys():
-        if data[configMESH.DFLT_FIELD_NBSTEPS] > 0:
+        if data[configMESH.DFLT_FIELD_NBSTEPS] > 0 and num is not None:
             dataOut = data[configMESH.DFLT_FIELD_DATA][num]
-    else:
-        dataOut = data[configMESH.DFLT_FIELD_DATA]
-    return dataOut
+    return np.array(dataOut)
 
 
 def writeScalarsDataV2(fileHandle: fileio.fileHandler, data: np.ndarray, name: str) -> None:
@@ -801,7 +825,8 @@ def writeFieldsDataV2(fileHandle: fileio.fileHandler,
 
 def WriteFieldsXML(fileHandle, nbNodes, nbElems, fields, numStep=None):
     """Write elements"""
-    pass
+    _ = (fileHandle, nbNodes, nbElems, fields, numStep)
+    return None
 
 
 writer = vtkWriter

@@ -5,10 +5,11 @@ This class is a part of the meshRW library and will write a vtk file from a mesh
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
+# pylint: disable=unused-import,unused-argument,unused-variable,dangerous-default-value,arguments-differ,no-member
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false
 
 from pathlib import Path
 from typing import Union, Optional
-import sys
 
 import time
 
@@ -120,7 +121,7 @@ class vtkWriter(writerClass.writer):
         """
         return self.append
 
-    def setOptions(self, options: dict)-> None:
+    def setOptions(self, opts: dict)-> None:
         """
         Sets the options for the object.
 
@@ -133,9 +134,9 @@ class vtkWriter(writerClass.writer):
         Returns:
             None
         """
-        self.binary = options.get('binary', False)
-        self.ascii = options.get('ascii', False)
-        self.opts = options
+        self.binary = opts.get('binary', False)
+        self.ascii = opts.get('ascii', False)
+        self.opts = opts
 
     def writeContentsSteps(self, 
                            nodes: Union[list, np.ndarray], 
@@ -334,8 +335,9 @@ class vtkWriter(writerClass.writer):
             None
         """
         points = vtk.vtkPoints()
-        for i in range(len(nodes)):
-            points.InsertNextPoint(nodes[i, :])
+        nodes_run = np.asarray(nodes)
+        for i in range(len(nodes_run)):
+            points.InsertNextPoint(*nodes_run[i, :])
         self.ugrid.SetPoints(points)
 
     @various.timeit('Elements declared')
@@ -365,7 +367,7 @@ class vtkWriter(writerClass.writer):
             # get connectivity data
             typeElem = m.get('type')
             connectivity = m.get('connectivity')
-            physgrp = m.get('physgrp', None)
+            _ = m.get('physgrp', None)
             # load element's vtk class
             cell, nbnodes = dbvtk.getVTKObj(typeElem)
             Logger.debug(f'Set {len(connectivity)} elements of type {typeElem}')
@@ -460,10 +462,10 @@ class vtkWriter(writerClass.writer):
         # load field data
         data = field.get('data')
         name = field.get('name')
-        numEntities = field.get('numEntities', None)
+        _ = field.get('numEntities', None)
         nbsteps = field.get('nbsteps', 1)
         steps = field.get('steps', None)
-        dim = field.get('dim', 0)
+        _ = field.get('dim', 0)
         timesteps = field.get('timesteps', None)
         typeField = field.get('type')
         # for time dependent data

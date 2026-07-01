@@ -5,11 +5,12 @@ This class is a part of the meshRW library and will write a msh file from a mesh
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
+# pylint: disable=unused-import,unused-argument,dangerous-default-value,attribute-defined-outside-init,unused-variable,arguments-differ
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false
 
 import time
 from pathlib import Path
 from typing import Union, Optional
-import sys
 
 import gmsh
 import numpy as np
@@ -140,7 +141,7 @@ class mshWriter(writerClass.writer):
         """
         return self.append
 
-    def setOptions(self, options: dict)-> None:
+    def setOptions(self, opts: dict)-> None:
         """
         Sets the options for the object with default values if not provided.
 
@@ -151,10 +152,10 @@ class mshWriter(writerClass.writer):
         Returns:
             None
         """
-        self.version = options.get('version', 2.2)
-        self.binary = options.get('binary', False)
-        self.nodes_reclassify = options.get('nodes_reclassify', True)
-        self.opts = options
+        self.version = opts.get('version', 2.2)
+        self.binary = opts.get('binary', False)
+        self.nodes_reclassify = opts.get('nodes_reclassify', True)
+        self.opts = opts
 
     def writeContents(self, 
                       nodes: Union[list, np.ndarray], 
@@ -377,7 +378,7 @@ class mshWriter(writerClass.writer):
         nbsteps = field.get('nbsteps', None)
         steps = field.get('steps', None)
         timesteps = field.get('timesteps', None)
-        dim = field.get('dim', 0)
+        _ = field.get('dim', 0)
         typeField = field.get('type')
         #
         if not name:
@@ -417,18 +418,19 @@ class mshWriter(writerClass.writer):
         #
         # in the case of reclassification of the nodes, some of them can be removed
         # filter the input data
-        eId = []
+        eId = np.array([], dtype=int)
         if typeField == 'nodal':
-            eId = gmsh.model.mesh.getNodes()[0]
-            numEntities = numEntities[eId-1]
+            eId = np.asarray(gmsh.model.mesh.getNodes()[0], dtype=int)
+            numEntities = numEntities[eId - 1]
         tagView = gmsh.view.add(name)
         for s, t in zip(steps, timesteps):
             dataView = data[s]
+            dataView = np.asarray(dataView)
             # if len(dataView.shape) == 1:
             #     dataView = dataView.reshape((-1, 1))
             # filter data
             if len(eId) > 0:
-                dataView = dataView[eId-1]
+                dataView = dataView[eId - 1]
             # add homogeneous model data
             if not homogeneous:
                 gmsh.view.addModelData(tag=tagView, 
@@ -437,7 +439,7 @@ class mshWriter(writerClass.writer):
                                     dataType=nameTypeData, 
                                     tags=numEntities, 
                                     data=dataView if len(dataView.shape) > 1 \
-                                        else dataView.reshape(-1, 1),, # in the case of use of addHomogeneousModelData (this data must be flatten: np.hstack(dataView.transpose()) )
+                                        else dataView.reshape(-1, 1), # in the case of use of addHomogeneousModelData (this data must be flatten: np.hstack(dataView.transpose()) )
                                     numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                     time=t)
             else:
@@ -446,7 +448,7 @@ class mshWriter(writerClass.writer):
                                    modelName=self.modelName, 
                                    dataType=nameTypeData, 
                                    tags=numEntities, 
-                                   data=np.hstack(dataView.transpose()), 
+                                   data=np.asarray(dataView).transpose().reshape(-1), 
                                    numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                    time=t)
             # ,

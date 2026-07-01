@@ -8,8 +8,15 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 """
 from typing import Union
-import vtk
+import vtk  # type: ignore[attr-defined]
 from loguru import logger as Logger
+
+
+def _vtk(name: str):
+    ctor = getattr(vtk, name, None)
+    if callable(ctor):
+        return ctor()
+    return None
 
 
 def loadElementDict()-> dict:
@@ -40,15 +47,15 @@ def loadElementDict()-> dict:
     """
     elementDict = {
         # 2-nodes line
-        'LIN2': {'code': 3, 'nodes': 2, 'dim': 1, 'vtkobj': vtk.vtkLine()},
+        'LIN2': {'code': 3, 'nodes': 2, 'dim': 1, 'vtkobj': _vtk('vtkLine')},
         # 3-nodes second order line
-        'LIN3': {'code': 21, 'nodes': 3, 'dim': 1, 'vtkobj': vtk.vtkQuadraticEdge()},
+        'LIN3': {'code': 21, 'nodes': 3, 'dim': 1, 'vtkobj': _vtk('vtkQuadraticEdge')},
         # 4-nodes third order line
         'LIN4': None,
         # 3-nodes triangle
-        'TRI3': {'code': 5, 'nodes': 3, 'dim': 2, 'vtkobj': vtk.vtkTriangle()},
+        'TRI3': {'code': 5, 'nodes': 3, 'dim': 2, 'vtkobj': _vtk('vtkTriangle')},
         # 6-nodes second order triangle (3 vertices, 3 on edges)
-        'TRI6': {'code': 22, 'nodes': 6, 'dim': 2, 'vtkobj': vtk.vtkQuadraticTriangle()},
+        'TRI6': {'code': 22, 'nodes': 6, 'dim': 2, 'vtkobj': _vtk('vtkQuadraticTriangle')},
         # 9-nodes cubic order triangle (3 vertices, 3 on edges and 3 inside)
         'TRI9': None,
         # 10-nodes higher order triangle (3 vertices, 6 on edges and 1 inside)
@@ -58,49 +65,49 @@ def loadElementDict()-> dict:
         # 15-nodes higher order triangle (3 vertices, 9 on edges and 3 inside)
         'TRI15': None,
         # 4-nodes quadrangle
-        'QUA4': {'code': 9, 'nodes': 4, 'dim': 2, 'vtkobj': vtk.vtkQuad()},
+        'QUA4': {'code': 9, 'nodes': 4, 'dim': 2, 'vtkobj': _vtk('vtkQuad')},
         # 8-nodes second order quadrangle (4 vertices and 4 on edges)
-        'QUA8': {'code': 23, 'nodes': 8, 'dim': 2, 'vtkobj': vtk.vtkQuadraticQuad()},
+        'QUA8': {'code': 23, 'nodes': 8, 'dim': 2, 'vtkobj': _vtk('vtkQuadraticQuad')},
         # 9-nodes higher order quadrangle (4 vertices, 4 on edges and 1 inside)
         'QUA9': None,
         # 4-nodes tetrahedron
-        'TET4': {'code': 10, 'nodes': 4, 'dim': 3, 'vtkobj': vtk.vtkTetra()},
+        'TET4': {'code': 10, 'nodes': 4, 'dim': 3, 'vtkobj': _vtk('vtkTetra')},
         # 10-nodes second order tetrahedron (4 vertices and 6 on edges)
-        'TET10': {'code': 24, 'nodes': 10, 'dim': 3, 'vtkobj': vtk.vtkQuadraticTetra()},
+        'TET10': {'code': 24, 'nodes': 10, 'dim': 3, 'vtkobj': _vtk('vtkQuadraticTetra')},
         # 8-nodes hexahedron
-        'HEX8': {'code': 12, 'nodes': 8, 'dim': 3, 'vtkobj': vtk.vtkHexahedron()},
+        'HEX8': {'code': 12, 'nodes': 8, 'dim': 3, 'vtkobj': _vtk('vtkHexahedron')},
         # 20-nodes second order hexahedron (8 vertices and 12 on edges)
-        'HEX20': {'code': 25, 'nodes': 20, 'dim': 3, 'vtkobj': vtk.vtkQuadraticHexahedron()},
+        'HEX20': {'code': 25, 'nodes': 20, 'dim': 3, 'vtkobj': _vtk('vtkQuadraticHexahedron')},
         # 27-nodes higher order hexahedron (8 vertices,
         # 12 on edges, 6 on faces and 1 inside)
         'HEX27': None,
         # 6-nodes prism
-        'PRI6': {'code': 13, 'nodes': 6, 'dim': 3, 'vtkobj': vtk.vtkWedge()},
+        'PRI6': {'code': 13, 'nodes': 6, 'dim': 3, 'vtkobj': _vtk('vtkWedge')},
         # 15-nodes second order prism (6 vertices and 9 on edges)
         'PRI15': None,
         # 18-nodes higher order prism (6 vertices, 9 on edges and 3 on faces)
         'PRI18': None,
         # 5-node pyramid
-        'PYR5': {'code': 14, 'nodes': 5, 'dim': 3, 'vtkobj': vtk.vtkPyramid()},
+        'PYR5': {'code': 14, 'nodes': 5, 'dim': 3, 'vtkobj': _vtk('vtkPyramid')},
         # 13-nodes second order pyramid (5 edges and 8 on edges)
         'PYR13': None,
         # 14-nodes higher order pyramid (5 edges, 8 on edges and 1 inside)
         'PYR14': None,
         # 1-node point
-        'NOD1': {'code': 1, 'nodes': 1, 'dim': 0, 'vtkobj': vtk.vtkVertex()},
+        'NOD1': {'code': 1, 'nodes': 1, 'dim': 0, 'vtkobj': _vtk('vtkVertex')},
         #
         # many nodes
-        'NODN': {'code': 2, 'nodes': -1, 'dim': 0, 'vtkobj': vtk.vtkPolyVertex()},
+        'NODN': {'code': 2, 'nodes': -1, 'dim': 0, 'vtkobj': _vtk('vtkPolyVertex')},
         # many lines (poly-lines)
-        'LINEN': {'code': 4, 'nodes': -1, 'dim': 1, 'vtkobj': vtk.vtkPolyLine()},
+        'LINEN': {'code': 4, 'nodes': -1, 'dim': 1, 'vtkobj': _vtk('vtkPolyLine')},
         # many stripped triangles
-        'TRIN': {'code': 6, 'nodes': -1, 'dim': 2, 'vtkobj': vtk.vtkTriangleStrip()},
+        'TRIN': {'code': 6, 'nodes': -1, 'dim': 2, 'vtkobj': _vtk('vtkTriangleStrip')},
         # polygons
-        'POLY': {'code': 7, 'nodes': -1, 'dim': 2, 'vtkobj': vtk.vtkPolygon()},
+        'POLY': {'code': 7, 'nodes': -1, 'dim': 2, 'vtkobj': _vtk('vtkPolygon')},
         # pixel
-        'PIXEL': {'code': 8, 'nodes': -1, 'dim': 2, 'vtkobj': vtk.vtkPixel()},
+        'PIXEL': {'code': 8, 'nodes': -1, 'dim': 2, 'vtkobj': _vtk('vtkPixel')},
         # voxel
-        'VOXEL': {'code': 11, 'nodes': -1, 'dim': 3, 'vtkobj': vtk.vtkVoxel()},
+        'VOXEL': {'code': 11, 'nodes': -1, 'dim': 3, 'vtkobj': _vtk('vtkVoxel')},
     }
     return elementDict
 
@@ -205,16 +212,17 @@ def getVTKElemType(txtEltype: Union[str, int])-> tuple:
     if isinstance(txtEltype, int):
         elementNum = txtEltype
     else:
-        if txtEltype.upper() in VTKtoElem.keys():
-            txtEltype = VTKtoElem[txtEltype]
-        elementNum = elementDict[txtEltype.upper()].get('code', None)
-        numPerElement = getNumberNodes(txtEltype.upper())
+        elem_key = txtEltype.upper()
+        if elem_key in VTKtoElem.keys():
+            elem_key = VTKtoElem[elem_key]
+        elementNum = elementDict[elem_key.upper()].get('code', None)
+        numPerElement = getNumberNodes(elem_key.upper())
     if not elementNum:
         Logger.error(f'Element type {txtEltype} not implemented')
     return elementNum, numPerElement
 
 
-def getElemTypeFromVTK(elementNum: int) -> str:
+def getElemTypeFromVTK(elementNum: int) -> Union[str, None]:
     """
     Get the global name of an element type based on its numerical ID as defined in Gmsh.
 
@@ -268,11 +276,12 @@ def getNumberNodes(txtElemtype: str) -> int:
     """
 
     elementDict = loadElementDict()
+    nbNodes = 0
     # check if the type of element exists
     if txtElemtype in elementDict.keys():
         # get the number of nodes for the type of element
         if elementDict[txtElemtype]:
-            nbNodes = elementDict[txtElemtype].get('nodes', None)
+            nbNodes = elementDict[txtElemtype].get('nodes', 0)
     else:
         # show error message if the type of element does not exist
         Logger.error(f'Element type {txtElemtype} not defined')
@@ -294,7 +303,10 @@ def getNumberNodesFromNum(elementNum: int) -> int:
         int: The number of nodes associated with the specified element type.
     """
 
-    return getNumberNodes(getElemTypeFromVTK(elementNum))
+    element_type = getElemTypeFromVTK(elementNum)
+    if element_type is None:
+        return 0
+    return getNumberNodes(element_type)
 
 
 # DEFAULT VALUES
