@@ -9,10 +9,17 @@
 
 ## Shared infrastructure
 
-- `meshRW.writerClass`: abstract base class and shared analysis helpers.
+- `meshRW.writerclass`: canonical abstract base class and shared analysis helpers.
+- `meshRW.writerClass`: compatibility alias to `meshRW.writerclass`.
 - `meshRW.fileio`: safe file handling wrapper.
 - `meshRW.dbmsh` and `meshRW.dbvtk`: element/type lookup dictionaries.
 - `meshRW.various`: utility helpers.
+
+## Compatibility policy
+
+- Snake_case APIs are canonical for current releases.
+- Legacy camelCase entry points remain available for backward compatibility.
+- Legacy module names `configMESH` and `writerClass` are preserved as import shims.
 
 ## Data model expectations
 

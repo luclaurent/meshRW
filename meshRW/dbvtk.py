@@ -7,12 +7,11 @@ Documentation available here: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-f
 Luc Laurent - luc.laurent@lecnam.net -- 2021
 
 """
-from typing import Union
 import vtk
 from loguru import logger as Logger
 
 
-def loadElementDict()-> dict:
+def load_element_dict()-> dict:
     """
     Load a dictionary mapping element types to their corresponding VTK properties.
 
@@ -38,7 +37,7 @@ def loadElementDict()-> dict:
         - The VTK objects (e.g., vtk.vtkLine, vtk.vtkTriangle) must be imported 
           from the VTK library for this function to work.
     """
-    elementDict = {
+    element_dict = {
         # 2-nodes line
         'LIN2': {'code': 3, 'nodes': 2, 'dim': 1, 'vtkobj': vtk.vtkLine()},
         # 3-nodes second order line
@@ -102,10 +101,10 @@ def loadElementDict()-> dict:
         # voxel
         'VOXEL': {'code': 11, 'nodes': -1, 'dim': 3, 'vtkobj': vtk.vtkVoxel()},
     }
-    return elementDict
+    return element_dict
 
 
-def getVTKtoElem()-> dict:
+def get_vtk_to_elem()-> dict:
     """
     Returns a dictionary mapping VTK element types to their corresponding 
     element type codes used in another system.
@@ -119,7 +118,7 @@ def getVTKtoElem()-> dict:
                 corresponding element type codes (e.g., 'NOD1', 'TRI3').
     """
 
-    VTKtoElem = {
+    vtk_to_elem = {
         'VTK_VERTEX': 'NOD1',
         'VTK_LINE': 'LIN2',
         'VTK_TRIANGLE': 'TRI3',
@@ -141,37 +140,39 @@ def getVTKtoElem()-> dict:
         'VTK_PIXEL': 'PIXEL',
         'VTK_VOXEL': 'VOXEL',
     }
-    return VTKtoElem
+    return vtk_to_elem
 
 
-def getVTKObj(txtEltype):
+def get_vtk_obj(txt_elem_type: str) -> tuple:
     """
     Get the vtk class from libvtk from text declaration
     syntax:
-        getVTKEObjType(txtEltype)
+        getVTKEObjType(txt_elem_type)
 
     input:
-        txtEltype: element declared using VTK string (if number is used the function wil return it)
+        txt_elem_type: element declared using VTK string 
+        (if number is used the function wil return it)
     output:
         vtk class for the requested element
         number of nodes on element
     """
 
-    VTKtoElem = getVTKtoElem()
-    elementDict = loadElementDict()
+    vtk_to_elem = get_vtk_to_elem()
+    element_dict = load_element_dict()
 
-    # depending on the type of txtEltype
-    numPerElement = -1
-    if txtEltype.upper() in VTKtoElem.keys():
-        txtEltype = VTKtoElem[txtEltype]
-    vtkobj = elementDict[txtEltype.upper()].get('vtkobj', None)
-    numPerElement = getNumberNodes(txtEltype.upper())
+    # depending on the type of txt_elem_type
+    num_per_element = -1
+    elem_type_upper = txt_elem_type.upper()
+    if elem_type_upper in vtk_to_elem:
+        elem_type_upper = vtk_to_elem[elem_type_upper]
+    vtkobj = element_dict[elem_type_upper].get('vtkobj', None)
+    num_per_element = get_number_nodes(elem_type_upper)
     if not vtkobj:
-        Logger.error(f'Element type {txtEltype} not implemented')
-    return vtkobj, numPerElement
+        Logger.error(f'Element type {txt_elem_type} not implemented')
+    return vtkobj, num_per_element
 
 
-def getVTKElemType(txtEltype: Union[str, int])-> tuple:
+def get_vtk_elem_type(txt_elem_type: str|int)-> tuple:
     """
     Get the VTK element type and the number of nodes per element.
 
@@ -180,13 +181,13 @@ def getVTKElemType(txtEltype: Union[str, int])-> tuple:
     to the numbering defined in the VTK documentation.
 
     Args:
-        txtEltype (Union[str, int]): The element type, either as a string (VTK string declaration) 
-                                     or as an integer (VTK element type number).
+        txt_elem_type (Union[str, int]): The element type, either as a string 
+        (VTK string declaration) or as an integer (VTK element type number).
 
     Returns:
         tuple: A tuple containing:
-            - elementNum (int): The VTK element type number.
-            - numPerElement (int): The number of nodes per element. Returns -1 if not applicable.
+            - element_num (int): The VTK element type number.
+            - num_per_element (int): The number of nodes per element. Returns -1 if not applicable.
 
     Raises:
         Logger.error: If the provided element type is not implemented or invalid.
@@ -197,33 +198,37 @@ def getVTKElemType(txtEltype: Union[str, int])-> tuple:
         - Refer to the VTK documentation for the numbering and details of element types.
     """
 
-    VTKtoElem = getVTKtoElem()
-    elementDict = loadElementDict()
+    vtk_to_elem = get_vtk_to_elem()
+    element_dict = load_element_dict()
 
-    # depending on the type of txtEltype
-    numPerElement = -1
-    if isinstance(txtEltype, int):
-        elementNum = txtEltype
+    # depending on the type of txt_elem_type
+    num_per_element = -1
+    if isinstance(txt_elem_type, int):
+        element_num = txt_elem_type
+    elif isinstance(txt_elem_type, str):
+        elem_type_upper = txt_elem_type.upper()
+        if elem_type_upper in vtk_to_elem:
+            elem_type_upper = vtk_to_elem[elem_type_upper]
+        element_num = element_dict[elem_type_upper].get('code', None)
+        num_per_element = get_number_nodes(elem_type_upper)
     else:
-        if txtEltype.upper() in VTKtoElem.keys():
-            txtEltype = VTKtoElem[txtEltype]
-        elementNum = elementDict[txtEltype.upper()].get('code', None)
-        numPerElement = getNumberNodes(txtEltype.upper())
-    if not elementNum:
-        Logger.error(f'Element type {txtEltype} not implemented')
-    return elementNum, numPerElement
+        Logger.error(f'Element type {txt_elem_type} not implemented')
+        element_num = None
+    if not element_num:
+        Logger.error(f'Element type {txt_elem_type} not implemented')
+    return element_num, num_per_element
 
 
-def getElemTypeFromVTK(elementNum: int) -> str:
+def get_elem_type_from_vtk(element_num: int) -> str|None:
     """
     Get the global name of an element type based on its numerical ID as defined in Gmsh.
 
     This function retrieves the element type name corresponding to the given numerical ID
     by searching through a dictionary of element definitions. The dictionary is loaded
-    using the `loadElementDict` function. If the ID is not found, an error is logged.
+    using the `load_element_dict` function. If the ID is not found, an error is logged.
 
     Args:
-        elementNum (int): The numerical ID of the element type as defined in Gmsh.
+        element_num (int): The numerical ID of the element type as defined in Gmsh.
 
     Returns:
         str: The global name of the element type if found, otherwise `None`.
@@ -232,26 +237,26 @@ def getElemTypeFromVTK(elementNum: int) -> str:
         Logs an error if the element type ID is not found in the dictionary.
     """
     # load the dictionary
-    elementDict = loadElementDict()
-    globalName = None
+    element_dict = load_element_dict()
+    global_name = None
     # get the name of the element using the integer iD along the dictionary
-    for k, v in elementDict.items():
+    for k, v in element_dict.items():
         if v:
-            if v.get('code', None) == elementNum:
-                globalName = k
+            if v.get('code', None) == element_num:
+                global_name = k
                 break
     # if the name of the element if not available show error
-    if globalName is None:
-        Logger.error(f'Element type not found with id {elementNum}')
-    return globalName
+    if global_name is None:
+        Logger.error(f'Element type not found with id {element_num}')
+    return global_name
 
 
-def getNumberNodes(txtElemtype: str) -> int:
+def get_number_nodes(txt_elem_type: str|None) -> int:
     """
     Get the number of nodes for a specific element type.
 
     Args:
-        txtElemtype (str): The element type as a string. If a number is used, 
+        txt_elem_type (str): The element type as a string. If a number is used, 
                            the function will return it.
 
     Returns:
@@ -263,23 +268,24 @@ def getNumberNodes(txtElemtype: str) -> int:
         element dictionary.
 
     Notes:
-        The function relies on `loadElementDict()` to retrieve the dictionary 
+        The function relies on `load_element_dict()` to retrieve the dictionary 
         of element types and their properties.
     """
 
-    elementDict = loadElementDict()
+    element_dict = load_element_dict()
+    nb_nodes = 0
     # check if the type of element exists
-    if txtElemtype in elementDict.keys():
+    if txt_elem_type in element_dict:
         # get the number of nodes for the type of element
-        if elementDict[txtElemtype]:
-            nbNodes = elementDict[txtElemtype].get('nodes', None)
+        if element_dict[txt_elem_type]:
+            nb_nodes = element_dict[txt_elem_type].get('nodes', None)
     else:
         # show error message if the type of element does not exist
-        Logger.error(f'Element type {txtElemtype} not defined')
-    return nbNodes
+        Logger.error(f'Element type {txt_elem_type} not defined')
+    return nb_nodes
 
 
-def getNumberNodesFromNum(elementNum: int) -> int:
+def get_number_nodes_from_num(element_num: int) -> int:
     """
     Get the number of nodes for a specific element type based on its numerical identifier.
 
@@ -288,13 +294,49 @@ def getNumberNodesFromNum(elementNum: int) -> int:
     and then retrieving the number of nodes for that element type.
 
     Args:
-        elementNum (int): The numerical identifier of the element type as used in Gmsh.
+        element_num (int): The numerical identifier of the element type as used in Gmsh.
 
     Returns:
         int: The number of nodes associated with the specified element type.
     """
 
-    return getNumberNodes(getElemTypeFromVTK(elementNum))
+    return get_number_nodes(get_elem_type_from_vtk(element_num))
+
+
+# Backward-compatible API aliases (camelCase)
+def loadElementDict() -> dict:
+    """Compatibility wrapper for :func:`load_element_dict`."""
+    return load_element_dict()
+
+
+def getVTKtoElem() -> dict:
+    """Compatibility wrapper for :func:`get_vtk_to_elem`."""
+    return get_vtk_to_elem()
+
+
+def getVTKObj(txt_elem_type: str) -> tuple:
+    """Compatibility wrapper for :func:`get_vtk_obj`."""
+    return get_vtk_obj(txt_elem_type)
+
+
+def getVTKElemType(txt_elem_type: str | int) -> tuple:
+    """Compatibility wrapper for :func:`get_vtk_elem_type`."""
+    return get_vtk_elem_type(txt_elem_type)
+
+
+def getElemTypeFromVTK(element_num: int) -> str | None:
+    """Compatibility wrapper for :func:`get_elem_type_from_vtk`."""
+    return get_elem_type_from_vtk(element_num)
+
+
+def getNumberNodes(txt_elem_type: str | None) -> int:
+    """Compatibility wrapper for :func:`get_number_nodes`."""
+    return get_number_nodes(txt_elem_type)
+
+
+def getNumberNodesFromNum(element_num: int) -> int:
+    """Compatibility wrapper for :func:`get_number_nodes_from_num`."""
+    return get_number_nodes_from_num(element_num)
 
 
 # DEFAULT VALUES

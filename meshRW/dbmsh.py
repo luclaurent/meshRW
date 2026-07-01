@@ -13,7 +13,7 @@ from typing import Union
 from loguru import logger as Logger
 
 
-def loadElementDict()-> dict:
+def load_element_dict()-> dict:
     """
     Load a dictionary mapping element types to their corresponding properties.
 
@@ -30,8 +30,8 @@ def loadElementDict()-> dict:
     Returns:
         dict: A dictionary mapping element type strings to their properties.
     """
-    
-    elementDict = {
+
+    element_dict = {
         # 2-nodes line
         'LIN2': {'code': 1, 'nodes': 2, 'dim': 1},
         # 3-nodes second order line
@@ -82,19 +82,21 @@ def loadElementDict()-> dict:
         # 1-node point
         'NOD1': {'code': 15, 'nodes': 1, 'dim': 0},
     }
-    return elementDict
+    return element_dict
 
 
-def getMSHElemType(txtEltype: Union[str, int])-> int:
+def get_msh_elem_type(txt_elem_type: Union[str, int])-> int:
     """
-    Get the Gmsh element type number from a textual declaration or return the number directly if provided.
+    Get the Gmsh element type number from a textual declaration or return the number directly 
+    if provided.
 
-    This function retrieves the element type number as defined in the Gmsh documentation. If the input is a string, 
-    it looks up the corresponding number in a predefined dictionary. If the input is already an integer, it simply 
-    returns the input value.
+    This function retrieves the element type number as defined in the Gmsh documentation. 
+    If the input is a string, it looks up the corresponding number in a predefined dictionary. 
+    If the input is already an integer, it simply returns the input value.
 
     Args:
-        txtEltype (Union[str, int]): The element type, either as a string (e.g., "triangle", "quad") or as an integer.
+        txt_elem_type (Union[str, int]): The element type, either as a string 
+        (e.g., "triangle", "quad") or as an integer.
 
     Returns:
         int: The Gmsh element type number corresponding to the input.
@@ -106,31 +108,31 @@ def getMSHElemType(txtEltype: Union[str, int])-> int:
     Note:
         Refer to the Gmsh documentation for the numbering scheme of element types.
     """
-    elementDict = loadElementDict()
+    element_dict = load_element_dict()
 
-    # depending on the type of txtEltype
-    # - if int: return txtEltype
+    # depending on the type of txt_elem_type
+    # - if int: return txt_elem_type
     # - else get the number from the dictionary
-    if isinstance(txtEltype, int):
-        elementNum = txtEltype
+    if isinstance(txt_elem_type, int):
+        element_num = txt_elem_type
     else:
-        elementNum = elementDict[txtEltype.upper()].get('code', None)
+        element_num = element_dict[txt_elem_type.upper()].get('code', None)
     # show error if the type is not available
-    if not elementNum:
-        Logger.error(f'Element type {txtEltype} not implemented')
-    return elementNum
+    if not element_num:
+        Logger.error(f'Element type {txt_elem_type} not implemented')
+    return element_num
 
 
-def getElemTypeFromMSH(elementNum: int) -> str:
+def get_elem_type_from_msh(element_num: int) -> str|None:
     """
     Get the global name of an element type based on its numerical ID as defined in Gmsh.
 
     This function retrieves the element type name corresponding to the given numerical ID 
-    from a dictionary of element types. The dictionary is loaded using the `loadElementDict` 
+    from a dictionary of element types. The dictionary is loaded using the `load_element_dict` 
     function. If the ID is not found, an error is logged.
 
     Args:
-        elementNum (int): The numerical ID of the element type as defined in Gmsh.
+        element_num (int): The numerical ID of the element type as defined in Gmsh.
 
     Returns:
         str: The global name of the element type if found, otherwise `None`.
@@ -139,21 +141,21 @@ def getElemTypeFromMSH(elementNum: int) -> str:
         Logs an error if the element type ID is not found in the dictionary.
     """
     # load the dictionary
-    elementDict = loadElementDict()
-    globalName = None
+    element_dict = load_element_dict()
+    global_name = None
     # get the name of the element using the integer iD along the dictionary
-    for k, v in elementDict.items():
+    for k, v in element_dict.items():
         if v:
-            if v.get('code', None) == elementNum:
-                globalName = k
+            if v.get('code', None) == element_num:
+                global_name = k
                 break
     # if the name of the element if not available show error
-    if globalName is None:
-        Logger.error(f'Element type not found with id {elementNum}')
-    return globalName
+    if global_name is None:
+        Logger.error(f'Element type not found with id {element_num}')
+    return global_name
 
 
-def getNumberNodes(txtElemtype: str) -> int:
+def get_number_nodes(txt_elem_type: str|None) -> int:
     """
     Get the number of nodes for a specific element type.
 
@@ -161,7 +163,7 @@ def getNumberNodes(txtElemtype: str) -> int:
     from a predefined dictionary. The element type is provided as a string.
 
     Args:
-        txtElemtype (str): The element type as a string. If a number is used, 
+        txt_elem_type (str): The element type as a string. If a number is used, 
                            the function will return it.
 
     Returns:
@@ -173,19 +175,19 @@ def getNumberNodes(txtElemtype: str) -> int:
         Logs an error message if the specified element type is not defined in the dictionary.
     """
     # load the dictionary
-    elementDict = loadElementDict()
-    nbNodes = 0
+    element_dict = load_element_dict()
+    nb_nodes = 0
     # check if the type of element exists
-    if txtElemtype in elementDict.keys():
+    if txt_elem_type in element_dict:
         # get the number of nodes for the type of element
-        if elementDict[txtElemtype]:
-            nbNodes = elementDict[txtElemtype].get('nodes', None)
+        if element_dict[txt_elem_type]:
+            nb_nodes = element_dict[txt_elem_type].get('nodes', None)
     else:
         # show error message if the type of element does not exist
-        Logger.error(f'Element type {txtElemtype} not defined')
-    return nbNodes
+        Logger.error(f'Element type {txt_elem_type} not defined')
+    return nb_nodes
 
-def getDim(txtElemtype: str) -> int:
+def get_dim(txt_elem_type: str) -> int:
     """    
     Get the spatial dimension for a specific element type.
 
@@ -194,29 +196,30 @@ def getDim(txtElemtype: str) -> int:
     an error message is logged.
 
     Args:
-        txtElemtype (str): The element type specified as a string.
+        txt_elem_type (str): The element type specified as a string.
 
     Returns:
         int: The spatial dimension of the element type, or 0 if the element type is not found.
 
     Raises:
-        None: This function does not raise exceptions but logs an error if the element type is undefined.
+        None: This function does not raise exceptions but logs an error 
+        if the element type is undefined.
     """
     # load the dictionary
-    elementDict = loadElementDict()
-    nbNodes = 0
+    element_dict = load_element_dict()
+    nb_nodes = 0
     # check if the type of element exists
-    if txtElemtype in elementDict.keys():
+    if txt_elem_type in element_dict:
         # get the number of nodes for the type of element
-        if elementDict[txtElemtype]:
-            nbNodes = elementDict[txtElemtype].get('dim', None)
+        if element_dict[txt_elem_type]:
+            nb_nodes = element_dict[txt_elem_type].get('dim', None)
     else:
         # show error message if the type of element does not exist
-        Logger.error(f'Element type {txtElemtype} not defined')
-    return nbNodes
+        Logger.error(f'Element type {txt_elem_type} not defined')
+    return nb_nodes
 
 
-def getNumberNodesFromNum(elementNum: int) -> int:
+def get_number_nodes_from_num(element_num: int) -> int:
     """
     Get the number of nodes for a specific element type based on its numerical identifier.
 
@@ -225,12 +228,43 @@ def getNumberNodesFromNum(elementNum: int) -> int:
     the corresponding number of nodes.
 
     Args:
-        elementNum (int): The numerical identifier of the element type in Gmsh.
+        element_num (int): The numerical identifier of the element type in Gmsh.
 
     Returns:
         int: The number of nodes associated with the specified element type.
     """
-    return getNumberNodes(getElemTypeFromMSH(elementNum))
+    return get_number_nodes(get_elem_type_from_msh(element_num))
+
+
+# Backward-compatible API aliases (camelCase)
+def loadElementDict() -> dict:
+    """Compatibility wrapper for :func:`load_element_dict`."""
+    return load_element_dict()
+
+
+def getMSHElemType(txt_elem_type: Union[str, int]) -> int:
+    """Compatibility wrapper for :func:`get_msh_elem_type`."""
+    return get_msh_elem_type(txt_elem_type)
+
+
+def getElemTypeFromMSH(element_num: int) -> str | None:
+    """Compatibility wrapper for :func:`get_elem_type_from_msh`."""
+    return get_elem_type_from_msh(element_num)
+
+
+def getNumberNodes(txt_elem_type: str | None) -> int:
+    """Compatibility wrapper for :func:`get_number_nodes`."""
+    return get_number_nodes(txt_elem_type)
+
+
+def getDim(txt_elem_type: str) -> int:
+    """Compatibility wrapper for :func:`get_dim`."""
+    return get_dim(txt_elem_type)
+
+
+def getNumberNodesFromNum(element_num: int) -> int:
+    """Compatibility wrapper for :func:`get_number_nodes_from_num`."""
+    return get_number_nodes_from_num(element_num)
 
 
 # DEFAULT VALUES

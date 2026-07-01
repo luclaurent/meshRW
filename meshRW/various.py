@@ -17,14 +17,14 @@ def convert_size(size_bytes: Union[int, float]) -> str:
     """
     Convert a size in bytes to a human-readable string format.
 
-    This function takes a size in bytes (as an integer or float) and converts it 
+    This function takes a size in bytes (as an integer or float) and converts it
     to a more human-readable format using appropriate units (e.g., KB, MB, GB, etc.).
 
     Args:
         size_bytes (Union[int, float]): The size in bytes to be converted.
 
     Returns:
-        str: A human-readable string representation of the size, including the 
+        str: A human-readable string representation of the size, including the
              appropriate unit (e.g., '1.5 MB', '200 KB').
 
     Raises:
@@ -53,7 +53,7 @@ def timeit(txt: Optional[str] = None)-> Callable:
     A decorator to measure and log the execution time of a function.
 
     Args:
-        txt (Optional[str]): An optional string to include in the log message. 
+        txt (Optional[str]): An optional string to include in the log message.
                                 If provided, it will be prefixed to the execution time.
 
     Returns:

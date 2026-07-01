@@ -13,10 +13,10 @@ import sys
 import numpy as np
 from loguru import logger as Logger
 
-from . import configMESH, dbvtk, fileio, various, writerClass
+from . import config_mesh, dbvtk, fileio, various, writerclass
 
 
-class vtkWriter(writerClass.writer):
+class vtkWriter(writerclass.writer):
     """
     vtkWriter is a class designed to write VTK files in various formats (v2 or XML). 
     It supports writing nodes, elements, and fields, and can handle multiple steps 
@@ -91,7 +91,7 @@ class vtkWriter(writerClass.writer):
         #     Logger.add(sys.stderr, level="INFO") 
         Logger.info('Start writing vtk file')
         # adapt inputs
-        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
+        nodes, elements, fields = writerclass.adaptInputs(nodes, elements, fields)
         # prepare new fields (from physical groups for instance)
         newFields = self.createNewFields(elements)
         if newFields:
@@ -104,6 +104,41 @@ class vtkWriter(writerClass.writer):
         self.db = dbvtk
         # write contents depending on the number of steps
         self.writeContentsSteps(nodes, elements, fields)
+
+    # Writer abstract API (snake_case) wrappers
+    def get_append(self) -> bool:
+        """Compatibility wrapper for Writer abstract API."""
+        return self.getAppend()
+
+    def set_options(self, opts: dict) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.setOptions(opts)
+
+    def write_contents(
+        self,
+        nodes: Union[list, np.ndarray],
+        elements: dict,
+        fields: Union[list, np.ndarray, None] = None,
+        num_step: Optional[int] = None,
+    ) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeContents(nodes, elements, fields, num_step)
+
+    def write_nodes(self, nodes: np.ndarray) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeNodes(nodes)
+
+    def write_elements(self, elements: Union[list, np.ndarray, dict]) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeElements(elements)
+
+    def write_fields(
+        self,
+        fields: Optional[Union[list, np.ndarray]] = None,
+        num_step: Optional[int] = None,
+    ) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeFields(fields, num_step)
 
     def setOptions(self, options: dict)-> None:
         """
@@ -319,7 +354,7 @@ class vtkWriter(writerClass.writer):
         # count number of elements
         self.nbElems = 0
         for e in elemsRun:
-            self.nbElems += e[configMESH.DFLT_MESH].shape[0]
+            self.nbElems += e[config_mesh.DFLT_MESH].shape[0]
 
         if self.version == 'v2':
             WriteElemsV2(self.customHandler.fhandle, elems)
@@ -353,16 +388,16 @@ class vtkWriter(writerClass.writer):
         physGrp = False
         newFields = None
         for itE in elems:
-            if configMESH.DFLT_PHYS_GRP in itE.keys():
+            if config_mesh.DFLT_PHYS_GRP in itE.keys():
                 physGrp = True
                 break
         if physGrp:
             newFields = list()
             data = list()
             for itE in elems:
-                nbElems = itE[configMESH.DFLT_MESH].shape[0]
-                if configMESH.DFLT_PHYS_GRP in itE.keys():
-                    dataPhys = np.array(itE[configMESH.DFLT_PHYS_GRP], dtype=int)
+                nbElems = itE[config_mesh.DFLT_MESH].shape[0]
+                if config_mesh.DFLT_PHYS_GRP in itE.keys():
+                    dataPhys = np.array(itE[config_mesh.DFLT_PHYS_GRP], dtype=int)
                     if len(dataPhys) == nbElems:
                         data = np.append(data, dataPhys)
                     else:
@@ -370,7 +405,7 @@ class vtkWriter(writerClass.writer):
                 else:
                     data = np.append(data, -np.ones(nbElems))
             Logger.debug('Create new field for physical group')
-            newFields.extend([{'data': data, 'type': 'elemental_scalar', 'dim': 1, 'name': configMESH.DFLT_PHYS_GRP}])
+            newFields.extend([{'data': data, 'type': 'elemental_scalar', 'dim': 1, 'name': config_mesh.DFLT_PHYS_GRP}])
 
         return newFields
 
@@ -512,9 +547,9 @@ def WriteElemsV2(fileHandle: fileio.fileHandler, elements: list) -> None:
     nbElems = 0
     nbInt = 0
     for itE in elements:
-        nbElems += itE[configMESH.DFLT_MESH].shape[0]
-        nbInt += np.prod(itE[configMESH.DFLT_MESH].shape)
-        Logger.debug(f'{itE[configMESH.DFLT_MESH].shape[0]} {itE[configMESH.DFLT_FIELD_TYPE]}')
+        nbElems += itE[config_mesh.DFLT_MESH].shape[0]
+        nbInt += np.prod(itE[config_mesh.DFLT_MESH].shape)
+        Logger.debug(f'{itE[config_mesh.DFLT_MESH].shape[0]} {itE[config_mesh.DFLT_FIELD_TYPE]}')
 
     # initialize size declaration
     fileHandle.write(f'\n{dbvtk.DFLT_ELEMS} {nbElems:d} {nbInt+nbElems:d}\n')
@@ -522,12 +557,12 @@ def WriteElemsV2(fileHandle: fileio.fileHandler, elements: list) -> None:
     # along the element types
     for itE in elements:
         # get the numbering the the element and the number of nodes per element
-        nbNodesPerCell = dbvtk.getNumberNodes(itE[configMESH.DFLT_FIELD_TYPE])
+        nbNodesPerCell = dbvtk.getNumberNodes(itE[config_mesh.DFLT_FIELD_TYPE])
         formatSpec = '{:d} '
         formatSpec += ' '.join('{:d}' for _ in range(nbNodesPerCell))
         formatSpec += '\n'
         # write cells
-        for e in itE[configMESH.DFLT_MESH]:
+        for e in itE[config_mesh.DFLT_MESH]:
             fileHandle.write(formatSpec.format(nbNodesPerCell, *e))
 
     # declaration of cell types
@@ -535,8 +570,8 @@ def WriteElemsV2(fileHandle: fileio.fileHandler, elements: list) -> None:
     Logger.debug(f'Start writing {nbElems} {dbvtk.DFLT_ELEMS_TYPE}')
     # along the element types
     for itE in elements:
-        numElemVTK, _ = dbvtk.getVTKElemType(itE[configMESH.DFLT_FIELD_TYPE])
-        for _ in range(itE[configMESH.DFLT_MESH].shape[0]):
+        numElemVTK, _ = dbvtk.getVTKElemType(itE[config_mesh.DFLT_FIELD_TYPE])
+        for _ in range(itE[config_mesh.DFLT_MESH].shape[0]):
             fileHandle.write(f'{numElemVTK:d}\n')
 
 
@@ -615,13 +650,13 @@ def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fi
     iXNodalScalar = list()
     iXElementalScalar = list()
     for i, f in enumerate(fields):
-        if f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_NODAL:
+        if f[config_mesh.DFLT_FIELD_TYPE] == config_mesh.DFLT_FIELD_TYPE_NODAL:
             iXNodalField.append(i)
-        elif f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT:
+        elif f[config_mesh.DFLT_FIELD_TYPE] == config_mesh.DFLT_FIELD_TYPE_ELEMENT:
             iXElementalField.append(i)
-        elif f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_NODAL_SCALAR:
+        elif f[config_mesh.DFLT_FIELD_TYPE] == config_mesh.DFLT_FIELD_TYPE_NODAL_SCALAR:
             iXNodalScalar.append(i)
-        elif f[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT_SCALAR:
+        elif f[config_mesh.DFLT_FIELD_TYPE] == config_mesh.DFLT_FIELD_TYPE_ELEMENT_SCALAR:
             iXElementalScalar.append(i)
 
     # write CELL_DATA
@@ -693,14 +728,14 @@ def getData(data: dict, num: int) -> np.ndarray:
     """
     # create array of data
     dataOut = None
-    if configMESH.DFLT_FIELD_STEPS in data.keys():
-        if len(data[configMESH.DFLT_FIELD_STEPS]) > 1:
-            dataOut = data[configMESH.DFLT_FIELD_DATA][num]
-    elif configMESH.DFLT_FIELD_NBSTEPS in data.keys():
-        if data[configMESH.DFLT_FIELD_NBSTEPS] > 0:
-            dataOut = data[configMESH.DFLT_FIELD_DATA][num]
+    if config_mesh.DFLT_FIELD_STEPS in data.keys():
+        if len(data[config_mesh.DFLT_FIELD_STEPS]) > 1:
+            dataOut = data[config_mesh.DFLT_FIELD_DATA][num]
+    elif config_mesh.DFLT_FIELD_NBSTEPS in data.keys():
+        if data[config_mesh.DFLT_FIELD_NBSTEPS] > 0:
+            dataOut = data[config_mesh.DFLT_FIELD_DATA][num]
     else:
-        dataOut = data[configMESH.DFLT_FIELD_DATA]
+        dataOut = data[config_mesh.DFLT_FIELD_DATA]
     return dataOut
 
 

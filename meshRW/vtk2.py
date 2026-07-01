@@ -18,10 +18,10 @@ import vtkmodules.util.numpy_support as ns
 from loguru import logger as Logger
 from lxml import etree
 
-from . import configMESH, dbvtk, various, writerClass
+from . import config_mesh, dbvtk, various, writerclass
 
 
-class vtkWriter(writerClass.writer):
+class vtkWriter(writerclass.writer):
     """
     vtkWriter is a class for writing VTK/VTU files using the VTK library. It provides functionality to handle nodes, elements, 
     and fields, and supports writing data along multiple time steps. The class also includes methods for creating new fields 
@@ -94,7 +94,7 @@ class vtkWriter(writerClass.writer):
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
         # adapt inputs
-        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)   
+        nodes, elements, fields = writerclass.adaptInputs(nodes, elements, fields)   
         # prepare new fields (from physical groups for instance)
         newFields = self.createNewFields(elements)
         if newFields:
@@ -110,6 +110,41 @@ class vtkWriter(writerClass.writer):
         self.db = dbvtk
         # write contents depending on the number of steps
         self.writeContentsSteps(nodes, elements, fields)
+
+    # Writer abstract API (snake_case) wrappers
+    def get_append(self) -> bool:
+        """Compatibility wrapper for Writer abstract API."""
+        return self.getAppend()
+
+    def set_options(self, opts: dict) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.setOptions(opts)
+
+    def write_contents(
+        self,
+        nodes: Union[list, np.ndarray],
+        elements: dict,
+        fields: Union[list, np.ndarray, None] = None,
+        num_step: Optional[int] = None,
+    ) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeContents(fields, num_step)
+
+    def write_nodes(self, nodes: Union[list, np.ndarray]) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeNodes(nodes)
+
+    def write_elements(self, elements: Union[list, np.ndarray, dict]) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeElements(elements)
+
+    def write_fields(
+        self,
+        fields: Optional[Union[list, np.ndarray]] = None,
+        num_step: Optional[int] = None,
+    ) -> None:
+        """Compatibility wrapper for Writer abstract API."""
+        self.writeFields(fields, num_step)
 
     def getAppend(self)-> bool:
         """"
@@ -408,16 +443,16 @@ class vtkWriter(writerClass.writer):
         physGrp = False
         newFields = None
         for itE in elems:
-            if configMESH.DFLT_PHYS_GRP in itE.keys():
+            if config_mesh.DFLT_PHYS_GRP in itE.keys():
                 physGrp = True
                 break
         if physGrp:
             newFields = list()
             data = list()
             for itE in elems:
-                nbElems = itE[configMESH.DFLT_MESH].shape[0]
-                if configMESH.DFLT_PHYS_GRP in itE.keys():
-                    dataPhys = np.array(itE[configMESH.DFLT_PHYS_GRP], dtype=int)
+                nbElems = itE[config_mesh.DFLT_MESH].shape[0]
+                if config_mesh.DFLT_PHYS_GRP in itE.keys():
+                    dataPhys = np.array(itE[config_mesh.DFLT_PHYS_GRP], dtype=int)
                     if len(dataPhys) == nbElems:
                         data = np.append(data, dataPhys)
                     else:
@@ -425,7 +460,7 @@ class vtkWriter(writerClass.writer):
                 else:
                     data = np.append(data, -np.ones(nbElems))
             Logger.debug('Create new field for physical group')
-            newFields.extend([{'data': data, 'type': 'elemental', 'dim': 1, 'name': configMESH.DFLT_PHYS_GRP}])
+            newFields.extend([{'data': data, 'type': 'elemental', 'dim': 1, 'name': config_mesh.DFLT_PHYS_GRP}])
 
         return newFields
     

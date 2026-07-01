@@ -4,6 +4,26 @@ All notable changes to this project are documented below by date.
 
 Format: chronological timeline with release/tag milestones and notable repository changes.
 
+## 2026-07-01
+
+### Release tags
+
+- `v1.6.0`
+
+### Changed
+
+- Standardized internal naming to snake_case across core modules.
+- Improved type hints and runtime guards in MSH/Gmsh writers.
+
+### Added
+
+- Backward-compatible aliases for legacy public APIs in `dbmsh`, `dbvtk`, and `fileio`.
+- Compatibility shims for legacy module imports (`configMESH`, `writerClass`).
+
+### Documentation
+
+- Clarified canonical module names and legacy compatibility in API docs.
+
 ## 2026-05-22
 
 ### Documentation and CI improvements (working tree)

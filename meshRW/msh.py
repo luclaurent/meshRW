@@ -9,18 +9,20 @@ Luc Laurent - luc.laurent@lecnam.net -- 2021
 """
 
 from pathlib import Path
-from typing import Union, Optional
-import sys
+from typing import Iterable, Optional, Union, cast
 
 import numpy as np
 from loguru import logger as Logger
 
-from . import configMESH, dbmsh, fileio, various, writerClass
+from . import config_mesh, dbmsh, fileio, various, writerclass
 
 
-class mshWriter(writerClass.writer):
+class MSHWriter(writerclass.Writer):
     """
-    mshWriter is a class for writing GMSH (.msh) files. It provides functionality to write nodes, elements, and fields into a GMSH file format. The class supports appending data to existing files and handles various configurations for writing mesh data.
+    MSHWriter is a class for writing GMSH (.msh) files. It provides functionality 
+    to write nodes, elements, and fields into a GMSH file format. The class supports
+    appending data to existing files and handles various configurations for writing
+    mesh data.
     Attributes:
         db (module): Database module for GMSH configurations.
         fhandle (fileio.fileHandler): File handler for writing data to the file.
@@ -30,20 +32,23 @@ class mshWriter(writerClass.writer):
     Methods:
         __init__(filename, nodes, elements, fields, append, title, verbose, opts):
             Initializes the mshWriter class and writes the contents to the file.
-        setOptions(options):
+        set_options(options):
             Sets default options for the writer.
-        writeContents(nodes, elements, fields, numStep):
+        write_contents(nodes, elements, fields, num_step):
             Writes the contents of the mesh file, including nodes, elements, and fields.
-        getAppend():
+        get_append():
             Checks if the file is in append mode.
-        writeNodes(nodes):
+        write_nodes(nodes):
             Writes the nodes' coordinates to the file.
-        writeElements(elems):
+        write_elements(elems):
             Writes the elements' connectivity and types to the file.
-        writeFields(fields):
+        write_fields(fields):
             Writes the fields (nodal or elemental data) to the file.
     Usage:
-        This class is used to create or append to GMSH (.msh) files. It supports writing nodes, elements, and fields with various configurations. The input data can be provided as lists or numpy arrays, and the class handles the formatting and writing process.
+        This class is used to create or append to GMSH (.msh) files. It supports writing 
+        nodes, elements, and fields with various configurations. The input data can be 
+        provided as lists or numpy arrays, and the class handles the formatting and 
+        writing process.
     Example:
         writer = mshWriter(
             filename="mesh.msh",
@@ -55,31 +60,35 @@ class mshWriter(writerClass.writer):
             verbose=True
     """
 
-    def __init__(        
+    def __init__(
         self,
-        filename: Union[str, Path] = None,
-        nodes: Union[list, np.ndarray] = None,
-        elements: Union[list, np.ndarray] = None,
-        fields: Union[list, np.ndarray] = None,
+        filename: Union[str, Path, None] = None,
+        nodes: Union[list, np.ndarray, None] = None,
+        elements: Union[list, np.ndarray, None] = None,
+        fields: Union[list, np.ndarray, None] = None,
         append: bool = False,
-        title: str = None,
+        title: str|None = None,
         verbose: bool = False,
-        opts: dict = {'createPath': True},
+        opts: Optional[dict] = None,
     )-> None:
         """
        Initialize the mshWriter class to write a GMSH file.
 
         Parameters:
-            filename (Union[str, Path], optional): Name of the GMSH file (with or without `.msh` extension). 
+            filename (Union[str, Path], optional): Name of the GMSH file (with or without 
+            `.msh` extension). 
                 Can include a directory path. Defaults to None.
             nodes (Union[list, np.ndarray], optional): Node coordinates. Defaults to None.
-            elements (Union[list, np.ndarray], optional): Connectivity tables. Should be a list of dictionaries 
+            elements (Union[list, np.ndarray], optional): Connectivity tables. Should be a 
+            list of dictionaries 
                 with keys:
                     - 'connectivity': Connectivity array.
                     - 'type': Type of elements (string or integer, see GMSH documentation).
-                    - 'physgrp' (optional): Physical group (integer or array of integers for each cell). 
+                    - 'physgrp' (optional): Physical group (integer or array of integers for 
+                    each cell). 
                 Defaults to None.
-            fields (Union[list, np.ndarray], optional): List of fields to write. Each field is a dictionary with keys:
+            fields (Union[list, np.ndarray], optional): List of fields to write. Each field 
+            is a dictionary with keys:
                 - 'data': Variable name.
                 - 'type': 'nodal' or 'elemental'.
                 - 'numentities': Number of concerned values (nodes or elements).
@@ -88,51 +97,71 @@ class mshWriter(writerClass.writer):
                 - 'steps': List of steps.
                 - 'nbsteps': Number of steps.
                 Defaults to None.
-            append (bool, optional): Whether to append fields to an existing file. Defaults to False.
-            title (str, optional): Title of the file. Defaults to None.
-            verbose (bool, optional): If True, enables verbose logging. Defaults to False.
-            opts (dict, optional): Additional options for the writer. Defaults: {'createPath': True},.
+            append (bool, optional): Whether to append fields to an existing file. 
+            Defaults to False.
+            title (str, optional): Title of the file. 
+            Defaults to None.
+            verbose (bool, optional): If True, enables verbose logging. 
+            Defaults to False.
+            opts (dict, optional): Additional options for the writer. 
+            Defaults: {'createPath': True},.
 
         Raises:
             Exception: If any error occurs during file handling or writing.
 
         Notes:
             - This class adapts the inputs for writing and initializes the file handler.
-            - Depending on the `append` flag and file existence, the file is opened in append or write mode.
+            - Depending on the `append` flag and file existence, the file is opened 
+            in append or write mode.
             - The contents are written to the file, and the file is closed after writing.
         """
         # # adapt verbosity logger
         # if not verbose:
         #     Logger.remove()
-        #     Logger.add(sys.stderr, level="INFO") 
+        #     Logger.add(sys.stderr, level="INFO")
+        _ = verbose
         Logger.info('Start writing msh file')
         # adapt inputs
-        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
+        if elements is None:
+            raise ValueError('elements are required')
+        nodes, elements, fields = writerclass.adapt_inputs(nodes, elements, fields)
+        if nodes is None or elements is None:
+            raise ValueError('nodes and elements are required')
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, opts)
+        super().__init__(filename,
+                         nodes,
+                         cast(dict | None, elements),
+                         fields,
+                         append,
+                         title,
+                         opts or {'createPath': True})
 
         # load specific configuration
         self.db = dbmsh
+        self.opts = opts or {'createPath': True}
+        self.nb_nodes = 0
+        self.dim_pb = 0
+        self.nb_elems = 0
         # depending on the case
         Logger.info(f'Initialize writing {self.basename}')
         if fields is not None and self.append and self.filename.exists():
-            self.fhandle = fileio.fileHandler(filename=filename, right='a', safeMode=False)
+            self.fhandle = fileio.FileHandler(filename=filename, right='a', safe_mode=False)
         else:
-            self.fhandle = fileio.fileHandler(filename=filename, right='w', safeMode=False)
+            self.fhandle = fileio.FileHandler(filename=filename, right='w', safe_mode=False)
 
         # write contents
-        self.writeContents(nodes, elements, fields)
+        self.write_contents(nodes, elements, fields)
 
         # close file
         self.fhandle.close()
         self.fhandle = None
 
-    def setOptions(self, options: dict)-> None:
+    def set_options(self, opts: dict)-> None:
         """
         Sets the default options for the object.
 
         Args:
-            options (dict): A dictionary containing configuration options 
+            opts (dict): A dictionary containing configuration options 
                     to be set. The keys and values in the dictionary 
                     should correspond to the specific options supported 
                     by the object.
@@ -140,40 +169,48 @@ class mshWriter(writerClass.writer):
         Returns:
             None
         """
-        self.opts = options
+        self.opts = opts
 
-    def writeContents(self,                     
-                      nodes: Union[list, np.ndarray], 
-                      elements: Union[list, np.ndarray], 
-                      fields: Optional[list] = None, 
-                      numStep: Optional[int] = None)-> None:
+    def write_contents(self,
+                      nodes: Union[list, np.ndarray],
+                      elements: Union[list, np.ndarray],
+                      fields: Union[list, np.ndarray, None] = None,
+                      num_step: Optional[int] = None)-> None:
         """
         Write the contents of a mesh file, including nodes, elements, and optional fields.
 
         Parameters:
-            nodes (Union[list, np.ndarray]): The list or array of nodes to be written to the file.
-            elements (Union[list, np.ndarray]): The list or array of elements to be written to the file.
-            fields (Optional[list], optional): A list of fields to be written to the file. Defaults to None.
-            numStep (Optional[int], optional): The step number associated with the fields. Defaults to None.
+            nodes (Union[list, np.ndarray]): The list or array of nodes to be written to 
+            the file.
+            elements (Union[list, np.ndarray]): The list or array of elements to be written
+             to the file.
+            fields (Optional[list], optional): A list of fields to be written to the file.
+             Defaults to None.
+            num_step (Optional[int], optional): The step number associated with the fields. 
+            Defaults to None.
 
         Returns:
             None
         """
-        if not self.getAppend():
+        _ = num_step
+        assert self.fhandle is not None
+        if not self.get_append():
             # write header
-            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_OPEN_CLOSE['open']))
+            txt = dbmsh.DFLT_FILE_OPEN_CLOSE['open']
+            self.fhandle.write(f'{txt}\n')
             self.fhandle.write(f'{dbmsh.DFLT_FILE_VERSION}\n')
-            self.fhandle.write('{}\n'.format(dbmsh.DFLT_FILE_OPEN_CLOSE['close']))
+            txt = dbmsh.DFLT_FILE_OPEN_CLOSE['close']
+            self.fhandle.write(f'{txt}\n')
             # write nodes
-            self.writeNodes(nodes)
+            self.write_nodes(nodes)
             # write elements
-            self.writeElements(elements)
+            self.write_elements(elements)
 
         # write fields
         if fields is not None:
-            self.writeFields(fields)
+            self.write_fields(fields)
 
-    def getAppend(self)-> bool:
+    def get_append(self)-> bool:
         """
         Retrieves the append flag from the file handler.
 
@@ -184,12 +221,12 @@ class mshWriter(writerClass.writer):
         Returns:
             bool: The current state of the append flag.
         """
-
-        self.append = self.fhandle.append
+        assert self.fhandle is not None
+        self.append = bool(self.fhandle.append)
         return self.append
 
     @various.timeit('Nodes written')
-    def writeNodes(self, nodes: Union[list, np.ndarray])-> None:
+    def write_nodes(self, nodes: Union[list, np.ndarray])-> None:
         """
         Writes the coordinates of nodes to a file in a specific format.
 
@@ -210,43 +247,46 @@ class mshWriter(writerClass.writer):
           and closing tag defined in `dbmsh.DFLT_NODES_OPEN_CLOSE`.
         - Node indices in the output file start from 1.
         """
+        assert self.fhandle is not None
         # adapt nodes
         if isinstance(nodes, list):
             nodes = np.array(nodes)
         #
-        self.nbNodes = nodes.shape[0]
-        Logger.debug(f'Write {self.nbNodes} nodes')
+        self.nb_nodes = nodes.shape[0]
+        Logger.debug(f'Write {self.nb_nodes} nodes')
         #
-        self.fhandle.write('{}\n'.format(dbmsh.DFLT_NODES_OPEN_CLOSE['open']))
-        self.fhandle.write(f'{self.nbNodes}\n')
+        txt = dbmsh.DFLT_NODES_OPEN_CLOSE['open']
+        self.fhandle.write(f'{txt}\n')
+        self.fhandle.write(f'{self.nb_nodes}\n')
         #
-        self.dimPb = nodes.shape[1]
+        self.dim_pb = nodes.shape[1]
 
         # (2d)
-        if self.dimPb == 2:
+        if self.dim_pb == 2:
             #
-            formatSpec = '{:d} {:9.4g} {:9.4g} 0.0\n'
+            format_spec = '{:d} {:9.4g} {:9.4g} 0.0\n'
             # write
-            for i in range(self.nbNodes):
-                self.fhandle.write(formatSpec.format(i + 1, *nodes[i, :], 0.0))
+            for i in range(self.nb_nodes):
+                self.fhandle.write(format_spec.format(i + 1, *nodes[i, :], 0.0))
 
         # (3d)
-        if self.dimPb == 3:
+        if self.dim_pb == 3:
             #
-            formatSpec = '{:d} {:9.4g} {:9.4g} {:9.4g}\n'
+            format_spec = '{:d} {:9.4g} {:9.4g} {:9.4g}\n'
             # write
-            for i in range(self.nbNodes):
-                self.fhandle.write(formatSpec.format(i + 1, *nodes[i, :]))
-
-        self.fhandle.write('{}\n'.format(dbmsh.DFLT_NODES_OPEN_CLOSE['close']))
+            for i in range(self.nb_nodes):
+                self.fhandle.write(format_spec.format(i + 1, *nodes[i, :]))
+        txt = dbmsh.DFLT_NODES_OPEN_CLOSE['close']
+        self.fhandle.write(f'{txt}\n')
 
     @various.timeit('Elements written')
-    def writeElements(self, elems: Union[list, np.ndarray])-> None:
+    def write_elements(self, elements: Union[list, np.ndarray])-> None:
         """
         Writes elements to a file in the GMSH format.
 
         Parameters:
-            elems (Union[list, np.ndarray]): A list or dictionary containing element connectivity and metadata.
+            elems (Union[list, np.ndarray]): A list or dictionary containing 
+            element connectivity and metadata.
                 The input can be one of the following formats:
                     - List of dictionaries:
                         [{'connectivity': table1, 'type': eltype1, 'physgrp': grp1},
@@ -257,51 +297,69 @@ class mshWriter(writerClass.writer):
                 Keys in the dictionary:
                     - 'connectivity': A 2D array representing the connectivity table of elements.
                     - 'type': The type of elements (string or integer, see GMSH documentation).
-                    - 'physgrp' (optional): Physical group identifier(s). Can be an integer or an array of integers
-                      to declare the physical group of each cell. Defaults to 0 if not provided.
+                    - 'physgrp' (optional): Physical group identifier(s). Can be an integer or 
+                    an array of integersto declare the physical group of each cell.
+                    Defaults to 0 if not provided.
 
         Returns:
             None
 
         Notes:
-            - The method calculates the total number of elements (`nbElems`) and writes them to the file.
+            - The method calculates the total number of elements (`nbElems`) and 
+            writes them to the file.
             - Each element is written with its type, physical group, and connectivity information.
             - The GMSH element type is determined using `dbmsh.getMSHElemType`.
-            - Physical group identifiers are adjusted to ensure they are in the correct format (list of integers).
+            - Physical group identifiers are adjusted to ensure they are in the correct format 
+            (list of integers).
         """
+        assert self.fhandle is not None
         # convert to list if dict
-        if type(elems) is dict:
-            elemsRun = [elems]
+        if isinstance(elements, dict):
+            elems_run = [elements]
         else:
-            elemsRun = elems
+            elems_run = elements
 
         # count number of elems
-        self.nbElems = 0
+        self.nb_elems = 0
         Logger.debug('Start preparing elements')
-        for iD in elemsRun:
-            dimC = iD[configMESH.DFLT_MESH].shape
+        dflt_mesh = config_mesh.DFLT_MESH
+        dflt_phys_grp = config_mesh.DFLT_PHYS_GRP
+        dflt_type_elem = config_mesh.DFLT_TYPE_ELEM
+        for elem in elems_run:
+            id_elem = cast(dict, elem)
+            mesh_data = id_elem.get(dflt_mesh)
+            if mesh_data is None:
+                raise ValueError(f'Missing {dflt_mesh} in element')
+            dim_c = mesh_data.shape
             #
-            iD['nbElems'] = dimC[0]  # nb of elements on the connectivity table
-            iD['nbNodes'] = dimC[1]  # nb of nodes per element
-            self.nbElems += dimC[0]  # total number of elements
+            id_elem['nbElems'] = dim_c[0]  # nb of elements on the connectivity table
+            id_elem['nbNodes'] = dim_c[1]  # nb of nodes per element
+            self.nb_elems += dim_c[0]  # total number of elements
             #
             # convert element type to MSH number
-            iD['eltypeGMSH'] = dbmsh.getMSHElemType(iD[configMESH.DFLT_TYPE_ELEM])
+            elem_type = id_elem.get(dflt_type_elem)
+            if elem_type is None:
+                raise ValueError(f'Missing {dflt_type_elem} in element')
+            id_elem['eltypeGMSH'] = dbmsh.get_msh_elem_type(elem_type)
             #
-            if configMESH.DFLT_PHYS_GRP not in iD.keys():
-                iD[configMESH.DFLT_PHYS_GRP] = 0
-            if type(iD[configMESH.DFLT_PHYS_GRP]) is int:
-                iD[configMESH.DFLT_PHYS_GRP] = [iD[configMESH.DFLT_PHYS_GRP]]
-            if len(iD[configMESH.DFLT_PHYS_GRP]) == 1:
-                iD[configMESH.DFLT_PHYS_GRP].append(iD[configMESH.DFLT_PHYS_GRP][0])
+            if dflt_phys_grp not in id_elem:
+                id_elem[dflt_phys_grp] = 0
+            phys_grp = id_elem.get(dflt_phys_grp)
+            if isinstance(phys_grp, int):
+                id_elem[dflt_phys_grp] = [phys_grp]
+            phys_grp_list = id_elem.get(dflt_phys_grp)
+            if phys_grp_list is not None and len(phys_grp_list) == 1:
+                phys_grp_list.append(phys_grp_list[0])
         Logger.debug('Done')
 
         # write all meshes
-        Logger.debug(f'Start writing {self.nbElems} elements')
-        self.fhandle.write('{}\n'.format(dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']))
-        self.fhandle.write(f'{self.nbElems}\n')
-        itElem = 0  # iterator for elements
-        for iD in elemsRun:
+        Logger.debug(f'Start writing {self.nb_elems} elements')
+        txt = dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']
+        self.fhandle.write(f'{txt}\n')
+        self.fhandle.write(f'{self.nb_elems}\n')
+        it_elem = 0  # iterator for elements
+        for elem in elems_run:
+            id_elem = cast(dict, elem)
             # create format specifier for element
             # 1: number of element
             # 2: type of the element (see gmsh documentation)
@@ -309,25 +367,35 @@ class mshWriter(writerClass.writer):
             # 4: physical entity
             # 5: elementary entity
             # 6+: nodes of the elements
-            formatSpec = ' '.join('{:d}' for i in range(3 + len(iD[configMESH.DFLT_PHYS_GRP]) + iD['nbNodes'])) + '\n'
+            phys_grp = cast(list, id_elem.get(config_mesh.DFLT_PHYS_GRP))
+            mesh = cast(np.ndarray, id_elem.get(config_mesh.DFLT_MESH))
+            nb_nodes = cast(int, id_elem.get('nbNodes'))
+            nb_elems = cast(int, id_elem.get('nbElems'))
+            elem_type = cast(int, id_elem.get('eltypeGMSH'))
+            format_spec = ' '.join('{:d}' \
+                for _ in \
+                    range(3 + len(phys_grp) + nb_nodes))\
+                    + '\n'
             # write
-            for e in range(iD['nbElems']):
-                itElem += 1
+            for e in range(nb_elems):
+                it_elem += 1
                 # write in file
                 self.fhandle.write(
-                    formatSpec.format(
-                        itElem,
-                        iD['eltypeGMSH'],
-                        len(iD[configMESH.DFLT_PHYS_GRP]),
-                        *iD[configMESH.DFLT_PHYS_GRP],
-                        *iD[configMESH.DFLT_MESH][e],
+                    format_spec.format(
+                        it_elem,
+                        elem_type,
+                        len(phys_grp),
+                        *phys_grp,
+                        *mesh[e],
                     )
                 )
-
-        self.fhandle.write('{}\n'.format(dbmsh.DFLT_ELEMS_OPEN_CLOSE['close']))
+        txt = dbmsh.DFLT_ELEMS_OPEN_CLOSE['close']
+        self.fhandle.write(f'{txt}\n')
 
     @various.timeit('Fields written')
-    def writeFields(self, fields: Union[list, np.ndarray])-> None:
+    def write_fields(self,
+                     fields: Union[list, np.ndarray, None] = None,
+                     num_step: Optional[int] = None)-> None:
         """
         Writes field data to a file in a specific format.
 
@@ -341,12 +409,14 @@ class mshWriter(writerClass.writer):
                           If a dictionary, it should have:
                             - 'array': Array of data values.
                             - 'connectivityId': Integer indicating the associated list of cells.
-                - 'type': String, either 'nodal' or 'elemental', indicating whether the data is defined at nodes or cells.
+                - 'type': String, either 'nodal' or 'elemental', indicating whether the data 
+                is defined at nodes or cells.
                 - 'dim': Integer, the number of data values per node or cell.
                 - 'name': String, the name of the data field.
                 - 'steps' (optional): List of steps used to declare fields.
                 - 'nbsteps' (optional): Integer, the number of steps used to declare fields.
-                  If neither 'steps' nor 'nbsteps' are provided, the field is assumed to be static (not defined along steps).
+                  If neither 'steps' nor 'nbsteps' are provided, the field is assumed to be 
+                  static (not defined along steps).
 
         Behavior:
         ---------
@@ -358,74 +428,87 @@ class mshWriter(writerClass.writer):
 
         Notes:
         ------
-        - The method uses a predefined configuration (`configMESH`) to extract default field keys and types.
-        - Logging is used to provide debug information about the writing process, including field names, steps, and dimensions.
-        - The output format includes tags, time values, and data values for each node or cell.
+        - The method uses a predefined configuration (`configMESH`) to extract default 
+        field keys and types.
+        - Logging is used to provide debug information about the writing process, including 
+        field names, steps, and dimensions.
+        - The output format includes tags, time values, and data values for each node or 
+        cell.
 
         Raises:
         -------
         - KeyError: If required keys are missing in the input field dictionaries.
         - AttributeError: If the file handle (`self.fhandle`) is not properly initialized.
         """
+        _ = num_step
+        assert self.fhandle is not None
+        if fields is None:
+            return
         # convert to list if dict
-        if fields is dict:
-            fieldsRun = [fields]
+        if isinstance(fields, dict):
+            fields_run = [fields]
         else:
-            fieldsRun = fields
+            fields_run = fields
 
         # along data
         Logger.debug('Start writing fields')
-        for iF in fieldsRun:
-            nameField = iF[configMESH.DFLT_FIELD_NAME]
+        for field in fields_run:
+            it_f = cast(dict, field)
+            name_field = it_f[config_mesh.DFLT_FIELD_NAME]
             # number of data per nodes/cells
-            nbPerEntity = iF[configMESH.DFLT_FIELD_DIM]
-            if configMESH.DFLT_FIELD_STEPS in iF.keys():
-                listSteps = iF[configMESH.DFLT_FIELD_STEPS]
-                nbSteps = len(listSteps)
-            elif configMESH.DFLT_FIELD_NBSTEPS in iF.keys():
-                nbSteps = iF[configMESH.DFLT_FIELD_NBSTEPS]
-                listSteps = range(nbSteps)
+            nb_per_entity = it_f[config_mesh.DFLT_FIELD_DIM]
+            if config_mesh.DFLT_FIELD_STEPS in it_f:
+                list_steps = it_f[config_mesh.DFLT_FIELD_STEPS]
+                nb_steps = len(list_steps)
+            elif config_mesh.DFLT_FIELD_NBSTEPS in it_f:
+                nb_steps = it_f[config_mesh.DFLT_FIELD_NBSTEPS]
+                list_steps = range(nb_steps)
             else:
-                nbSteps = 1
-                listSteps = [0.0]
-            Logger.debug(f'Field: {nameField}, number of steps: {nbSteps}, dimension per node/cell: {nbPerEntity}')
+                nb_steps = 1
+                list_steps = [0.0]
+            txt = f'Field: {name_field}, number of steps: {nb_steps}'
+            txt += f', dimension per node/cell: {nb_per_entity}'
+            Logger.debug(txt)
             # reformat values as list of arrays
-            if len(iF[configMESH.DFLT_FIELD_DATA]) > 1 and nbSteps == 1:
-                values = [iF[configMESH.DFLT_FIELD_DATA]]
+            if len(it_f[config_mesh.DFLT_FIELD_DATA]) > 1 and nb_steps == 1:
+                values = [it_f[config_mesh.DFLT_FIELD_DATA]]
             else:
-                values = iF[configMESH.DFLT_FIELD_DATA]
+                values = it_f[config_mesh.DFLT_FIELD_DATA]
             # format specifier to write fields
-            formatSpec = '{:d} ' + ' '.join('{:9.4f}' for i in range(nbPerEntity)) + '\n'
+            format_spec = '{:d} ' + ' '.join('{:9.4f}' for i in range(nb_per_entity)) + '\n'
             # along steps
-            for iS in range(nbSteps):
-                if nbSteps > 1:
-                    Logger.debug(f'Step number: {iS+1}/{nbSteps}')
-                if iF[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_NODAL:
-                    typeData = dbmsh.DFLT_FIELDS_NODES_OPEN_CLOSE
-                elif iF[configMESH.DFLT_FIELD_TYPE] == configMESH.DFLT_FIELD_TYPE_ELEMENT:
-                    typeData = dbmsh.DFLT_FIELDS_ELEMS_OPEN_CLOSE
-                self.fhandle.write('{}\n'.format(typeData['open']))
+            for it_step in range(nb_steps):
+                if nb_steps > 1:
+                    Logger.debug(f'Step number: {it_step+1}/{nb_steps}')
+                if it_f[config_mesh.DFLT_FIELD_TYPE] == config_mesh.DFLT_FIELD_TYPE_NODAL:
+                    type_data = dbmsh.DFLT_FIELDS_NODES_OPEN_CLOSE
+                elif it_f[config_mesh.DFLT_FIELD_TYPE] == config_mesh.DFLT_FIELD_TYPE_ELEMENT:
+                    type_data = dbmsh.DFLT_FIELDS_ELEMS_OPEN_CLOSE
+                else:
+                    raise ValueError(f"Unknown field type {it_f[config_mesh.DFLT_FIELD_TYPE]}")
+                txt = type_data['open']
+                self.fhandle.write(f'{txt}\n')
                 self.fhandle.write('1\n')  # one string tag
                 # the name of the view
-                self.fhandle.write(f'"{nameField}"\n')
+                self.fhandle.write(f'"{name_field}"\n')
                 self.fhandle.write('1\n')  # one real tag
-                self.fhandle.write(f'{listSteps[iS]:9.4f}\n')  # the time value
+                self.fhandle.write(f'{list_steps[it_step]:9.4f}\n')  # the time value
                 self.fhandle.write('3\n')  # three integer tags
-                self.fhandle.write(f'{iS:d}\n')  # time step value
+                self.fhandle.write(f'{it_step:d}\n')  # time step value
                 # number of components per nodes
-                self.fhandle.write(f'{nbPerEntity:d}\n')
+                self.fhandle.write(f'{nb_per_entity:d}\n')
                 # number of nodal values
-                self.fhandle.write(f'{values[iS].shape[0]:d}\n')
+                self.fhandle.write(f'{values[it_step].shape[0]:d}\n')
                 #
-                for i in range(values[iS].shape[0]):
-                    self.fhandle.write(formatSpec.format(i + 1, *values[iS][i, :]))
+                for i in range(values[it_step].shape[0]):
+                    self.fhandle.write(format_spec.format(i + 1, *values[it_step][i, :]))
+                txt = type_data['close']
+                self.fhandle.write(f'{txt}\n')
 
-                self.fhandle.write('{}\n'.format(typeData['close']))
 
-
-class mshReader:
+class MSHReader:
     """
-    mshReader is a class designed to read and process mesh files in the `.msh` format. 
+    MSHReader is a class designed to read and process mesh files in the `.msh` format. 
     It provides functionality to parse nodes, elements, and tags from the file and 
     organize them into structured data for further use.
 
@@ -433,16 +516,17 @@ class mshReader:
         nodes (numpy.ndarray): Array of node coordinates.
         dim (int): Dimension of the mesh (2D or 3D).
         nbNodes (int): Number of nodes in the mesh.
-        elems (dict): Dictionary of elements, where keys are element types and values are lists of element connectivity.
-        tagsList (dict): Dictionary of tags and associated elements.
+        elems (dict): Dictionary of elements, where keys are element types and values
+        are lists of element connectivity.
+        tags_list (dict): Dictionary of tags and associated elements.
         fhandle (file object): File handle for the opened `.msh` file.
-        objFile (fileio.fileHandler): File handler object for managing file operations.
-        readData (str): Current section being read ('nodes', 'elems', or None).
-        curIt (int): Current iteration index for reading nodes or elements.
+        obj_file (fileio.fileHandler): File handler object for managing file operations.
+        read_data (str): Current section being read ('nodes', 'elems', or None).
+        cur_it (int): Current iteration index for reading nodes or elements.
 
     Methods:
         __init__(filename=None, type='mshv2', dim=3):
-            Initializes the mshReader object, opens the file, and reads its content.
+            Initializes the MSHReader object, opens the file, and reads its content.
 
         initcontent():
             Initializes or resets the content attributes of the object.
@@ -453,88 +537,95 @@ class mshReader:
         clean():
             Cleans the object by resetting its content attributes.
 
-        readNodes(dim=None, lineStr=None):
+        read_nodes(dim=None, line_str=None):
             Reads node data from the `.msh` file.
             Args:
                 dim (int, optional): Dimension of the nodes (2D or 3D).
-                lineStr (str): Content of the current line being read.
+                line_str (str): Content of the current line being read.
 
-        readElements(lineStr=None):
+        read_elements(line_str=None):
             Reads element data from the `.msh` file.
             Args:
-                lineStr (str): Content of the current line being read.
+                line_str (str): Content of the current line being read.
 
-        _finalizeElems():
+        _finalize_elems():
             Finalizes the element data by converting lists to numpy arrays.
 
-        _readElementsLine(arraystr):
+        _read_elements_line(arraystr):
             Reads a single line of element data and processes it.
             Args:
                 arraystr (list of str): Content of a line for an element.
 
-        getNodes(tag=None):
+        get_nodes(tag=None):
             Returns the array of node coordinates.
             Args:
                 tag (int, optional): Tag to filter nodes by.
 
-        getElements(type=None, tag=None, dictFormat=True):
+        get_elements(type=None, tag=None, dict_format=True):
             Returns the list of elements.
             Args:
                 type (str, optional): Type of elements to filter by.
                 tag (int, optional): Tag to filter elements by.
-                dictFormat (bool, optional): Whether to return elements in dictionary format.
+                dict_format (bool, optional): Whether to return elements in dictionary format.
 
-        getTags():
+        get_tags():
             Returns the list of tags as integers.
 
-        getTypes():
+        get_types():
             Returns the list of element types.
     """
-    
-    def __init__(self, 
-                 filename: Union[str, Path]=None, 
-                 type: str='mshv2', 
+
+    def __init__(self,
+                 filename: Union[str, Path, None]=None,
+                 file_type: str='mshv2',
                  dim: int=3)->None:
         """
         Initializes the mesh reader object.
 
         Args:
-            filename (Union[str, Path], optional): The path to the mesh file to be read. Defaults to None.
+            filename (Union[str, Path], optional): The path to the mesh file to be read. 
+            Defaults to None.
             type (str, optional): The type of the mesh file. Defaults to 'mshv2'.
-            dim (int, optional): The dimensionality of the mesh (e.g., 2D or 3D). Defaults to 3.
+            dim (int, optional): The dimensionality of the mesh (e.g., 2D or 3D). 
+            Defaults to 3.
 
         Attributes:
-            objFile (fileio.fileHandler): The file handler object for the mesh file.
+            obj_file (fileio.fileHandler): The file handler object for the mesh file.
             fhandle (file object): The file handle for reading the mesh file.
-            readData (str): Tracks the current section of the file being read (e.g., 'nodes', 'elems').
+            read_data (str): Tracks the current section of the file being read 
+            (e.g., 'nodes', 'elems').
 
         Raises:
             Exception: If there are issues with file handling or data parsing.
 
         Notes:
-            - The method reads the mesh file line by line, identifying and processing nodes and elements.
+            - The method reads the mesh file line by line, identifying and processing 
+            nodes and elements.
             - After reading, it finalizes the elements and closes the file.
         """
         self.initcontent()
+        _ = file_type
         Logger.debug(f'Open file {filename}')
         # open file and get handle
-        self.objFile = fileio.fileHandler(filename=filename, right='r', safeMode=False)
-        self.fhandle = self.objFile.getHandler()
+        self.obj_file = fileio.FileHandler(filename=filename, right='r', safe_mode=False)
+        self.fhandle = self.obj_file.get_handler()
+        if self.fhandle is None:
+            raise ValueError('Unable to open file handle')
         # read file line by line
-        for line in self.fhandle:
-            if not self.readData:
-                self.readData = catchTag(line)
-            elif self.readData == 'nodes':
+        for line in cast(Iterable[str], self.fhandle):
+            if not self.read_data:
+                self.read_data = catch_tag(line)
+            elif self.read_data == 'nodes':
                 # read nodes
-                self.readNodes(dim, line)
-            elif self.readData == 'elems':
+                self.read_nodes(dim, line)
+            elif self.read_data == 'elems':
                 # read elements
-                self.readElements(line)
+                self.read_elements(line)
         # finalize data
-        self._finalizeElems()
+        self._finalize_elems()
 
         # close file
-        self.objFile.close()
+        self.obj_file.close()
 
     def initcontent(self)-> None:
         """
@@ -545,21 +636,21 @@ class mshReader:
         - `dim`: The dimension of the mesh (2D or 3D) (initially None).
         - `nbNodes`: The number of nodes in the mesh (initially None).
         - `elems`: A dictionary to store elements, where keys are the names of the elements.
-        - `tagsList`: A dictionary to store tags and their associated elements.
+        - `tags_list`: A dictionary to store tags and their associated elements.
         - `fhandle`: A file handle for file operations (initially None).
-        - `objFile`: An object representing the file (initially None).
-        - `readData`: Data read from the file (initially None).
-        - `curIt`: An integer representing the current iteration (initially 0).
+        - `obj_file`: An object representing the file (initially None).
+        - `read_data`: Data read from the file (initially None).
+        - `cur_it`: An integer representing the current iteration (initially 0).
         """
         self.nodes = None  # array of nodes coordinates
         self.dim = None  # dimension of the mesh (2/3)
-        self.nbNodes = None  # number of nodes
+        self.nb_nodes = None  # number of nodes
         self.elems = {}  # dictionary of elements (keys are name of the element)
-        self.tagsList = {}  # list of tags and associated elements
+        self.tags_list = {}  # list of tags and associated elements
         self.fhandle = None
-        self.objFile = None
-        self.readData = None
-        self.curIt = 0
+        self.obj_file = None
+        self.read_data = None
+        self.cur_it = 0
 
     def __del__(self)-> None:
         """
@@ -577,7 +668,7 @@ class mshReader:
         """
         self.initcontent()
 
-    def readNodes(self, dim: Optional[int]=None, lineStr: Optional[str]=None)-> None:
+    def read_nodes(self, dim: Optional[int]=None, line_str: Optional[str]=None)-> None:
         """
         Reads node data from a line in an `.msh` file.
 
@@ -587,52 +678,56 @@ class mshReader:
         Args:
             dim (Optional[int]): The dimension of the nodes (e.g., 2 for 2D, 3 for 3D).
                                  If not provided, it will be inferred from the data.
-            lineStr (Optional[str]): The content of the current line being read.
+            line_str (Optional[str]): The content of the current line being read.
 
         Behavior:
-            - On the first call (`curIt == 0`), it reads the number of nodes (`nbNodes`)
+            - On the first call (`cur_it == 0`), it reads the number of nodes (`nbNodes`)
               and initializes the dimension (`dim`).
             - On subsequent calls, it processes the node coordinates and stores them
               in a NumPy array (`nodes`).
-            - Once all nodes are read, it resets the reading state (`readData` and `curIt`).
+            - Once all nodes are read, it resets the reading state (`read_data` and `cur_it`).
 
         Attributes:
             nbNodes (int): The total number of nodes to be read.
             dim (int): The dimension of the nodes (e.g., 2D or 3D).
             nodes (np.ndarray): A NumPy array storing the coordinates of the nodes.
-            curIt (int): The current iteration or line being processed.
-            readData (None): A flag indicating the end of the node reading process.
+            cur_it (int): The current iteration or line being processed.
+            read_data (None): A flag indicating the end of the node reading process.
 
         Logs:
             - Logs the start of the node reading process with the number of nodes.
             - Logs the completion of the node reading process with the total nodes
               and their dimension.
         """
-        contentLine = lineStr.split()
+        if line_str is None:
+            return
+        content_line = line_str.split()
         # first read: access to the number of nodes
-        if self.curIt == 0:
+        if self.cur_it == 0:
             # read number of nodes
-            self.nbNodes = int(contentLine[0])
-            self.curIt += 1
+            self.nb_nodes = int(content_line[0])
+            self.cur_it += 1
             self.dim = dim
-            Logger.debug(f'Start read {self.nbNodes} nodes')
+            Logger.debug(f'Start read {self.nb_nodes} nodes')
         else:
-            if self.curIt == 1:
+            if self.cur_it == 1:
                 if not dim:
                     # extract dimension
-                    self.dim = len(contentLine) - 1
+                    self.dim = len(content_line) - 1
                 # create array to store nodes coordinates
-                self.nodes = np.zeros((self.nbNodes, self.dim))
+                assert self.nb_nodes is not None and self.dim is not None
+                self.nodes = np.zeros((self.nb_nodes, self.dim))
             # store nodes
-            self.nodes[self.curIt - 1, :] = np.array(contentLine[1 : self.dim + 1], dtype=float)
-            self.curIt += 1
+            assert self.nodes is not None and self.dim is not None
+            self.nodes[self.cur_it - 1, :] = np.array(content_line[1 : self.dim + 1], dtype=float)
+            self.cur_it += 1
             # stop read nodes
-            if self.curIt - 1 == self.nbNodes:
-                self.readData = None
-                self.curIt = 0
-                Logger.debug(f'Nodes read: {self.nbNodes}, dimension: {self.dim}')
+            if self.cur_it - 1 == self.nb_nodes:
+                self.read_data = None
+                self.cur_it = 0
+                Logger.debug(f'Nodes read: {self.nb_nodes}, dimension: {self.dim}')
 
-    def readElements(self, lineStr: Optional[str]=None)-> None:
+    def read_elements(self, line_str: Optional[str]=None)-> None:
         """
         Reads and processes elements from a given line of input.
 
@@ -642,11 +737,11 @@ class mshReader:
         finalizes the data once all elements have been read.
 
         Args:
-            lineStr (Optional[str]): The content of the current line to be processed.
+            line_str (Optional[str]): The content of the current line to be processed.
                                      If None, no processing is performed.
 
         Behavior:
-            - On the first call (self.curIt == 0), it reads the total number of elements
+            - On the first call (self.cur_it == 0), it reads the total number of elements
               from the input line and initializes the reading process.
             - On subsequent calls, it processes the element connectivity data line by line.
             - Once all elements have been read, it finalizes the data, resets internal
@@ -658,39 +753,41 @@ class mshReader:
             - Logs the tags associated with the elements.
 
         Note:
-            This method relies on helper methods `_readElementsLine` and `_finalizeElems`
+            This method relies on helper methods `_read_elements_line` and `_finalize_elems`
             to process individual lines and finalize the data, respectively.
         """
+        if line_str is None:
+            return
 
-        contentLine = lineStr.split()
+        content_line = line_str.split()
         # first read: access to the number of elements
-        if self.curIt == 0:
+        if self.cur_it == 0:
             # read number of elements
-            self.nbElems = int(contentLine[0])
-            self.curIt += 1
-            Logger.debug(f'Start read {self.nbElems} elements')
+            self.nb_elems = int(content_line[0])
+            self.cur_it += 1
+            Logger.debug(f'Start read {self.nb_elems} elements')
         else:
             # store elements connectivity
-            self._readElementsLine(contentLine)
-            self.curIt += 1
+            self._read_elements_line(content_line)
+            self.cur_it += 1
             # stop read elements
-            if self.curIt - 1 == self.nbElems:
+            if self.cur_it - 1 == self.nb_elems:
                 #  finalize data
-                self._finalizeElems()
+                self._finalize_elems()
                 # reset
-                self.readData = None
-                self.curIt = 0
-                Logger.debug(f'Elements read: {self.nbElems}')
+                self.read_data = None
+                self.cur_it = 0
+                Logger.debug(f'Elements read: {self.nb_elems}')
                 Logger.debug('Type of elements')
-                for elemType in self.elems.keys():
-                    Logger.debug(f' > {self.elems[elemType].shape[0]} {elemType}')
+                for key, val in self.elems.items():
+                    Logger.debug(f' > {val.shape[0]} {key}')
                 Logger.debug('Tags')
-                for tagName in self.tagsList.keys():
-                    Logger.debug(f'Tag: {tagName}')
-                    for elemType in self.tagsList[tagName].keys():
-                        Logger.debug(f' > {len(self.tagsList[tagName][elemType])} {elemType}')
+                for tag_name, tag_data in self.tags_list.items():
+                    Logger.debug(f'Tag: {tag_name}')
+                    for key, val in tag_data.items():
+                        Logger.debug(f' > {len(val)} {key}')
 
-    def _finalizeElems(self)-> None:
+    def _finalize_elems(self)-> None:
         """
         Finalizes the element data by converting each element in the `elems` dictionary 
         to a NumPy array. This ensures that the data structure is consistent and 
@@ -699,10 +796,10 @@ class mshReader:
         Returns:
             None
         """
-        for iT in self.elems:
-            self.elems[iT] = np.array(self.elems[iT])
+        for it in self.elems:
+            self.elems[it] = np.array(self.elems[it])
 
-    def _readElementsLine(self, arraystr: list)-> None:
+    def _read_elements_line(self, arraystr: list)-> None:
         """
         Reads and processes a line of element data from a mesh file.
 
@@ -712,52 +809,54 @@ class mshReader:
 
         Functionality:
             - Converts the input line to an integer array.
-            - Extracts the element ID and determines its type using the `dbmsh.getElemTypeFromMSH` function.
+            - Extracts the element ID and determines its type using the 
+            `dbmsh.get_elem_type_from_msh` function.
             - Retrieves the number of tags and the associated tags from the line.
             - Extracts the nodes associated with the element.
             - Stores the element nodes in the `self.elems` dictionary, categorized by element type.
-            - Updates the `self.tagsList` dictionary to associate tags with their corresponding elements 
-              and element types.
+            - Updates the `self.tags_list` dictionary to associate tags with their corresponding 
+            elements and element types.
 
         Notes:
-            - The `self.elems` dictionary organizes elements by their type, with each type containing 
-              a list of node arrays.
-            - The `self.tagsList` dictionary maps tags (as strings) to a nested structure of element 
-              types and their corresponding indices in `self.elems`.
+            - The `self.elems` dictionary organizes elements by their type, with each type 
+            containing a list of node arrays.
+            - The `self.tags_list` dictionary maps tags (as strings) to a nested structure 
+            of element types and their corresponding indices in `self.elems`.
 
         Raises:
-            ValueError: If the input line does not conform to the expected format or contains invalid data.
+            ValueError: If the input line does not conform to the expected format or contains 
+            invalid data.
         """
         # convert to int
         arrayint = np.array(arraystr, dtype=int)
         # get element id
-        elementId = arrayint[1]
-        elemType = dbmsh.getElemTypeFromMSH(elementId)
+        element_id = arrayint[1]
+        elem_type = dbmsh.get_elem_type_from_msh(element_id)
         # get number of tags
-        nbTags = arrayint[2]
-        tags = arrayint[3 : 3 + nbTags]
+        nb_tags = arrayint[2]
+        tags = arrayint[3 : 3 + nb_tags]
         # element nodes
-        elementNodes = arrayint[3 + nbTags :]
+        element_nodes = arrayint[3 + nb_tags :]
         # check if element can be stored
-        if elemType not in self.elems.keys():
-            self.elems[elemType] = list()
+        if elem_type not in self.elems:
+            self.elems[elem_type] = list()
         # store it
-        self.elems[elemType].append(elementNodes)
+        self.elems[elem_type].append(element_nodes)
         # get the item of the element
-        iX = len(self.elems[elemType]) - 1
+        ix = len(self.elems[elem_type]) - 1
         # create the list for each tag
-        for iT in tags:
-            iTs = str(iT)
+        for it in tags:
+            it_s = str(it)
             # check if the tag already exists
-            if iTs not in self.tagsList.keys():
-                self.tagsList[iTs] = dict()
+            if it_s not in self.tags_list:
+                self.tags_list[it_s] = dict()
             # check if the element type has been already created
-            if elemType not in self.tagsList[iTs].keys():
-                self.tagsList[iTs][elemType] = list()
+            if elem_type not in self.tags_list[it_s]:
+                self.tags_list[it_s][elem_type] = list()
             # store the elements
-            self.tagsList[iTs][elemType].append(iX)
+            self.tags_list[it_s][elem_type].append(ix)
 
-    def getNodes(self, tag: int=None)-> np.ndarray:
+    def get_nodes(self, tag: Optional[int]=None)-> np.ndarray:
         """
         Retrieve the array of node coordinates.
 
@@ -777,11 +876,17 @@ class mshReader:
         """
         if tag is not None:
             # get elements
-            elts = self.getElements(tag=tag, dictFormat=False)
+            elts = self.get_elements(tag=tag, dict_format=False)
+            assert self.nodes is not None
+            if not isinstance(elts, np.ndarray):
+                return np.array([])
             return self.nodes[np.unique(elts.flatten())-1,:]
-        return self.nodes
+        return np.array([]) if self.nodes is None else self.nodes
 
-    def getElements(self, type: str=None, tag: int=None, dictFormat: bool=True)-> Union[np.ndarray, dict]:
+    def get_elements(self,
+                     elem_type: Optional[str|None]=None,
+                     tag: Optional[int|None]=None,
+                     dict_format: bool=True)-> Union[np.ndarray, dict]:
         """
         Retrieve elements from the mesh based on specified criteria.
 
@@ -792,87 +897,91 @@ class mshReader:
             tag (int, optional): The tag to filter elements by. If specified, only elements 
                 associated with the given tag will be retrieved. If not provided, elements 
                 from all tags will be included.
-            dictFormat (bool, optional): Determines the format of the returned data. 
+            dict_format (bool, optional): Determines the format of the returned data. 
                 If True, the elements will be returned as a dictionary. If False, the elements 
                 will be returned as a NumPy array. Defaults to True.
 
         Returns:
             Union[np.ndarray, dict]: The retrieved elements. The format depends on the 
-            `dictFormat` parameter:
-                - If `dictFormat` is True, a dictionary is returned where keys are element 
+            `dict_format` parameter:
+                - If `dict_format` is True, a dictionary is returned where keys are element 
                   types and values are NumPy arrays of elements.
-                - If `dictFormat` is False, a NumPy array of elements is returned. If multiple 
+                - If `dict_format` is False, a NumPy array of elements is returned. If multiple 
                   element types are present, only the first type is returned with a warning.
 
         Notes:
             - If `type` is specified, only elements of the given type are retrieved.
             - If `tag` is specified, only elements associated with the given tag are retrieved.
-            - If `dictFormat` is False and multiple element types are present, only the first 
+            - If `dict_format` is False and multiple element types are present, only the first 
               type is exported, and a warning is logged.
         """
-        elemsTag = dict()
+        elems_tag = dict()
         # filter by tag
         if tag:
-            if str(tag) in self.tagsList.keys():
-                elemsTag = self.tagsList[str(tag)]
+            if str(tag) in self.tags_list:
+                elems_tag = self.tags_list[str(tag)]
         else:
             # copy all meshes associated to all tags
             # along tags
-            for iT, vT in self.tagsList.items():
+            for _, vt in self.tags_list.items():
                 # along meshes in tag
-                for iM in vT.keys():
+                for im in vt.keys():
                     # check if element type already exists
-                    if iM not in elemsTag.keys():
-                        elemsTag[iM] = list()
-                    elemsTag[iM].extend(vT[iM])
+                    if im not in elems_tag:
+                        elems_tag[im] = list()
+                    elems_tag[im].extend(vt[im])
         # filter by type
-        if type:
-            elemsExport = list()
-            elemsExportUnique = list()
-            if type in elemsTag.keys():
-                elemsExport = self.elems[type][elemsTag[type], :]
-                elemsExportUnique = np.unique(elemsExport, axis=0)
+        if elem_type:
+            elems_export = list()
+            elems_export_unique = list()
+            if elem_type in elems_tag:
+                elems_export = self.elems[elem_type][elems_tag[elem_type], :]
+                elems_export_unique = np.unique(elems_export, axis=0)
         else:
-            elemsExport = dict()
-            elemsExportUnique = dict()
-            for iT in elemsTag.keys():
-                elemsExport[iT] = self.elems[iT][elemsTag[iT], :]
-                elemsExportUnique[iT] = np.unique(elemsExport[iT], axis=0)
+            elems_export = dict()
+            elems_export_unique = dict()
+            for key,val in elems_tag.items():
+                elems_export[key] = self.elems[key][val, :]
+                elems_export_unique[key] = np.unique(elems_export[key], axis=0)
 
         # specific export
-        if not dictFormat and not type:
-            if len(elemsExport) > 1:
-                Logger.warning('Elements exported without the dictionary format: some data are not exported')
-            if len(elemsExport) == 0:
+        if not dict_format and not elem_type:
+            if not isinstance(elems_export, dict):
+                return np.array([])
+            if len(elems_export) > 1:
+                txt = 'Elements exported without the dictionary format: some data are not exported'
+                Logger.warning(txt)
+            if len(elems_export) == 0:
                 Logger.warning('No element to export')
                 return np.array([])
-            idElems = list(elemsExport.keys())[0]
-            elemsExport = elemsExport[idElems]
-            elemsExportUnique = elemsExportUnique[idElems]
+            id_elems = list(elems_export.keys())[0]
+            elems_export = elems_export[id_elems]
+            elems_export_unique = elems_export_unique[id_elems]
 
-        return elemsExportUnique
+        return cast(Union[np.ndarray, dict], elems_export_unique)
 
-    def getTags(self)-> list:
+    def get_tags(self)-> list:
         """
         Retrieves the list of tags as integers.
 
-        This method processes the `tagsList` attribute of the object, which is expected 
+        This method processes the `tags_list` attribute of the object, which is expected 
         to be a dictionary-like structure. It extracts the keys, converts them to integers, 
         and returns them as a list.
 
         Returns:
-            list: A list of integer tags. If `tagsList` is empty or not set, an empty list is returned.
+            list: A list of integer tags. If `tags_list` is empty or not set, an empty 
+            list is returned.
         """
-        listTags = list()
-        listExport = list()
-        if self.tagsList:
-            listTags = self.tagsList.keys()
+        list_tags = list()
+        list_export = list()
+        if self.tags_list:
+            list_tags = self.tags_list.keys()
             # convert to integer
-            for iL in listTags:
-                listExport.append(int(iL))
-        return listExport
+            for il in list_tags:
+                list_export.append(int(il))
+        return list_export
 
-    def getTypes(self)-> list:
+    def get_types(self)-> list:
         """
         Retrieve the list of element types (tags) present in the mesh.
 
@@ -880,13 +989,35 @@ class mshReader:
             list: A list of integer tags representing the types of elements 
                   in the mesh. If no elements are present, an empty list is returned.
         """
-        listTypes = list()
+        list_types = list()
         if self.elems:
-            listTypes = list(self.elems.keys())
-        return listTypes
+            list_types = list(self.elems.keys())
+        return list_types
+
+    # Backward-compatible method aliases (camelCase)
+    def getNodes(self, tag: Optional[int] = None) -> np.ndarray:
+        """Compatibility wrapper for :meth:`get_nodes`."""
+        return self.get_nodes(tag=tag)
+
+    def getElements(
+        self,
+        tag: Optional[int] = None,
+        type: Optional[Union[str, int]] = None,
+        dictFormat: bool = True,
+    ) -> Union[np.ndarray, dict]:
+        """Compatibility wrapper for :meth:`get_elements`."""
+        return self.get_elements(tag=tag, elem_type=type, dict_format=dictFormat)
+
+    def getTags(self) -> list:
+        """Compatibility wrapper for :meth:`get_tags`."""
+        return self.get_tags()
+
+    def getTypes(self) -> list:
+        """Compatibility wrapper for :meth:`get_types`."""
+        return self.get_types()
 
 
-def catchTag(content: str=None)-> str:
+def catch_tag(content: Optional[str|None]=None)-> str|None:
     """
     Determines the type of tag present in the given content.
 
@@ -901,17 +1032,21 @@ def catchTag(content: str=None)-> str:
              matches the opening tag for nodes, 'elems' if it matches the opening
              tag for elements, or None if no match is found.
     """
-    tagStartNodes = dbmsh.DFLT_NODES_OPEN_CLOSE['open']
-    tagStartElems = dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']
-    typeTag = None
-    if tagStartNodes == content.strip():
-        typeTag = 'nodes'
-    if tagStartElems == content.strip():
-        typeTag = 'elems'
-    return typeTag
+    tag_start_nodes = dbmsh.DFLT_NODES_OPEN_CLOSE['open']
+    tag_start_elems = dbmsh.DFLT_ELEMS_OPEN_CLOSE['open']
+    type_tag = None
+    if content is None:
+        return type_tag
+    if tag_start_nodes == content.strip():
+        type_tag = 'nodes'
+    if tag_start_elems == content.strip():
+        type_tag = 'elems'
+    return type_tag
 
 
-def checkContentLine(content: list=None, pattern: str=None, item: int=0)-> bool:
+def check_content_line(content: Optional[list|None]=None,
+                       pattern: Optional[str|None]=None,
+                       item: int=0)-> bool:
     """
     Check if the first element of a list matches a given pattern.
 
@@ -929,18 +1064,21 @@ def checkContentLine(content: list=None, pattern: str=None, item: int=0)-> bool:
         bool: `True` if the first element of `content` matches `pattern`, 
               otherwise `False`.
     """
+    _ = item
     status = True
     if not content:
         status = False
     if not pattern:
         status = False
-    if len(content) == 0:
+    if content is not None and len(content) == 0:
         status = False
 
-    if status:
+    if status and content is not None:
         if content[0] != pattern:
             status = False
     return status
 
-writer = mshWriter
-reader = mshReader
+writer = MSHWriter
+reader = MSHReader
+mshWriter = MSHWriter
+mshReader = MSHReader
