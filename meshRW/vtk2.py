@@ -8,24 +8,28 @@ Luc Laurent - luc.laurent@lecnam.net -- 2024
 
 from pathlib import Path
 from typing import Union, Optional
-import sys
 
 import time
 
 import numpy as np
+# pylint: disable=no-member
 import vtk
 import vtkmodules.util.numpy_support as ns
 from loguru import logger as Logger
-from lxml import etree
+# pylint: disable=c-extension-no-member, no-member
+import lxml.etree as etree
 
-from . import config_mesh, dbvtk, various, writerclass
+from . import configMESH, dbvtk, various, writerClass
 
 
-class vtkWriter(writerclass.writer):
+class VTKWriter(writerClass.Writer):
     """
-    vtkWriter is a class for writing VTK/VTU files using the VTK library. It provides functionality to handle nodes, elements, 
-    and fields, and supports writing data along multiple time steps. The class also includes methods for creating new fields 
-    from physical groups, setting field data, and writing PVD files for time-dependent datasets.
+    Write VTU datasets with the VTK Python bindings.
+
+    The writer builds an unstructured grid in memory, attaches nodal and elemental
+    arrays, and writes a single `.vtu` file or a time-series of numbered `.vtu`
+    files plus a `.pvd` collection file.
+
     Attributes:
         ugrid (vtk.vtkUnstructuredGrid): The unstructured grid object for VTK data.
         writer (vtk.vtkXMLUnstructuredGridWriter): The writer object for saving VTK files.
@@ -56,16 +60,16 @@ class vtkWriter(writerclass.writer):
         write(ugrid, filename):
             Writes the VTK unstructured grid to a file.
     """
-    def __init__(        
+    def __init__(
         self,
-        filename: Union[str, Path] = None,
-        nodes: Union[list, np.ndarray] = None,
-        elements: dict = None,
-        fields: Union[list, np.ndarray] = None,
+        filename: Union[str, Path, None] = None,
+        nodes: Union[list, np.ndarray, None] = None,
+        elements: dict|None = None,
+        fields: Union[list, np.ndarray, None] = None,
         append: bool = False,
-        title: str = None,
+        title: str|None = None,
         verbose: bool = False,
-        opts: dict = {'binary': False, 'ascii': True},
+        opts: dict|None = None,
     )-> None:
         """
         Initialize the VTK writer class.
@@ -73,94 +77,62 @@ class vtkWriter(writerclass.writer):
         Parameters:
             filename (Union[str, Path], optional): The file path for the VTK file. Defaults to None.
             nodes (Union[list, np.ndarray], optional): The list or array of nodes. Defaults to None.
-            elements (dict, optional): The dictionary of elements. Defaults to None.
+            elements (dict, optional): Element dictionary or list of dictionaries. Defaults to None.
             fields (Union[list, np.ndarray], optional): The list or array of fields. Defaults to None.
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): The title of the VTK file. Defaults to None.
             verbose (bool, optional): Whether to enable verbose logging. Defaults to False.
-            opts (dict, optional): Options for file writing, such as binary or ASCII mode. 
+            opts (dict, optional): Options for file writing, such as binary or ASCII mode.
                 Defaults to {'binary': False, 'ascii': True}.
 
         Notes:
-            - This method initializes the VTK writer, adapts inputs, prepares new fields, 
+            - This method initializes the VTK writer, adapts inputs, prepares new fields,
               and writes the contents depending on the number of steps.
             - The `Logger` is used for logging, and verbosity can be adjusted.
             - The `dbvtk` configuration is loaded for specific settings.
         """
+        _ = verbose
         # # adapt verbosity logger
         # if not verbose:
         #     Logger.remove()
-        #     Logger.add(sys.stderr, level="INFO") 
+        #     Logger.add(sys.stderr, level="INFO")
         #
         Logger.info('Start writing vtk/vtu file using libvtk')
         # adapt inputs
-        nodes, elements, fields = writerclass.adaptInputs(nodes, elements, fields)   
+        nodesOk, elementsOk, fieldsOk = writerClass.adaptInputs(nodes, elements, fields)
         # prepare new fields (from physical groups for instance)
-        newFields = self.createNewFields(elements)
+        newFields = self.createNewFields(elementsOk)
         if newFields:
-            if not fields:
-                fields = list()
-            fields.extend(newFields)     
+            if not fieldsOk:
+                fieldsOk = list()
+            fieldsOk.extend(newFields)
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, opts)
+        if opts is None:
+            opts = {'binary': False, 'ascii': True}
+        super().__init__(filename, nodesOk, elementsOk, fieldsOk, append, title, opts)
         # vtk data
         self.ugrid = None
         self.writer = None
         # load specific configuration
         self.db = dbvtk
         # write contents depending on the number of steps
-        self.writeContentsSteps(nodes, elements, fields)
-
-    # Writer abstract API (snake_case) wrappers
-    def get_append(self) -> bool:
-        """Compatibility wrapper for Writer abstract API."""
-        return self.getAppend()
-
-    def set_options(self, opts: dict) -> None:
-        """Compatibility wrapper for Writer abstract API."""
-        self.setOptions(opts)
-
-    def write_contents(
-        self,
-        nodes: Union[list, np.ndarray],
-        elements: dict,
-        fields: Union[list, np.ndarray, None] = None,
-        num_step: Optional[int] = None,
-    ) -> None:
-        """Compatibility wrapper for Writer abstract API."""
-        self.writeContents(fields, num_step)
-
-    def write_nodes(self, nodes: Union[list, np.ndarray]) -> None:
-        """Compatibility wrapper for Writer abstract API."""
-        self.writeNodes(nodes)
-
-    def write_elements(self, elements: Union[list, np.ndarray, dict]) -> None:
-        """Compatibility wrapper for Writer abstract API."""
-        self.writeElements(elements)
-
-    def write_fields(
-        self,
-        fields: Optional[Union[list, np.ndarray]] = None,
-        num_step: Optional[int] = None,
-    ) -> None:
-        """Compatibility wrapper for Writer abstract API."""
-        self.writeFields(fields, num_step)
+        self.writeContentsSteps(nodesOk, elementsOk, fieldsOk)
 
     def getAppend(self)-> bool:
-        """"
+        """
         Retrieves the current state of the append option.
 
         Returns:
-            bool: The value of the append option, indicating whether appending is enabled.
+            bool: Always mirrors the configured append flag. XML VTU writes are still emitted as fresh files.
         """
         return self.append
 
-    def setOptions(self, options: dict)-> None:
+    def setOptions(self, opts: dict)-> None:
         """
         Sets the options for the object.
 
         Args:
-            options (dict): A dictionary containing configuration options. 
+            opts (dict): A dictionary containing configuration options.
                 Supported keys:
                     - 'binary' (bool): If True, enables binary mode. Defaults to False.
                     - 'ascii' (bool): If True, enables ASCII mode. Defaults to False.
@@ -168,13 +140,13 @@ class vtkWriter(writerclass.writer):
         Returns:
             None
         """
-        self.binary = options.get('binary', False)
-        self.ascii = options.get('ascii', False)
-        self.opts = options
+        self.binary = opts.get('binary', False)
+        self.ascii = opts.get('ascii', False)
+        self.opts = opts
 
-    def writeContentsSteps(self, 
-                           nodes: Union[list, np.ndarray], 
-                           elements: Union[list, np.ndarray, dict], 
+    def writeContentsSteps(self,
+                           nodes: Union[list, np.ndarray],
+                           elements: Union[list, np.ndarray, dict],
                            fields: Optional[Union[list, np.ndarray]] = None)-> None:
         """
         Write content to files along multiple steps or as a single output.
@@ -219,8 +191,8 @@ class vtkWriter(writerclass.writer):
         # write along steps
         if self.nbSteps > 0:
             for itS in range(self.nbSteps):
-                # add fieds
-                self.writeContents(fields, numStep=itS)
+                # add fields for the current time step
+                self.writeContents(fields=fields, numStep=itS)
                 # adapt the filename
                 filename = self.getFilename(suffix='.' + str(itS).zfill(len(str(self.nbSteps))))
                 # write file
@@ -233,8 +205,8 @@ class vtkWriter(writerclass.writer):
             # write pvd file
             self.writePVD(dataPVD)
         else:
-            # add fieds
-            self.writeContents(fields)
+            # add fields to the single output dataset
+            self.writeContents(fields=fields)
             # write file
             filename = self.getFilename()
             self.write(self.ugrid, filename)
@@ -282,35 +254,41 @@ class vtkWriter(writerclass.writer):
         starttime = time.perf_counter()
         with open(filename, 'wb') as f:
             f.write(xml_str)
-        Logger.info(
-                f'PVD file written {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s'
-            )
+
+        txt = f'PVD file written {filename} ({various.convert_size(filename.stat().st_size)}) '
+        txt += f'- Elapsed {(time.perf_counter()-starttime):.4f} s'
+        Logger.info(txt)
 
 
     @various.timeit('Fields declared')
-    def writeContents(self, 
-                      fields: Optional[Union[list, np.ndarray]] = None, 
+    def writeContents(self,
+                      nodes: Optional[Union[list, np.ndarray]] = None,
+                      elements: Optional[Union[list, np.ndarray, dict]] = None,
+                      fields: Optional[Union[list, np.ndarray]] = None,
                       numStep: Optional[int] = None)-> None:
         """
-        Writes the contents of the fields to the appropriate output format.
+        Attach field arrays to the current unstructured grid.
 
-        This method handles the addition of fields to the output, depending on the 
-        version or format being used. It delegates the actual writing of fields 
-        to the `writeFields` method.
+        The ``nodes`` and ``elements`` parameters are accepted for compatibility with
+        the abstract writer interface. This implementation uses them earlier when the
+        unstructured grid is built and only consumes ``fields`` here.
 
         Args:
-            fields (Optional[Union[list, np.ndarray]]): The fields to be written. 
-            This can be a list or a NumPy array. Defaults to None.
-            numStep (Optional[int]): The step number associated with the fields. 
+            nodes (Optional[Union[list, np.ndarray]]): Unused compatibility parameter.
+            elements (Optional[Union[list, np.ndarray, dict]]): Unused compatibility parameter.
+            fields (Optional[Union[list, np.ndarray]]): The fields to be attached.
+                This can be a list or a NumPy array. Defaults to None.
+            numStep (Optional[int]): The step number associated with the fields.
             This is used to track the time step or iteration. Defaults to None.
 
         Returns:
             None
         """
+        _ = (nodes, elements)
         self.writeFields(fields, numStep=numStep)
 
-    def writeFields(self,                     
-                    fields: Optional[Union[list, np.ndarray]] = None, 
+    def writeFields(self,
+                    fields: Optional[Union[list, np.ndarray]] = None,
                     numStep: Optional[int]=None)-> None:
         """
         Write fields to the unstructured grid (ugrid) object.
@@ -319,10 +297,10 @@ class vtkWriter(writerclass.writer):
         (point data or cell data) of the unstructured grid based on the field type.
 
         Args:
-            fields (Optional[Union[list, np.ndarray]]): A list or a single numpy array 
-                representing the fields to be added. If a single field is provided, 
+            fields (Optional[Union[list, np.ndarray]]): A list or single NumPy array
+                representing the fields to be added. If a single field is provided,
                 it will be converted into a list.
-            numStep (Optional[int]): An optional integer representing the time step 
+            numStep (Optional[int]): An optional integer representing the time step
                 or iteration number associated with the fields.
 
         Returns:
@@ -332,22 +310,26 @@ class vtkWriter(writerclass.writer):
             ValueError: If the field type is not recognized.
 
         Notes:
-            - The method uses the `setField` function to process each field and 
+            - The method uses the `setField` function to process each field and
                 determine its type ('nodal' or 'elemental').
             - 'nodal' fields are added to the point data of the unstructured grid.
             - 'elemental' fields are added to the cell data of the unstructured grid.
             - If the field type is not recognized, an error is logged.
         """
         if fields is not None:
+            if self.ugrid is None:
+                Logger.error('Unstructured grid is not initialized. Cannot write fields.')
+                return
+            ugrid = self.ugrid
             if not isinstance(fields, list):
                 fields = [fields]
             Logger.info(f'Add {len(fields)} fields')
             for f in fields:
                 data, typedata = self.setField(f, numStep=numStep)
                 if typedata == 'nodal':
-                    self.ugrid.GetPointData().AddArray(data)
+                    ugrid.GetPointData().AddArray(data)
                 elif typedata == 'elemental':
-                    self.ugrid.GetCellData().AddArray(data)
+                    ugrid.GetCellData().AddArray(data)
                 else:
                     Logger.error(f'Field type {typedata} not recognized')
 
@@ -357,20 +339,24 @@ class vtkWriter(writerclass.writer):
         Writes the given nodes to the VTK unstructured grid.
 
         This method takes a list or numpy array of nodes and adds them as points
-        to the VTK unstructured grid (`ugrid`). Each node is expected to be a 
+        to the VTK unstructured grid (`ugrid`). Each node is expected to be a
         3D coordinate.
 
         Args:
             nodes (Union[list, np.ndarray]): A list or numpy array of shape (N, 3),
-            where N is the number of nodes, and each node is represented by 
+            where N is the number of nodes, and each node is represented by
             its 3D coordinates (x, y, z).
 
         Returns:
             None
         """
+        if self.ugrid is None:
+            Logger.error('Unstructured grid is not initialized. Cannot write nodes.')
+            return
         points = vtk.vtkPoints()
-        for i in range(len(nodes)):
-            points.InsertNextPoint(nodes[i, :])
+        nodes_run = np.asarray(nodes)
+        for i in range(len(nodes_run)):
+            points.InsertNextPoint(*nodes_run[i, :])
         self.ugrid.SetPoints(points)
 
     @various.timeit('Elements declared')
@@ -379,7 +365,7 @@ class vtkWriter(writerclass.writer):
         Writes elements to the unstructured grid (ugrid) based on the provided input.
 
         Args:
-            elements (Union[list, np.ndarray, dict]): A collection of elements to be added. 
+            elements (Union[list, np.ndarray, dict]): A collection of elements to be added.
                 Each element is expected to be a dictionary containing:
                     - 'type' (str): The type of the element (e.g., VTK cell type).
                     - 'connectivity' (list or array): The connectivity data defining the element.
@@ -389,28 +375,31 @@ class vtkWriter(writerclass.writer):
             KeyError: If required keys ('type' or 'connectivity') are missing in an element.
 
         Notes:
-            - The method uses the `dbvtk.getVTKObj` function to retrieve the VTK cell object 
+            - The method uses the `dbvtk.getVTKObj` function to retrieve the VTK cell object
               and the number of nodes for the given element type.
-            - Each element's connectivity is used to set the point IDs for the VTK cell, 
+            - Each element's connectivity is used to set the point IDs for the VTK cell,
               which is then inserted into the unstructured grid.
             - Debug logs are generated to indicate the number and type of elements being processed.
 
         """
+        if self.ugrid is None:
+            Logger.error('Unstructured grid is not initialized. Cannot write elements.')
+            return
         for m in elements:
             # get connectivity data
             typeElem = m.get('type')
             connectivity = m.get('connectivity')
-            physgrp = m.get('physgrp', None)
+            _ = m.get('physgrp', None)
             # load element's vtk class
-            cell, nbnodes = dbvtk.getVTKObj(typeElem)
+            cell, nbNodes = dbvtk.getVTKObj(typeElem)
             Logger.debug(f'Set {len(connectivity)} elements of type {typeElem}')
             #
             for t in connectivity:
-                for i in range(nbnodes):
+                for i in range(nbNodes):
                     cell.GetPointIds().SetId(i, t[i])
                 self.ugrid.InsertNextCell(cell.GetCellType(), cell.GetPointIds())
 
-    def createNewFields(self, 
+    def createNewFields(self,
                         elems: Union[list, np.ndarray, dict])-> Optional[list]:
         """
         Create new fields based on the provided elements data.
@@ -420,7 +409,7 @@ class vtkWriter(writerclass.writer):
         of a physical group key in the elements and constructs a new field accordingly.
 
         Args:
-            elems (Union[list, np.ndarray, dict]): A collection of elements data. Each
+            elems (Union[list, np.ndarray, dict]): A dictionary or collection of element data. Each
                 element is expected to be a dictionary containing mesh and optionally
                 physical group information.
 
@@ -443,16 +432,16 @@ class vtkWriter(writerclass.writer):
         physGrp = False
         newFields = None
         for itE in elems:
-            if config_mesh.DFLT_PHYS_GRP in itE.keys():
+            if configMESH.DFLT_PHYS_GRP in itE.keys():
                 physGrp = True
                 break
         if physGrp:
             newFields = list()
             data = list()
             for itE in elems:
-                nbElems = itE[config_mesh.DFLT_MESH].shape[0]
-                if config_mesh.DFLT_PHYS_GRP in itE.keys():
-                    dataPhys = np.array(itE[config_mesh.DFLT_PHYS_GRP], dtype=int)
+                nbElems = itE[configMESH.DFLT_MESH].shape[0]
+                if configMESH.DFLT_PHYS_GRP in itE.keys():
+                    dataPhys = np.array(itE[configMESH.DFLT_PHYS_GRP], dtype=int)
                     if len(dataPhys) == nbElems:
                         data = np.append(data, dataPhys)
                     else:
@@ -460,12 +449,12 @@ class vtkWriter(writerclass.writer):
                 else:
                     data = np.append(data, -np.ones(nbElems))
             Logger.debug('Create new field for physical group')
-            newFields.extend([{'data': data, 'type': 'elemental', 'dim': 1, 'name': config_mesh.DFLT_PHYS_GRP}])
+            newFields.extend([{'data': data, 'type': 'elemental', 'dim': 1, 'name': configMESH.DFLT_PHYS_GRP}])
 
         return newFields
-    
-    def setField(self, 
-                 field: dict, 
+
+    def setField(self,
+                 field: dict,
                  numStep: Optional[int]=None)-> tuple:
         """
         Sets a field in the VTK format from the provided field data.
@@ -491,14 +480,15 @@ class vtkWriter(writerclass.writer):
             - If the field is time-dependent and `numStep` is provided, the function extracts
               the data corresponding to the specified time step.
             - The function initializes a VTK array using the provided field data and sets its name.
+            - Missing field names fall back to ``"field"``.
         """
         # load field data
         data = field.get('data')
-        name = field.get('name')
-        numEntities = field.get('numEntities', None)
+        name = field.get('name') or 'field'
+        _ = field.get('numEntities', None)
         nbsteps = field.get('nbsteps', 1)
         steps = field.get('steps', None)
-        dim = field.get('dim', 0)
+        _ = field.get('dim', 0)
         timesteps = field.get('timesteps', None)
         typeField = field.get('type')
         # for time dependent data
@@ -516,10 +506,12 @@ class vtkWriter(writerclass.writer):
             if not timesteps and nbsteps>1:
                 timesteps = np.zeros(nbsteps)
 
-            if nbsteps > 1 or steps is not None:
+            if data is not None and (nbsteps > 1 or steps is not None):
                 data = data[numStep]
+        if data is None:
+            raise ValueError('Field data is required')
         # initialize VTK's array
-        dataVtk = ns.numpy_to_vtk(data)
+        dataVtk = ns.numpy_to_vtk(np.asarray(data))
         # dataVtk = vtk.vtkDoubleArray()
         dataVtk.SetName(name)
         # if len(data.shape) == 1:
@@ -542,11 +534,11 @@ class vtkWriter(writerclass.writer):
         # #
         return dataVtk, typeField
 
-    def write(self, 
-              ugrid: Optional[vtk.vtkUnstructuredGrid]=None, 
-              filename: Optional[str]=None)-> None:
+    def write(self,
+              ugrid: Optional[vtk.vtkUnstructuredGrid]=None,
+              filename: Optional[str|Path]=None)-> None:
         """
-        Writes a VTK unstructured grid to a file.
+        Write a VTK unstructured grid to disk.
         This method writes the provided VTK unstructured grid (`ugrid`) to a file
         specified by `filename`. It supports both binary and ASCII formats, depending
         on the configuration of the writer. If no `ugrid` is provided, the instance's
@@ -561,27 +553,39 @@ class vtkWriter(writerclass.writer):
         Raises:
             ValueError: If `filename` is not provided or is invalid.
         Notes:
-            - The method initializes the writer if it has not been set up already.
-            - The file format (binary or ASCII) is determined by the `binary` and
-              `ascii` attributes of the instance.
+                        - The method initializes the XML writer if it has not been set up already.
+                        - The output mode (binary or ASCII) is determined by the `binary` and
+                            `ascii` attributes of the instance.
             - Logs the size of the saved file and the time taken to write it.
         """
+        ugrid_run = self.ugrid if ugrid is None else ugrid
+        if filename is None:
+            Logger.error('No filename provided for writing VTK file')
+            return
+        if ugrid_run is None:
+            Logger.error('No unstructured grid provided for writing VTK file')
+            return
         # initialization
         if self.writer is None:
             self.writer = vtk.vtkXMLUnstructuredGridWriter()
-            self.writer.SetInputDataObject(self.ugrid)
-            if self.binary:
-                self.writer.SetFileType(vtk.VTK_BINARY)
-            if self.ascii:
-                self.writer.SetDataModeToAscii()
-        self.writer.SetFileName(filename)
-        self.writer.Update()
+        vtk_writer = self.writer
+        vtk_writer.SetInputDataObject(ugrid_run)
+        if self.binary:
+            vtk_writer.SetDataModeToBinary()
+        if self.ascii:
+            vtk_writer.SetDataModeToAscii()
+        vtk_writer.SetFileName(str(filename))
+        vtk_writer.Update()
         # self.writer.SetDebug(True)
         # self.writer.SetWriteTimeValue(True)
-        
+
         starttime = time.perf_counter()
-        self.writer.Write()
-        Logger.info(f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s')
+        vtk_writer.Write()
+        filename = Path(filename)
+        txt = f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) '
+        txt += f'- Elapsed {(time.perf_counter()-starttime):.4f} s'
+        Logger.info(txt)
 
 
-writer = vtkWriter
+writer = VTKWriter
+vtkWriter = VTKWriter

@@ -1,4 +1,3 @@
-import pytest
 from meshRW.dbvtk import (
     loadElementDict,
     getVTKtoElem,

@@ -1,6 +1,5 @@
-import os
+
 import pytest
-from pathlib import Path
 from meshRW.fileio import fileHandler
 import gzip
 import bz2
