@@ -20,9 +20,12 @@ from . import configMESH, dbmsh, fileio, various, writerClass
 
 class mshWriter(writerClass.writer):
     """
-    mshWriter is a class for writing GMSH (.msh) files. It provides functionality to
-    write nodes, elements, and fields into a GMSH file format. The class supports
-    appending data to existing files and handles various configurations for writing mesh data.
+    Write legacy Gmsh v2 mesh files.
+
+    The writer emits geometry/connectivity and optional nodal or elemental result
+    fields using the text MSH v2 layout. When ``append`` is enabled and the target
+    file already exists, only field sections are appended.
+
     Attributes:
         db (module): Database module for GMSH configurations.
         fhandle (fileio.fileHandler): File handler for writing data to the file.
@@ -72,22 +75,21 @@ class mshWriter(writerClass.writer):
         opts: dict|None = None,
     )-> None:
         """
-       Initialize the mshWriter class to write a GMSH file.
+        Initialize the legacy Gmsh writer.
 
         Parameters:
             filename (Union[str, Path], optional): Name of the GMSH file (with or without `.msh` extension).
                 Can include a directory path. Defaults to None.
             nodes (Union[list, np.ndarray], optional): Node coordinates. Defaults to None.
-            elements (Union[list, np.ndarray], optional): Connectivity tables. Should be a list of dictionaries
+            elements (Union[list, np.ndarray], optional): Connectivity tables. Should be a dictionary or list of dictionaries
                 with keys:
                     - 'connectivity': Connectivity array.
                     - 'type': Type of elements (string or integer, see GMSH documentation).
                     - 'physgrp' (optional): Physical group (integer or array of integers for each cell).
                 Defaults to None.
             fields (Union[list, np.ndarray], optional): List of fields to write. Each field is a dictionary with keys:
-                - 'data': Variable name.
+                - 'data': Array-like values, or a list of arrays for time-dependent exports.
                 - 'type': 'nodal' or 'elemental'.
-                - 'numentities': Number of concerned values (nodes or elements).
                 - 'dim': Number of values per node.
                 - 'name': Name of the field.
                 - 'steps': List of steps.
@@ -104,7 +106,7 @@ class mshWriter(writerClass.writer):
         Notes:
             - This class adapts the inputs for writing and initializes the file handler.
             - Depending on the `append` flag and file existence, the file is opened in append or write mode.
-            - The contents are written to the file, and the file is closed after writing.
+            - The contents are written immediately and the file is closed before returning.
         """
         # # adapt verbosity logger
         # if not verbose:
@@ -136,10 +138,10 @@ class mshWriter(writerClass.writer):
 
     def setOptions(self, opts: dict)-> None:
         """
-        Sets the default options for the object.
+        Store writer options.
 
         Args:
-            options (dict): A dictionary containing configuration options
+            opts (dict): A dictionary containing configuration options
                     to be set. The keys and values in the dictionary
                     should correspond to the specific options supported
                     by the object.
@@ -161,7 +163,7 @@ class mshWriter(writerClass.writer):
             nodes (Union[list, np.ndarray]): The list or array of nodes to be written to the file.
             elements (Union[list, np.ndarray]): The list or array of elements to be written to the file.
             fields (Optional[list], optional): A list of fields to be written to the file. Defaults to None.
-            numStep (Optional[int], optional): The step number associated with the fields. Defaults to None.
+            numStep (Optional[int], optional): Unused placeholder kept for API compatibility with the abstract base class.
 
         Returns:
             None
@@ -388,8 +390,8 @@ class mshWriter(writerClass.writer):
 
         Parameters:
         ----------
-        fields : Union[list, np.ndarray]
-            A list or dictionary containing field data. The structure of the input is as follows:
+        fields : Optional[Union[list, np.ndarray, dict]]
+            A list, NumPy array, or dictionary containing field data. The structure of the input is as follows:
             - If a dictionary, it is converted to a list.
             - Each field in the list is a dictionary with the following keys:
                 - 'data': Array of the data or a list of dictionaries.
@@ -424,7 +426,7 @@ class mshWriter(writerClass.writer):
         Raises:
         -------
         - KeyError: If required keys are missing in the input field dictionaries.
-        - AttributeError: If the file handle (`self.fhandle`) is not properly initialized.
+        - ValueError: If the field type is neither nodal nor elemental.
         """
         # convert to list if dict
         _ = numStep
@@ -983,7 +985,7 @@ def catchTag(content: Optional[str] = None)-> Optional[str]:
         content (str, optional): The content to check for a tag. Defaults to None.
 
     Returns:
-        str: The type of tag found in the content. Returns 'nodes' if the content
+        Optional[str]: The type of tag found in the content. Returns 'nodes' if the content
              matches the opening tag for nodes, 'elems' if it matches the opening
              tag for elements, or None if no match is found.
     """

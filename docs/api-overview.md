@@ -5,7 +5,7 @@
 - `meshRW.msh`: legacy Gmsh v2.2 writer and reader (`mshWriter`, `mshReader`).
 - `meshRW.msh2`: Gmsh API-backed writer for multiple MSH versions.
 - `meshRW.vtk`: legacy VTK (`.vtk`) writer.
-- `meshRW.vtk2`: VTK library-backed writer for `.vtk` and `.vtu`/`.pvd`.
+- `meshRW.vtk2`: VTK library-backed writer for `.vtu` outputs and transient `.pvd` collections.
 
 ## Shared infrastructure
 
@@ -22,7 +22,7 @@
 
 ### Elements
 
-List of dictionaries with at least:
+Dictionary or list of dictionaries with at least:
 
 - `connectivity`: array-like connectivity table.
 - `type`: element type (string or numeric id depending on context).
@@ -40,4 +40,4 @@ List of dictionaries with:
 
 ## Error handling
 
-Writers perform structural checks and raise `ValueError` or generic `Exception` in invalid states (e.g., unsupported extension, incompatible shapes).
+Writers perform structural checks and typically raise `ValueError` for invalid states such as missing connectivity, unsupported extensions, or incompatible shapes.

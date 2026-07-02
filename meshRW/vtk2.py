@@ -24,10 +24,12 @@ from . import configMESH, dbvtk, various, writerClass
 
 class vtkWriter(writerClass.writer):
     """
-    vtkWriter is a class for writing VTK/VTU files using the VTK library. It provides functionality to
-    handle nodes, elements, and fields, and supports writing data along multiple time steps.
-    The class also includes methods for creating new fields from physical groups, setting field data,
-    and writing PVD files for time-dependent datasets.
+    Write VTU datasets with the VTK Python bindings.
+
+    The writer builds an unstructured grid in memory, attaches nodal and elemental
+    arrays, and writes a single `.vtu` file or a time-series of numbered `.vtu`
+    files plus a `.pvd` collection file.
+
     Attributes:
         ugrid (vtk.vtkUnstructuredGrid): The unstructured grid object for VTK data.
         writer (vtk.vtkXMLUnstructuredGridWriter): The writer object for saving VTK files.
@@ -75,7 +77,7 @@ class vtkWriter(writerClass.writer):
         Parameters:
             filename (Union[str, Path], optional): The file path for the VTK file. Defaults to None.
             nodes (Union[list, np.ndarray], optional): The list or array of nodes. Defaults to None.
-            elements (dict, optional): The dictionary of elements. Defaults to None.
+            elements (dict, optional): Element dictionary or list of dictionaries. Defaults to None.
             fields (Union[list, np.ndarray], optional): The list or array of fields. Defaults to None.
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): The title of the VTK file. Defaults to None.
@@ -117,11 +119,11 @@ class vtkWriter(writerClass.writer):
         self.writeContentsSteps(nodesOk, elementsOk, fieldsOk)
 
     def getAppend(self)-> bool:
-        """"
+        """
         Retrieves the current state of the append option.
 
         Returns:
-            bool: The value of the append option, indicating whether appending is enabled.
+            bool: Always mirrors the configured append flag. XML VTU writes are still emitted as fresh files.
         """
         return self.append
 
@@ -130,7 +132,7 @@ class vtkWriter(writerClass.writer):
         Sets the options for the object.
 
         Args:
-            options (dict): A dictionary containing configuration options.
+            opts (dict): A dictionary containing configuration options.
                 Supported keys:
                     - 'binary' (bool): If True, enables binary mode. Defaults to False.
                     - 'ascii' (bool): If True, enables ASCII mode. Defaults to False.
@@ -189,8 +191,8 @@ class vtkWriter(writerClass.writer):
         # write along steps
         if self.nbSteps > 0:
             for itS in range(self.nbSteps):
-                # add fieds
-                self.writeContents(fields, numStep=itS)
+                # add fields for the current time step
+                self.writeContents(fields=fields, numStep=itS)
                 # adapt the filename
                 filename = self.getFilename(suffix='.' + str(itS).zfill(len(str(self.nbSteps))))
                 # write file
@@ -203,8 +205,8 @@ class vtkWriter(writerClass.writer):
             # write pvd file
             self.writePVD(dataPVD)
         else:
-            # add fieds
-            self.writeContents(fields)
+            # add fields to the single output dataset
+            self.writeContents(fields=fields)
             # write file
             filename = self.getFilename()
             self.write(self.ugrid, filename)
@@ -265,15 +267,17 @@ class vtkWriter(writerClass.writer):
                       fields: Optional[Union[list, np.ndarray]] = None,
                       numStep: Optional[int] = None)-> None:
         """
-        Writes the contents of the fields to the appropriate output format.
+        Attach field arrays to the current unstructured grid.
 
-        This method handles the addition of fields to the output, depending on the
-        version or format being used. It delegates the actual writing of fields
-        to the `writeFields` method.
+        The ``nodes`` and ``elements`` parameters are accepted for compatibility with
+        the abstract writer interface. This implementation uses them earlier when the
+        unstructured grid is built and only consumes ``fields`` here.
 
         Args:
-            fields (Optional[Union[list, np.ndarray]]): The fields to be written.
-            This can be a list or a NumPy array. Defaults to None.
+            nodes (Optional[Union[list, np.ndarray]]): Unused compatibility parameter.
+            elements (Optional[Union[list, np.ndarray, dict]]): Unused compatibility parameter.
+            fields (Optional[Union[list, np.ndarray]]): The fields to be attached.
+                This can be a list or a NumPy array. Defaults to None.
             numStep (Optional[int]): The step number associated with the fields.
             This is used to track the time step or iteration. Defaults to None.
 
@@ -293,7 +297,7 @@ class vtkWriter(writerClass.writer):
         (point data or cell data) of the unstructured grid based on the field type.
 
         Args:
-            fields (Optional[Union[list, np.ndarray]]): A list or a single numpy array
+            fields (Optional[Union[list, np.ndarray]]): A list or single NumPy array
                 representing the fields to be added. If a single field is provided,
                 it will be converted into a list.
             numStep (Optional[int]): An optional integer representing the time step
@@ -405,7 +409,7 @@ class vtkWriter(writerClass.writer):
         of a physical group key in the elements and constructs a new field accordingly.
 
         Args:
-            elems (Union[list, np.ndarray, dict]): A collection of elements data. Each
+            elems (Union[list, np.ndarray, dict]): A dictionary or collection of element data. Each
                 element is expected to be a dictionary containing mesh and optionally
                 physical group information.
 
@@ -476,6 +480,7 @@ class vtkWriter(writerClass.writer):
             - If the field is time-dependent and `numStep` is provided, the function extracts
               the data corresponding to the specified time step.
             - The function initializes a VTK array using the provided field data and sets its name.
+            - Missing field names fall back to ``"field"``.
         """
         # load field data
         data = field.get('data')
@@ -533,7 +538,7 @@ class vtkWriter(writerClass.writer):
               ugrid: Optional[vtk.vtkUnstructuredGrid]=None,
               filename: Optional[str|Path]=None)-> None:
         """
-        Writes a VTK unstructured grid to a file.
+        Write a VTK unstructured grid to disk.
         This method writes the provided VTK unstructured grid (`ugrid`) to a file
         specified by `filename`. It supports both binary and ASCII formats, depending
         on the configuration of the writer. If no `ugrid` is provided, the instance's
@@ -548,9 +553,9 @@ class vtkWriter(writerClass.writer):
         Raises:
             ValueError: If `filename` is not provided or is invalid.
         Notes:
-            - The method initializes the writer if it has not been set up already.
-            - The file format (binary or ASCII) is determined by the `binary` and
-              `ascii` attributes of the instance.
+                        - The method initializes the XML writer if it has not been set up already.
+                        - The output mode (binary or ASCII) is determined by the `binary` and
+                            `ascii` attributes of the instance.
             - Logs the size of the saved file and the time taken to write it.
         """
         ugrid_run = self.ugrid if ugrid is None else ugrid

@@ -55,10 +55,10 @@ vtk2.vtkWriter(
 
 ## Writer input model
 
-All writers follow the same data structure:
+Writers share the same core data model:
 
 - `nodes`: array-like `(n_nodes, 2|3)`.
-- `elements`: list of dictionaries with `connectivity`, `type`, optional `physgrp`.
+- `elements`: a dictionary or list of dictionaries with `connectivity`, `type`, and optional `physgrp`.
 - `fields`: list of dictionaries with `name`, `type` (`nodal`/`elemental`), `dim`, `data`, and optional time metadata (`nbsteps`, `steps`).
 
 ## Format notes
