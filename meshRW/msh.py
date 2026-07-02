@@ -33,25 +33,11 @@ class MSHWriter(writerClass.Writer):
         dimPb (int): Dimensionality of the problem (2D or 3D).
         nbElems (int): Number of elements in the mesh.
     Methods:
-        __init__(filename, nodes, elements, fields, append, title, verbose, opts):
-            Initializes the MSHWriter class and writes the contents to the file.
-        setOptions(options):
-            Sets default options for the writer.
-        writeContents(nodes, elements, fields, numStep):
-            Writes the contents of the mesh file, including nodes, elements, and fields.
-        getAppend():
-            Checks if the file is in append mode.
-        writeNodes(nodes):
-            Writes the nodes' coordinates to the file.
-        writeElements(elems):
-            Writes the elements' connectivity and types to the file.
-        writeFields(fields):
-            Writes the fields (nodal or elemental data) to the file.
+        The writer provides dedicated routines for nodes, elements, and fields,
+        and supports appending additional field blocks to existing MSH files.
     Usage:
-        This class is used to create or append to GMSH (.msh) files. It supports
-        writing nodes, elements, and fields with various configurations. The
-        input data can be provided as lists or numpy arrays, and the class handles
-        the formatting and writing process.
+        Use this class to create or append legacy `.msh` outputs from array-like
+        mesh and field data structures.
     Example:
         writer = MSHWriter(
             filename="mesh.msh",

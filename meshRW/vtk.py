@@ -31,28 +31,8 @@ class VTKWriter(writerClass.Writer):
         db (module): Database module for VTK-specific configurations.
 
     Methods:
-        __init__(filename, nodes, elements, fields, append, title, opts):
-            Initializes the vtkWriter instance and prepares the data for writing.
-        setOptions(options):
-            Sets default options for the writer.
-        writeContentsSteps(nodes, elements, fields):
-            Writes the content of the VTK file across multiple steps.
-        writeContents(nodes, elements, fields, numStep):
-            Writes all contents for a single step.
-        getAppend():
-            Determines whether to append to an existing file.
-        logBadExtension():
-            Logs an error if the file extension is invalid.
-        writeHeader():
-            Writes the header of the VTK file based on the version.
-        writeNodes(nodes):
-            Writes the nodes to the VTK file.
-        writeElements(elems):
-            Writes the elements to the VTK file.
-        createNewFields(elems):
-            Creates new fields based on the physical groups in the elements.
-        writeFields(fields, numStep):
-            Writes the fields to the VTK file based on the version.
+        The writer includes legacy VTK and XML-oriented helper routines for
+        writing mesh topology and associated fields, including transient outputs.
     """
     def __init__(
         self,
@@ -70,7 +50,7 @@ class VTKWriter(writerClass.Writer):
         Args:
             filename (Union[str, Path], optional): The file path to save the VTK file. Defaults to None.
             nodes (Union[list, np.ndarray], optional): List or array of node coordinates. Defaults to None.
-            elements (dict, optional): Dictionary containing element connectivity. Defaults to None.
+            elements (dict or list, optional): Element connectivity data. Defaults to None.
             fields (Union[list, np.ndarray], optional): List or array of field data. Defaults to None.
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): Title of the VTK file. Defaults to None.

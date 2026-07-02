@@ -42,47 +42,9 @@ class Writer(ABC):
         nbTemporalFields (int): Number of temporal fields.
 
     Methods:
-        __init__(filename, nodes, elements, fields, append, title, opts):
-            Initialize the writer with file and mesh data.
-
-        setOptions(opts):
-            Abstract method to set options for the writer.
-
-        getAppend():
-            Abstract method to get the append mode.
-
-        adaptTitle(txt, append):
-            Adapt the title with additional information.
-
-        writeContents(nodes, elements, fields, num_step):
-            Abstract method to write the contents of the mesh.
-
-        writeHeader():
-            Write the header to the output file.
-
-        writeNodes(nodes):
-            Abstract method to write the nodes.
-
-        writeElements(elements):
-            Abstract method to write the elements.
-
-        write_fields(fields, num_step):
-            Abstract method to write the fields.
-
-        splitFilename():
-            Split the filename into path, basename, and extension.
-
-        get_filename(prefix, suffix, extension):
-            Generate a new filename with optional prefix, suffix, and extension.
-
-        logBadExtension():
-            Log an error for unsupported file extensions.
-
-        dataAnalysis(nodes, elems, fields):
-            Analyze the mesh data, including nodes, elements, and fields.
-
-        field_analysis(fields):
-            Analyze the fields, including their types and temporal properties.
+        Subclasses implement format-specific methods for options, append behavior,
+        and writing nodes/elements/fields, while this base class provides shared
+        analysis and filename/path helpers.
     """
     def __init__(
         self,
@@ -102,7 +64,7 @@ class Writer(ABC):
             Defaults to None.
             nodes (Union[list, np.ndarray], optional): The list or array of nodes. 
             Defaults to None.
-            elements (dict, optional): A dictionary containing element data. 
+            elements (Union[list, np.ndarray, dict], optional): Element connectivity data.
             Defaults to None.
             fields (Union[list, np.ndarray], optional): The list or array of fields. 
             Defaults to None.
@@ -110,8 +72,6 @@ class Writer(ABC):
             Defaults to False.
             title (str, optional): The title of the file or dataset. 
             Defaults to None.
-            binary (bool, optional): Whether to write the file in binary format. 
-            Defaults to False.
             opts (dict, optional): Additional options for the writer. 
             Defaults to an empty dictionary.
 
@@ -120,7 +80,6 @@ class Writer(ABC):
             title (str): The adapted title of the file or dataset.
             filename (Path): The file path object for the filename.
             basename (str): The base name of the file.
-            binary (bool): Indicates if the file is in binary format.
             db (None): Placeholder for database-related functionality.
             nbNodes (int): The number of nodes.
             nbElems (int): The number of elements.

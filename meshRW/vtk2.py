@@ -35,30 +35,9 @@ class VTKWriter(writerClass.Writer):
         writer (vtk.vtkXMLUnstructuredGridWriter): The writer object for saving VTK files.
         db (module): The database module for VTK-specific configurations.
     Methods:
-        __init__(filename, nodes, elements, fields, append, title, verbose, opts):
-            Initializes the vtkWriter object with the given parameters and prepares the data for writing.
-        getAppend():
-            Returns the append option.
-        setOptions(options):
-            Sets the default options for writing files (binary or ASCII).
-        writeContentsSteps(nodes, elements, fields):
-            Writes the content along multiple time steps, if applicable.
-        writePVD(dataPVD):
-            Writes a PVD file for time-dependent datasets.
-        writeContents(fields, numStep):
-            Adds fields to the VTK data, depending on the version and time step.
-        writeFields(fields, numStep):
-            Writes the fields (nodal or elemental) to the VTK data.
-        writeNodes(nodes):
-            Adds nodes to the VTK unstructured grid.
-        writeElements(elements):
-            Adds elements to the VTK unstructured grid.
-        createNewFields(elems):
-            Creates new fields from element data, such as physical groups.
-        setField(field, numStep):
-            Sets the field data and initializes the corresponding VTK array.
-        write(ugrid, filename):
-            Writes the VTK unstructured grid to a file.
+        The implementation provides explicit steps for building an unstructured
+        grid, attaching nodal/elemental arrays, and writing single-step or
+        time-series VTU outputs with optional PVD indexing.
     """
     def __init__(
         self,
@@ -77,7 +56,7 @@ class VTKWriter(writerClass.Writer):
         Parameters:
             filename (Union[str, Path], optional): The file path for the VTK file. Defaults to None.
             nodes (Union[list, np.ndarray], optional): The list or array of nodes. Defaults to None.
-            elements (dict, optional): Element dictionary or list of dictionaries. Defaults to None.
+            elements (dict or list, optional): Element dictionary or list of dictionaries. Defaults to None.
             fields (Union[list, np.ndarray], optional): The list or array of fields. Defaults to None.
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): The title of the VTK file. Defaults to None.

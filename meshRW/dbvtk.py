@@ -241,7 +241,7 @@ def getElemTypeFromVTK(elementNum: int) -> Union[str, None]:
         elementNum (int): The numerical ID of the element type as defined in Gmsh.
 
     Returns:
-        str: The global name of the element type if found, otherwise `None`.
+        Union[str, None]: The global name of the element type if found, otherwise `None`.
 
     Raises:
         Logs an error if the element type ID is not found in the dictionary.

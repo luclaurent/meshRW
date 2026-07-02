@@ -36,9 +36,12 @@ def getViewName(viewTag: int) -> str:
 
 class MSHWriter(writerClass.Writer):
     """
-    mshWriter is a class for writing mesh files using the Gmsh API. It provides functionality to write nodes, elements,
-    and fields into a Gmsh-compatible `.msh` file format. The class supports both ASCII and binary formats and allows
-    for appending data to existing files.
+    Write mesh and result data using the Gmsh API.
+
+    This writer creates a discrete Gmsh model, inserts nodes/elements, attaches
+    nodal or elemental fields, and exports a `.msh` file according to configured
+    version and binary settings.
+
     Attributes:
         itName (int): Iterator for naming fields.
         db (module): Database module for mesh-related operations.
@@ -48,30 +51,9 @@ class MSHWriter(writerClass.Writer):
         entities (dict): Dictionary of physical groups and their associated entities.
         nbNodes (int): Number of nodes in the mesh.
         nbElems (int): Number of elements in the mesh.
-    Methods:
-        __init__(filename, nodes, elements, fields, append, title, verbose, binary, opts):
-            Initializes the MSHWriter object and writes the contents of the mesh file.
-        getAppend():
-            Returns the append flag, indicating whether to append data to an existing file.
-        setOptions(options):
-            Sets default options for the writer, such as the Gmsh version.
-        writeContents(nodes, elements, fields):
-            Writes the contents of the mesh file, including nodes, elements, and fields.
-        writeNodes(nodes):
-            Writes the node coordinates to the mesh file.
-        writeElements(elements):
-            Writes the elements and their connectivity to the mesh file.
-        writeFields(fields):
-            Writes all fields (nodal or elemental) to the mesh file.
-        writeField(field):
-            Writes a single field (nodal or elemental) to the mesh file.
-        writeFiles():
-            Writes the mesh and field data to the `.msh` file, handling binary 
-            and ASCII formats.
-    Usage:
-        This class is designed to be used for exporting mesh data to Gmsh-compatible files. It supports advanced
-        features like physical groups, field data, and binary file formats. The class relies on the Gmsh Python API
-        for its operations.
+    Notes:
+        The class relies on the Gmsh Python API and must initialize/finalize
+        the Gmsh runtime around each write operation.
     """
 
     def __init__(
@@ -93,8 +75,7 @@ class MSHWriter(writerClass.Writer):
             Defaults to None.
             nodes (Union[list, np.ndarray], optional): List or array of node coordinates. 
             Defaults to None.
-            elements (dict, optional): Dictionary of element definitions. 
-            Defaults to None.
+            elements (dict or list, optional): Element definitions. Defaults to None.
             fields (Union[list, np.ndarray], optional): List or array of fields. 
             Defaults to None.
             append (bool, optional): Whether to append to an existing file. 
