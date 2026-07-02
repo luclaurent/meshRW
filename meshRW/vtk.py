@@ -17,9 +17,9 @@ from . import configMESH, dbvtk, fileio, various, writerClass
 
 class vtkWriter(writerClass.writer):
     """
-    vtkWriter is a class designed to write VTK files in various formats (v2 or XML). 
-    It supports writing nodes, elements, and fields, and can handle multiple steps 
-    for time-dependent data. The class provides flexibility in appending data to 
+    vtkWriter is a class designed to write VTK files in various formats (v2 or XML).
+    It supports writing nodes, elements, and fields, and can handle multiple steps
+    for time-dependent data. The class provides flexibility in appending data to
     existing files and creating new fields based on physical groups.
 
     Attributes:
@@ -75,7 +75,8 @@ class vtkWriter(writerClass.writer):
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): Title of the VTK file. Defaults to None.
             verbose (bool, optional): Enable verbose logging if True. Defaults to False.
-            opts (dict, optional): Additional options for the writer, such as version. Defaults to {'version': 'v2', 'createPath': True}.
+            opts (dict, optional): Additional options for the writer, such as version.
+            Defaults to {'version': 'v2', 'createPath': True}.
         Notes:
             - Adapts verbosity of the logger based on the `verbose` flag.
             - Prepares new fields from physical groups if applicable.
@@ -83,11 +84,11 @@ class vtkWriter(writerClass.writer):
             - Loads specific configuration for VTK writing.
             - Writes contents depending on the number of steps.
         """
-        
+
         # # adapt verbosity logger
         # if not verbose:
         #     Logger.remove()
-        #     Logger.add(sys.stderr, level="INFO") 
+        #     Logger.add(sys.stderr, level="INFO")
         _ = verbose
         Logger.info('Start writing vtk file')
         # adapt inputs
@@ -105,7 +106,13 @@ class vtkWriter(writerClass.writer):
         if nodes is None or elements is None:
             raise ValueError('nodes and elements are required')
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, opts or {'version': 'v2', 'createPath': True})
+        super().__init__(filename,
+                         nodes,
+                         elements,
+                         fields,
+                         append,
+                         title,
+                         opts or {'version': 'v2', 'createPath': True})
         # load specific configuration
         self.db = dbvtk
         # write contents depending on the number of steps
@@ -119,7 +126,7 @@ class vtkWriter(writerClass.writer):
         If an option is not provided, a default value will be used.
 
         Args:
-            options (dict): A dictionary containing configuration options. 
+            options (dict): A dictionary containing configuration options.
                             Supported keys:
                             - 'version' (str): The version to set. Defaults to 'v2'.
 
@@ -129,9 +136,9 @@ class vtkWriter(writerClass.writer):
         self.version = opts.get('version', 'v2')
         self.opts = opts
 
-    def writeContentsSteps(self, 
-                           nodes: Union[list, np.ndarray], 
-                           elements: Union[list, np.ndarray, dict], 
+    def writeContentsSteps(self,
+                           nodes: Union[list, np.ndarray],
+                           elements: Union[list, np.ndarray, dict],
                            fields: Optional[Union[list, np.ndarray, dict]] = None)-> None:
         """
         Write content along multiple steps or a single step.
@@ -183,10 +190,10 @@ class vtkWriter(writerClass.writer):
             self.writeContents(nodes, elements, fields)
             self.customHandler.close()
 
-    def writeContents(self, 
-                      nodes: Union[list, np.ndarray], 
-                      elements: Union[list, np.ndarray, dict], 
-                      fields: Optional[Union[list, np.ndarray, dict]] = None, 
+    def writeContents(self,
+                      nodes: Union[list, np.ndarray],
+                      elements: Union[list, np.ndarray, dict],
+                      fields: Optional[Union[list, np.ndarray, dict]] = None,
                       numStep: Optional[int] = None) -> None:
         """
         Writes the contents of a mesh, including nodes, elements, and optional fields, to a file.
@@ -194,7 +201,8 @@ class vtkWriter(writerClass.writer):
         Parameters:
             nodes (Union[list, np.ndarray]): The list or array of nodes to be written.
             elements (dict): A dictionary containing the elements of the mesh.
-            fields (Optional[Union[list, np.ndarray]]): Optional list or array of fields to be written. Defaults to None.
+            fields (Optional[Union[list, np.ndarray]]): Optional list or array of fields to be written.
+            Defaults to None.
             numStep (Optional[int]): Optional step number associated with the fields. Defaults to None.
 
         Behavior:
@@ -233,8 +241,8 @@ class vtkWriter(writerClass.writer):
         """
         Logs an error message indicating that the file has a bad extension.
 
-        This method uses the Logger to report that the file associated with 
-        this instance has an extension that is not in the list of allowed 
+        This method uses the Logger to report that the file associated with
+        this instance has an extension that is not in the list of allowed
         extensions.
 
         Args:
@@ -243,14 +251,15 @@ class vtkWriter(writerClass.writer):
         Returns:
             None
         """
-        Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename, ' '.join(dbvtk.ALLOWED_EXTENSIONS)))
+        txt = f'File {self.filename}: bad extension (ALLOWED: {" ".join(self.db.ALLOWED_EXTENSIONS)})'
+        Logger.error(txt)
 
     def writeHeader(self)-> None:
         """
         Write the header of the VTK file based on the specified version.
 
-        This method writes the appropriate header for the VTK file depending on 
-        the version specified in the `self.version` attribute. It supports two 
+        This method writes the appropriate header for the VTK file depending on
+        the version specified in the `self.version` attribute. It supports two
         versions:
         - 'v2': Writes a VTK version 2 header using the `headerVTKv2` function.
         - 'xml': Writes an XML-based VTK header using the `headerVTKXML` method.
@@ -273,13 +282,13 @@ class vtkWriter(writerClass.writer):
         Parameters:
         -----------
         nodes : np.ndarray
-            A NumPy array containing the node data to be written. Each row 
-            typically represents a node, and columns represent its attributes 
+            A NumPy array containing the node data to be written. Each row
+            typically represents a node, and columns represent its attributes
             (e.g., coordinates).
 
         Notes:
         ------
-        - The number of nodes is determined from the shape of the `nodes` array 
+        - The number of nodes is determined from the shape of the `nodes` array
           and stored in the `self.nbNodes` attribute.
         - The writing process depends on the `self.version` attribute:
             - If `self.version` is 'v2', the `WriteNodesV2` function is used.
@@ -302,14 +311,14 @@ class vtkWriter(writerClass.writer):
         Parameters:
         -----------
         elems : Union[list, np.ndarray, dict]
-            The elements to be written. Can be provided as a list, numpy array, 
-            or dictionary. If a dictionary is provided, it will be converted 
+            The elements to be written. Can be provided as a list, numpy array,
+            or dictionary. If a dictionary is provided, it will be converted
             into a list for processing.
 
         Behavior:
         ---------
         - Counts the total number of elements and updates `self.nbElems`.
-        - Depending on the version (`self.version`), delegates the writing 
+        - Depending on the version (`self.version`), delegates the writing
           process to the appropriate function:
             - 'v2': Uses `WriteElemsV2` to write elements.
             - 'xml': Uses `WriteElemsXML` to write elements.
@@ -395,9 +404,9 @@ class vtkWriter(writerClass.writer):
         Writes field data to a file based on the specified version.
 
         Parameters:
-            fields (Optional[Union[list, np.ndarray]]): The field data to be written. 
+            fields (Optional[Union[list, np.ndarray]]): The field data to be written.
                 It can be a list or a NumPy array. Defaults to None.
-            numStep (Optional[int]): The time step or iteration number associated 
+            numStep (Optional[int]): The time step or iteration number associated
                 with the field data. Defaults to None.
 
         Returns:
@@ -450,22 +459,22 @@ def headerVTKXML(fileHandle, commentTxt=''):
     return None
 
 
-def WriteNodesV2(fileHandle: fileio.fileHandler, 
+def WriteNodesV2(fileHandle: fileio.fileHandler,
                  nodes: np.ndarray) -> None:
     """
     Write the coordinates of nodes for an unstructured grid to a file.
 
     Args:
         fileHandle (fileio.fileHandler): A file handler object used to write data to a file.
-        nodes (np.ndarray): A 2D NumPy array containing the coordinates of the nodes. 
-                            Each row represents a node, and the columns represent the 
+        nodes (np.ndarray): A 2D NumPy array containing the coordinates of the nodes.
+                            Each row represents a node, and the columns represent the
                             spatial dimensions (e.g., x, y, z).
 
     Raises:
         ValueError: If the number of spatial dimensions in the `nodes` array is not 2 or 3.
 
     Notes:
-        - The function writes the number of nodes and their coordinates to the file in a 
+        - The function writes the number of nodes and their coordinates to the file in a
           specific format.
         - The format of the coordinates depends on the spatial dimensions of the problem:
           - 2D: Writes x and y coordinates.
@@ -571,7 +580,11 @@ def WriteElemsXML(fileHandle, elements):
     return None
 
 
-def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fields: list, numStep: Optional[int] = None)-> None:
+def WriteFieldsV2(fileHandle: fileio.fileHandler,
+                  nbNodes: int,
+                  nbElems: int,
+                  fields: list,
+                  numStep: Optional[int] = None)-> None:
     """
     Writes nodal and elemental field data to a file in a specific format.
 
@@ -597,28 +610,38 @@ def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fi
         - Elemental scalars: Scalar data associated with elements.
 
     Behavior:
-        - Analyzes the fields to classify them into nodal fields, elemental fields, nodal scalars, and elemental scalars.
+        - Analyzes the fields to classify them into nodal fields, elemental fields, nodal scalars,
+        and elemental scalars.
         - Writes CELL_DATA for elemental fields and scalars.
         - Writes POINT_DATA for nodal fields and scalars.
-        - For each field or scalar, retrieves the data for the specified time step (if applicable) and writes it to the file.
+        - For each field or scalar, retrieves the data for the specified time step (if applicable)
+        and writes it to the file.
 
     Notes:
-        - The function uses helper functions `getData`, `writeScalarsDataV2`, and `writeFieldsDataV2` to process and write the data.
-        - The format of the written data is determined by constants such as `dbvtk.DFLT_ELEMS_DATA`, `dbvtk.DFLT_NODES_DATA`, and `dbvtk.DFLT_FIELD`.
+        - The function uses helper functions `getData`, `writeScalarsDataV2`, and `writeFieldsDataV2`
+        to process and write the data.
+        - The format of the written data is determined by constants such as `dbvtk.DFLT_ELEMS_DATA`,
+        `dbvtk.DFLT_NODES_DATA`, and `dbvtk.DFLT_FIELD`.
 
     Raises:
         - None explicitly, but errors may occur if the input data is malformed or if file operations fail.
     ##
         elems: lists of dict of connectivity with elements type (could be reduce to only one dictionary and elements)
-                [{'connectivity':table1,'type':eltype1,physgrp:gpr1},{'connectivity':table2,'type':eltype1,configMESH.DFLT_PHYS_GRP:grp2}...]
+                [{'connectivity':table1,'type':eltype1,physgrp:gpr1},
+                {'connectivity':table2,'type':eltype1,configMESH.DFLT_PHYS_GRP:grp2}...]
                 or
                 {'connectivity':table1,'type':eltype1,'physgrp':gpr1}
 
                 'connectivity': connectivity array
-                'type': type of elements (could be a string or an integer, see getGmshElemType and  gmsh documentation)
-                'physgrp' (optional): physical group (integer or array of integers to declare the physical group of each cell)
-        fields=[{'data':variable_name1,'type':'nodal' or 'elemental' ,'dim':number of values per node,'name':'name 1','steps':list of steps,'nbsteps':number of steps],
-                    {'data':variable_name2,'type':'nodal' or 'elemental' ,'dim':number of values per node,'name':'name 2','steps':list of steps,'nbsteps':number of steps],
+                'type': type of elements (could be a string or an integer, see getGmshElemType and
+                    gmsh documentation)
+                'physgrp' (optional): physical group (integer or array of integers to
+                    declare the physical group of each cell)
+        fields=[{'data':variable_name1,'type':'nodal' or 'elemental' ,
+            'dim':number of values per node,'name':'name 1','steps':list of steps,'nbsteps':number of steps],
+                    {'data':variable_name2,'type':'nodal' or 'elemental' ,
+                        'dim':number of values per node,'name':'name 2',
+                        'steps':list of steps,'nbsteps':number of steps],
                     ...
                     ]
 
@@ -633,7 +656,8 @@ def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fi
                 'data' could be defined as
                      - list of a arrays with all nodal or elemental values along steps
                      - a dictionary {'array':ar,'connectivityId':int} in the case of elemental
-                        'connectivityId': the data are given associated to a certain list of cells (other is defined as 0)
+                        'connectivityId': the data are given associated to a certain list of 
+                        cells (other is defined as 0)
     """
     # analyze fields data
     iXNodalField = list()
@@ -664,7 +688,8 @@ def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fi
         # write fields
         if len(iXElementalField) > 0:
             Logger.debug(f'Start writing {len(iXElementalField)} {dbvtk.DFLT_FIELD}')
-            fileHandle.write('{} {} {:d}\n'.format(dbvtk.DFLT_FIELD, 'cellField', len(iXElementalField)))
+            txt = f'{dbvtk.DFLT_FIELD} cellField {len(iXElementalField):d}\n'
+            fileHandle.write(txt)
             for iX in iXElementalField:
                 # get array of data
                 data = getData(fields[iX], numStep)
@@ -683,7 +708,8 @@ def WriteFieldsV2(fileHandle: fileio.fileHandler, nbNodes: int, nbElems: int, fi
         # write fields
         if len(iXNodalField) > 0:
             Logger.debug(f'Start writing {len(iXNodalField)} {dbvtk.DFLT_FIELD}')
-            fileHandle.write('{} {} {:d}\n'.format(dbvtk.DFLT_FIELD, 'pointField', len(iXNodalField)))
+            txt = f'{dbvtk.DFLT_FIELD} pointField {len(iXNodalField):d}\n'
+            fileHandle.write(txt)
             for iX in iXNodalField:
                 # get array of data
                 data = getData(fields[iX], numStep)
@@ -701,7 +727,7 @@ def getData(data: dict, num: Optional[int]) -> np.ndarray:
 
     Args:
         data (dict): A dictionary containing the data. It is expected to have
-                     keys such as `DFLT_FIELD_STEPS`, `DFLT_FIELD_NBSTEPS`, 
+                     keys such as `DFLT_FIELD_STEPS`, `DFLT_FIELD_NBSTEPS`,
                      and `DFLT_FIELD_DATA` as defined in `configMESH`.
         num (int): The step number for which the data is to be retrieved.
 
@@ -772,8 +798,8 @@ def writeScalarsDataV2(fileHandle: fileio.fileHandler, data: np.ndarray, name: s
         fileHandle.write(formatSpec.format(d))
 
 
-def writeFieldsDataV2(fileHandle: fileio.fileHandler, 
-                      data: np.ndarray, 
+def writeFieldsDataV2(fileHandle: fileio.fileHandler,
+                      data: np.ndarray,
                       name: str) -> None:
     """
     Writes a 2D NumPy array to a file using a custom FIELD format.

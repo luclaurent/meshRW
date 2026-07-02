@@ -5,8 +5,6 @@ This class is a part of the meshRW library and will write a msh file from a mesh
 ----
 Luc Laurent - luc.laurent@lecnam.net -- 2024
 """
-# pylint: disable=unused-import,unused-argument,dangerous-default-value,attribute-defined-outside-init,unused-variable,arguments-differ
-# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false, reportOptionalSubscript=false
 
 import time
 from pathlib import Path
@@ -38,8 +36,8 @@ def getViewName(view_tag: int) -> str:
 
 class mshWriter(writerClass.writer):
     """
-    mshWriter is a class for writing mesh files using the Gmsh API. It provides functionality to write nodes, elements, 
-    and fields into a Gmsh-compatible `.msh` file format. The class supports both ASCII and binary formats and allows 
+    mshWriter is a class for writing mesh files using the Gmsh API. It provides functionality to write nodes, elements,
+    and fields into a Gmsh-compatible `.msh` file format. The class supports both ASCII and binary formats and allows
     for appending data to existing files.
     Attributes:
         itName (int): Iterator for naming fields.
@@ -70,21 +68,21 @@ class mshWriter(writerClass.writer):
         writeFiles():
             Writes the mesh and field data to the `.msh` file, handling binary and ASCII formats.
     Usage:
-        This class is designed to be used for exporting mesh data to Gmsh-compatible files. It supports advanced 
-        features like physical groups, field data, and binary file formats. The class relies on the Gmsh Python API 
+        This class is designed to be used for exporting mesh data to Gmsh-compatible files. It supports advanced
+        features like physical groups, field data, and binary file formats. The class relies on the Gmsh Python API
         for its operations.
     """
-    
-    def __init__(        
+
+    def __init__(
         self,
-        filename: Union[str, Path] = None,
-        nodes: Union[list, np.ndarray] = None,
-        elements: dict = None,
-        fields: Union[list, np.ndarray] = None,
+        filename: Union[str, Path, None] = None,
+        nodes: Union[list, np.ndarray, None] = None,
+        elements: dict|None = None,
+        fields: Union[list, np.ndarray, None] = None,
         append: bool = False,
-        title: str = None,
+        title: str|None = None,
         verbose: bool = False,
-        opts: dict = {'version': 2.2, 'binary': False, 'nodes_reclassify': True, 'createPath': True},
+        opts: dict|None = None,
     )-> None:
         """
         Initialize the mesh writer object using the Gmsh API.
@@ -97,7 +95,7 @@ class mshWriter(writerClass.writer):
             append (bool, optional): Whether to append to an existing file. Defaults to False.
             title (str, optional): Title of the mesh. Defaults to None.
             verbose (bool, optional): Enable verbose logging. Defaults to False.
-            opts (dict, optional): Additional options for the mesh. Defaults to 
+            opts (dict, optional): Additional options for the mesh. Defaults to
                       {'version': 2.2, 'binary': False, 'nodes_reclassify': True, 'createPath': True}.
 
         Attributes:
@@ -111,16 +109,19 @@ class mshWriter(writerClass.writer):
             - The binary option is extracted from the opts dictionary.
             - The `writeContents` method is called to write the mesh contents.
         """
+        _ = verbose  # currently not used, but reserved for future use
         # # adapt verbosity logger
         # if not verbose:
         #     Logger.remove()
-        #     Logger.add(sys.stderr, level="INFO") 
+        #     Logger.add(sys.stderr, level="INFO")
         #
         Logger.info('Create msh file using gmsh API')
         self.itName = 0 # name iterators
         # adapt inputs
-        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
+        nodes, elements, fieldsOk = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
+        if opts is None:
+            opts = {'version': 2.2, 'binary': False, 'nodes_reclassify': True, 'createPath': True}
         super().__init__(filename, nodes, elements, fields, append, title, opts)
         # load specific configuration
         self.db = dbmsh
@@ -130,7 +131,7 @@ class mshWriter(writerClass.writer):
         self.modelName = self.title
 
         # write contents
-        self.writeContents(nodes, elements, fields)
+        self.writeContents(nodes, elements, fieldsOk)
 
     def getAppend(self)-> bool:
         """
@@ -157,25 +158,30 @@ class mshWriter(writerClass.writer):
         self.nodes_reclassify = opts.get('nodes_reclassify', True)
         self.opts = opts
 
-    def writeContents(self, 
-                      nodes: Union[list, np.ndarray], 
-                      elements: dict, 
-                      fields: Optional[Union[list, np.ndarray]]=None)-> None:
+    def writeContents(self,
+                      nodes: Union[list, np.ndarray, None],
+                      elements: dict|None,
+                      fields: Optional[Union[list, dict, None]]=None,
+                      numStep: Optional[int] = None)-> None:
         """
-        Write the contents of a mesh, including nodes, elements, and optional fields, 
+        Write the contents of a mesh, including nodes, elements, and optional fields,
         to a Gmsh-compatible file.
         Args:
-            nodes (Union[list, np.ndarray]): A list or numpy array containing the nodes of the mesh.
-            elements (dict): A dictionary containing the elements of the mesh, where keys represent 
+            nodes (Union[list, np.ndarray, None]): A list or numpy array containing the nodes of the mesh.
+            elements (dict|None): A dictionary containing the elements of the mesh, where keys represent
                 element types and values contain the corresponding element data.
-            fields (Optional[Union[list, np.ndarray]]): Optional list or numpy array containing 
+            fields (Optional[Union[list, dict, None]]): Optional list or numpy array containing
                 field data to be written to the mesh file. Defaults to None.
         Returns:
             None
-        This method initializes the Gmsh API, creates physical groups and entities for the mesh, 
-        adds nodes and elements, optionally writes field data, and saves the mesh to a file. 
+        This method initializes the Gmsh API, creates physical groups and entities for the mesh,
+        adds nodes and elements, optionally writes field data, and saves the mesh to a file.
         It also ensures proper cleanup of the Gmsh environment after writing the file.
         """
+        _ = numStep  # currently not used, but reserved for future use
+        if nodes is None or elements is None:
+            Logger.error('Nodes and elements must be provided to write the mesh')
+            return
         # initialize gmsh
         gmsh.initialize()
         gmsh.option.setNumber('Mesh.MshFileVersion', self.version)
@@ -196,7 +202,7 @@ class mshWriter(writerClass.writer):
             self.entities[g] = list()
             for d in range(4):
                 self.entities[g].append(gmsh.model.addDiscreteEntity(d))
-                gmsh.model.addPhysicalGroup(d, [self.entities[g][-1]], g, name=self.nameGrp.get(g, None))
+                gmsh.model.addPhysicalGroup(d, [self.entities[g][-1]], g, name=self.nameGrp.get(g, ''))
 
         # add nodes
         self.writeNodes(nodes)
@@ -208,7 +214,7 @@ class mshWriter(writerClass.writer):
         if self.nodes_reclassify:
             Logger.info('Reclassify nodes')
             gmsh.model.mesh.reclassifyNodes()
-        
+
         # add fields
         if fields is not None:
             self.writeFields(fields)
@@ -261,10 +267,10 @@ class mshWriter(writerClass.writer):
         Parameters:
         -----------
         elements : Union[list, dict]
-            A list or dictionary containing element connectivity and type information. 
+            A list or dictionary containing element connectivity and type information.
             The input can be in one of the following formats:
             - List of dictionaries:
-              [{'connectivity': table1, 'type': eltype1, 'physgrp': grp1}, 
+              [{'connectivity': table1, 'type': eltype1, 'physgrp': grp1},
                {'connectivity': table2, 'type': eltype2, 'physgrp': grp2}, ...]
             - Single dictionary:
               {'connectivity': table1, 'type': eltype1, 'physgrp': grp1}
@@ -288,9 +294,9 @@ class mshWriter(writerClass.writer):
         -------
         - Any exceptions raised by the Gmsh API during the addition of elements.
         """
-        
+
         # convert to list if dict
-        if type(elements) is dict:
+        if isinstance(elements, dict):
             elemsRun = [elements]
         else:
             elemsRun = elements
@@ -298,27 +304,35 @@ class mshWriter(writerClass.writer):
         Logger.info(f'Add {self.nbElems} elements')
         for m in elemsRun:
             # get connectivity data
-            typeElem = m.get('type')
-            connectivity = m.get('connectivity')
+            typeElem = m.get('type','')
+            connectivity = m.get('connectivity',np.empty((0, 0), dtype=int))
             physgrp = m.get('physgrp', None)
             codeElem = self.db.getMSHElemType(typeElem)
             dimElem = self.db.getDim(typeElem)
             #
             Logger.info(f'Set {len(connectivity)} elements of type {typeElem}')
-            gmsh.model.mesh.addElementsByType(self.globEntity[dimElem], codeElem, [], connectivity.flatten())
+            gmsh.model.mesh.addElementsByType(self.globEntity[dimElem],
+                                              codeElem,
+                                              [],
+                                              connectivity.flatten())
             if physgrp is not None:
                 if not isinstance(physgrp, np.ndarray) and not isinstance(physgrp, list):
                     physgrp = [physgrp]
                 for p in physgrp:
-                    gmsh.model.mesh.addElementsByType(self.entities[p][dimElem-1], codeElem, [], connectivity.flatten())
+                    gmsh.model.mesh.addElementsByType(self.entities[p][dimElem-1],
+                                                      codeElem,
+                                                      [],
+                                                      connectivity.flatten())
 
     @various.timeit('Fields declared')
-    def writeFields(self, fields: Union[list, np.ndarray])-> None:
+    def writeFields(self,
+                    fields: Optional[Union[list, dict, None]] = None,
+                    numStep: Optional[int|None] = None) -> None:
         """
         Writes one or more fields to the appropriate output.
 
         Args:
-            fields (Union[list, np.ndarray]): A single field or a list of fields to be written. 
+            fields (Union[list, np.ndarray]): A single field or a list of fields to be written.
                 If a single field is provided as a numpy array, it will be converted into a list.
 
         Returns:
@@ -328,10 +342,16 @@ class mshWriter(writerClass.writer):
             - Logs the number of fields being added.
             - Each field is written using the `writeField` method.
         """
+        _ = numStep  # currently not used, but reserved for future use
+        if fields is None:
+            Logger.info('No fields to write')
+            return
         if not isinstance(fields, list):
-            fields = [fields]
-        Logger.info(f'Add {len(fields)} fields')
-        for f in fields:
+            fieldsarray = [fields]
+        else:
+            fieldsarray = fields
+        Logger.info(f'Add {len(fieldsarray)} fields')
+        for f in fieldsarray:
             self.writeField(f, homogeneous=f.get('homogeneous', False))
 
     def writeField(self, field: dict, homogeneous: bool=False)-> None:
@@ -340,39 +360,42 @@ class mshWriter(writerClass.writer):
 
         Parameters:
             field (dict): A dictionary containing the field data with the following keys:
-            - 'data' (list or np.ndarray): The field data values. If multiple steps are present, 
+            - 'data' (list or np.ndarray): The field data values. If multiple steps are present,
               this should be a list or a 2D array where each row corresponds to a step.
-            - 'name' (str, optional): The name of the field. If not provided, a default name 
+            - 'name' (str, optional): The name of the field. If not provided, a default name
               will be generated based on the field type and an internal counter.
-            - 'numEntities' (np.ndarray, optional): The entity tags (e.g., node or element IDs) 
+            - 'numEntities' (np.ndarray, optional): The entity tags (e.g., node or element IDs)
               associated with the field data. If not provided, it defaults to all nodes or elements.
-            - 'nbsteps' (int, optional): The number of time steps. If not provided, it will be 
+            - 'nbsteps' (int, optional): The number of time steps. If not provided, it will be
               inferred from 'steps' or 'timesteps'.
-            - 'steps' (list or np.ndarray, optional): The step indices. If not provided, it defaults 
+            - 'steps' (list or np.ndarray, optional): The step indices. If not provided, it defaults
               to a range from 0 to 'nbsteps'.
-            - 'timesteps' (list or np.ndarray, optional): The time values corresponding to each step. 
+            - 'timesteps' (list or np.ndarray, optional): The time values corresponding to each step.
               If not provided, it defaults to zeros.
             - 'dim' (int, optional): The dimensionality of the field data. Defaults to 0.
             - 'type' (str): The type of the field, either 'nodal' or 'elemental'.
-            - 'homogeneous' (bool, optional): If True, the field data is treated as homogeneous 
+            - 'homogeneous' (bool, optional): If True, the field data is treated as homogeneous
               across all entities. Defaults to False.
 
         Raises:
             ValueError: If 'typeField' is not 'nodal' or 'elemental'.
 
         Notes:
-            - For 'nodal' fields, the data is associated with nodes, and 'numEntities' defaults to 
+            - For 'nodal' fields, the data is associated with nodes, and 'numEntities' defaults to
               all node IDs.
-            - For 'elemental' fields, the data is associated with elements, and 'numEntities' defaults 
+            - For 'elemental' fields, the data is associated with elements, and 'numEntities' defaults
               to all element IDs.
-            - The function uses Gmsh's API to add the field data to a view, with support for multiple 
+            - The function uses Gmsh's API to add the field data to a view, with support for multiple
               time steps.
-            - If 'homogeneous' is True, the data is flattened and added using the 
+            - If 'homogeneous' is True, the data is flattened and added using the
               `addHomogeneousModelData` method.
         """
-        
+
         # load field data
         data = field.get('data')
+        if data is None:
+            Logger.error('Field data is None')
+            return
         name = field.get('name')
         numEntities = field.get('numEntities', None)
         nbsteps = field.get('nbsteps', None)
@@ -384,7 +407,7 @@ class mshWriter(writerClass.writer):
         if not name:
             name = f'{typeField}_{self.itName}'
             self.itName += 1
-            
+
         # manage steps
         if steps is not None:
             nbsteps = len(steps)
@@ -433,22 +456,24 @@ class mshWriter(writerClass.writer):
                 dataView = dataView[eId - 1]
             # add homogeneous model data
             if not homogeneous:
-                gmsh.view.addModelData(tag=tagView, 
-                                    step=s, 
-                                    modelName=self.modelName, 
-                                    dataType=nameTypeData, 
-                                    tags=numEntities, 
+                gmsh.view.addModelData(tag=tagView,
+                                    step=s,
+                                    modelName=self.modelName,
+                                    dataType=nameTypeData,
+                                    tags=numEntities,
                                     data=dataView if len(dataView.shape) > 1 \
-                                        else dataView.reshape(-1, 1), # in the case of use of addHomogeneousModelData (this data must be flatten: np.hstack(dataView.transpose()) )
+                                        else dataView.reshape(-1, 1),
+                                        # in the case of use of addHomogeneousModelData
+                                        # (this data must be flatten: np.hstack(dataView.transpose()) )
                                     numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                     time=t)
             else:
-                gmsh.view.addHomogeneousModelData(tag=tagView, 
-                                   step=s, 
-                                   modelName=self.modelName, 
-                                   dataType=nameTypeData, 
-                                   tags=numEntities, 
-                                   data=np.asarray(dataView).transpose().reshape(-1), 
+                gmsh.view.addHomogeneousModelData(tag=tagView,
+                                   step=s,
+                                   modelName=self.modelName,
+                                   dataType=nameTypeData,
+                                   tags=numEntities,
+                                   data=np.asarray(dataView).transpose().reshape(-1),
                                    numComponents=dataView.shape[1] if len(dataView.shape) > 1 else 1,
                                    time=t)
             # ,
@@ -458,30 +483,30 @@ class mshWriter(writerClass.writer):
     @various.timeit('File(s) written')
     def writeFiles(self)-> None:
         """
-        Writes mesh and field data to files with advanced options for binary format 
+        Writes mesh and field data to files with advanced options for binary format
         and appending field data.
 
-        This method handles exporting mesh data and associated fields using the Gmsh 
-        API. Depending on the configuration, it can write data in binary or ASCII 
+        This method handles exporting mesh data and associated fields using the Gmsh
+        API. Depending on the configuration, it can write data in binary or ASCII
         format, append field data to the same file, or save each field in separate files.
 
         Attributes:
             binary (bool): Determines whether the mesh is written in binary format.
             filename (Path): The base filename for saving the mesh and field data.
-            getAppend (Callable): A method that returns a boolean indicating whether 
+            getAppend (Callable): A method that returns a boolean indicating whether
                 to append field data to the same file.
-            getFilename (Callable): A method that generates a new filename with a 
+            getFilename (Callable): A method that generates a new filename with a
                 specified suffix.
 
         Behavior:
-            - If `binary` is True, the mesh is written in binary format; otherwise, 
+            - If `binary` is True, the mesh is written in binary format; otherwise,
               it is written in ASCII format.
             - If `getAppend()` returns True, all fields are appended to the same file.
-            - If `getAppend()` returns False, each field is saved in a separate file 
+            - If `getAppend()` returns False, each field is saved in a separate file
               with a unique suffix.
 
         Logging:
-            - Logs the name of each field saved, the size of the file, and the time 
+            - Logs the name of each field saved, the size of the file, and the time
               taken to save the data.
 
         Raises:
@@ -496,7 +521,7 @@ class mshWriter(writerClass.writer):
             gmsh.option.setNumber('Mesh.Binary', 1)
         else:
             gmsh.option.setNumber('Mesh.Binary', 0)
-        # if len( gmsh.view.getTags())==0 or not self.getAppend(): 
+        # if len( gmsh.view.getTags())==0 or not self.getAppend():
         gmsh.write(self.filename.as_posix())
         if self.getAppend():
             for t in gmsh.view.getTags():
@@ -517,11 +542,10 @@ class mshWriter(writerClass.writer):
                 newfilename = self.getFilename(suffix=f'_view-{it}_{viewname}')
                 starttime = time.perf_counter()
                 gmsh.view.write(t, newfilename.as_posix(), append=False)
-                Logger.info(
-                    f'Data save in {newfilename} ({various.convert_size(newfilename.stat().st_size)}) - Elapsed {(time.perf_counter()-starttime):.4f} s'
-                )
-                
-                
+                txt = f'Data save in {newfilename} ({various.convert_size(newfilename.stat().st_size)}) '
+                txt += f'- Elapsed {(time.perf_counter()-starttime):.4f} s'
+                Logger.info(txt)
+
 writer = mshWriter  # for backward compatibility
 
     # def dataAnalysis(self,nodes,elems,fields):

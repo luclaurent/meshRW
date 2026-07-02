@@ -16,9 +16,9 @@ class writer(ABC):
     """
     Abstract base class for writing mesh data to files.
 
-    This class provides a framework for writing mesh data, including nodes, elements, 
-    and fields, to a file. It includes methods for setting options, analyzing data, 
-    and writing various components of the mesh. Subclasses must implement the 
+    This class provides a framework for writing mesh data, including nodes, elements,
+    and fields, to a file. It includes methods for setting options, analyzing data,
+    and writing various components of the mesh. Subclasses must implement the
     abstract methods to define specific behavior for different file formats.
 
     Attributes:
@@ -158,7 +158,7 @@ class writer(ABC):
         Set the options for the writer.
 
         Args:
-            opts (dict): A dictionary containing configuration options 
+            opts (dict): A dictionary containing configuration options
                          to customize the writer's behavior.
 
         Returns:
@@ -186,11 +186,11 @@ class writer(ABC):
 
         Args:
             txt (str, optional): The text to append or replace the title with. Defaults to an empty string.
-            append (bool, optional): If True, appends `txt` to the existing title. 
+            append (bool, optional): If True, appends `txt` to the existing title.
                                      If False, replaces the title with `txt`. Defaults to False.
 
         Returns:
-            str: The adapted title. If no text is provided and `append` is False, 
+            str: The adapted title. If no text is provided and `append` is False,
                  the current date and time in the format 'YYYY-MM-DD HH:MM:SS' is returned.
         """
         if append:
@@ -200,7 +200,7 @@ class writer(ABC):
         if not txtFinal:
             txtFinal = datetime.today().strftime('%Y-%M-%d %H:%M:%s')
         return txtFinal
-    
+
     def checkPath(self, path: Path)-> bool:
         """
         Check if the specified path exists, and create it if it does not.
@@ -216,10 +216,10 @@ class writer(ABC):
         return status
 
     @abstractmethod
-    def writeContents(self, 
-                      nodes: Union[list, np.ndarray], 
-                      elements: Union[list, np.ndarray], 
-                      fields: Optional[dict] = None, 
+    def writeContents(self,
+                      nodes: Union[list, np.ndarray],
+                      elements: Union[list, np.ndarray],
+                      fields: Optional[dict] = None,
                       numStep: Optional[int] = None)-> None:
         """
         Writes the contents of the mesh data to a file.
@@ -227,7 +227,7 @@ class writer(ABC):
         Args:
             nodes (list): A list of nodes, where each node is represented by its coordinates.
             elements (list): A list of elements, where each element is defined by its connectivity.
-            fields (dict, optional): A dictionary containing field data associated with the nodes or elements. 
+            fields (dict, optional): A dictionary containing field data associated with the nodes or elements.
                          Defaults to None.
             numStep (int, optional): The step number for which the data is being written. Defaults to None.
 
@@ -255,8 +255,8 @@ class writer(ABC):
         Writes the given nodes to a file or data structure.
 
         Args:
-            nodes (Union[list, np.ndarray]): A collection of nodes to be written. 
-            This can be a list or a NumPy array, where each node typically 
+            nodes (Union[list, np.ndarray]): A collection of nodes to be written.
+            This can be a list or a NumPy array, where each node typically
             represents a point or vertex in a mesh.
 
         Returns:
@@ -270,7 +270,7 @@ class writer(ABC):
         Writes the provided elements to a file or data structure.
 
         Args:
-            elements (Union[list, np.ndarray]): A collection of elements to be written. 
+            elements (Union[list, np.ndarray]): A collection of elements to be written.
             This can be a list or a NumPy array.
 
         Returns:
@@ -279,16 +279,16 @@ class writer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def writeFields(self, 
-                    fields: Optional[dict] = None, 
+    def writeFields(self,
+                    fields: Optional[dict] = None,
                     numStep: Optional[int] = None) -> None:
         """
         Writes the provided fields to a file or data structure.
 
         Args:
-            fields (Optional[dict]): A dictionary containing the fields to be written. 
+            fields (Optional[dict]): A dictionary containing the fields to be written.
                          Keys represent field names, and values represent field data.
-            numStep (Optional[int]): An optional integer representing the step number 
+            numStep (Optional[int]): An optional integer representing the step number
                          associated with the fields being written.
 
         Returns:
@@ -300,10 +300,10 @@ class writer(ABC):
         """
         Splits the filename into its path, base name, and extension.
 
-        This method extracts the path, base name, and extension of the file 
-        associated with the `self.filename` attribute. It iteratively checks 
-        if the file extension is allowed based on the `self.db.ALLOWED_EXTENSIONS` 
-        list. If the extension is not valid after two iterations, it logs the 
+        This method extracts the path, base name, and extension of the file
+        associated with the `self.filename` attribute. It iteratively checks
+        if the file extension is allowed based on the `self.db.ALLOWED_EXTENSIONS`
+        list. If the extension is not valid after two iterations, it logs the
         bad extension using the `self.logBadExtension()` method.
 
         Returns:
@@ -313,7 +313,7 @@ class writer(ABC):
                 - extension (str): The concatenated file extension(s).
 
         Raises:
-            None: This method does not explicitly raise exceptions but relies on 
+            None: This method does not explicitly raise exceptions but relies on
             the `self.logBadExtension()` method to handle invalid extensions.
         """
         extension = ''
@@ -333,9 +333,9 @@ class writer(ABC):
                 self.logBadExtension()
         return path, filename, extension
 
-    def getFilename(self, 
-                    prefix: Optional[str] = None, 
-                    suffix: Optional[str] = None, 
+    def getFilename(self,
+                    prefix: Optional[str] = None,
+                    suffix: Optional[str] = None,
                     extension: Optional[str] = None) -> Path:
         """
         Constructs a filename by optionally adding a prefix, suffix, and/or changing the file extension.
@@ -369,7 +369,9 @@ class writer(ABC):
         """
 
         allowed_extensions = getattr(self.db, 'ALLOWED_EXTENSIONS', [])
-        Logger.error('File {}: bad extension (ALLOWED: {})'.format(self.filename, ' '.join(allowed_extensions)))
+        txtA = ' '.join(allowed_extensions)
+        txt = f'File {self.filename}: bad extension (ALLOWED: {txtA})'
+        Logger.error(txt)
 
     def dataAnalysis(self,
                      nodes: Optional[Union[list, np.ndarray]],
@@ -407,7 +409,7 @@ class writer(ABC):
             - If no physical groups are provided, an artificial physical group is created.
             - If `fields` is provided, the `fieldAnalysis` method is called to analyze the fields.
         """
-        
+
         self.nbNodes = len(nodes) if nodes is not None else 0
         self.nbElems = 0
         #
@@ -475,17 +477,17 @@ class writer(ABC):
         """
         Analyse the provided fields and compute statistics about them.
 
-        This method processes a list of fields and determines the number of 
-        fields, the number of cell-based fields, point-based fields, and 
-        temporal fields. It also validates and loads temporal data such as 
+        This method processes a list of fields and determines the number of
+        fields, the number of cell-based fields, point-based fields, and
+        temporal fields. It also validates and loads temporal data such as
         steps and timesteps, ensuring consistency across fields.
 
         Args:
-            fields (list): A list of dictionaries where each dictionary 
-                           represents a field. Each field dictionary may 
+            fields (list): A list of dictionaries where each dictionary
+                           represents a field. Each field dictionary may
                            contain the following keys:
-                           - 'type': Specifies the type of the field 
-                             ('elemental' for cell-based or 'nodal' for 
+                           - 'type': Specifies the type of the field
+                             ('elemental' for cell-based or 'nodal' for
                              point-based).
                            - 'nbsteps': Number of time steps (optional).
                            - 'steps': Array of step indices (optional).
@@ -501,7 +503,7 @@ class writer(ABC):
             self.nbSteps (int): Number of steps for temporal fields.
 
         Logs:
-            - Warnings if there are inconsistencies in the step definitions 
+            - Warnings if there are inconsistencies in the step definitions
               across fields.
             - Debug information about the number of fields and their types.
 
@@ -526,7 +528,7 @@ class writer(ABC):
                 self.nbTemporalFields += 1
                 # load available data
                 cSteps = f.get('steps',None)
-                cTimeSteps = f.get('timesteps',None)    
+                cTimeSteps = f.get('timesteps',None)
                 cNbSteps = f.get('nbsteps', None)
                 #
                 if cNbSteps is None:
@@ -554,8 +556,7 @@ class writer(ABC):
         Logger.debug(f'Number of cell fields: {self.nbCellFields}')
         Logger.debug(f'Number of point fields: {self.nbPointFields}')
         Logger.debug(f'Number of temporal fields: {self.nbTemporalFields}')
-    
-    
+
 
 
 def adaptInputs(nodes: Optional[Union[list, np.ndarray]],
@@ -567,15 +568,15 @@ def adaptInputs(nodes: Optional[Union[list, np.ndarray]],
     Parameters:
     -----------
     nodes : Union[list, np.ndarray]
-        A list or numpy array representing the nodes. If the nodes are in 2D, 
+        A list or numpy array representing the nodes. If the nodes are in 2D,
         they will be converted to 3D by appending a zero z-coordinate.
     elements : Union[list, np.ndarray, dict]
-        A list, numpy array, or dictionary representing the elements. If a dictionary 
-        is provided, it will be wrapped in a list. Physical groups will be assigned 
+        A list, numpy array, or dictionary representing the elements. If a dictionary
+        is provided, it will be wrapped in a list. Physical groups will be assigned
         if not already present.
     fields : Union[list, np.ndarray, dict], optional
-        A list, numpy array, or dictionary representing the fields. If a dictionary 
-        is provided, it will be wrapped in a list. Steps and data will be converted 
+        A list, numpy array, or dictionary representing the fields. If a dictionary
+        is provided, it will be wrapped in a list. Steps and data will be converted
         to numpy arrays if they are lists. Defaults to None.
 
     Returns:
@@ -637,7 +638,7 @@ def adaptInputs(nodes: Optional[Union[list, np.ndarray]],
 
     return nodes, elements, fields
 
-    
+
 def getNewPhysGrp(existing: set)-> int:
     """
     Generate a new physical group ID that does not conflict with existing IDs.

@@ -86,7 +86,7 @@ ignore = ["N806", "N802", "N999", "N812", "N801",
 quote-style = "single"
 
 [tool.pylint.main]
-py-version = "3.8"
+py-version = "3.12"
 jobs = 0
 ignore-paths = [
     "^docs/_build/.*$",

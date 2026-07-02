@@ -1,4 +1,4 @@
-""" 
+"""
 This file is part of the meshRW package
 ---
 This file includes the definition and tools to manipulate MSH format
@@ -23,9 +23,9 @@ def loadElementDict()-> dict:
     """
     Load a dictionary mapping element types to their corresponding VTK properties.
 
-    This function returns a dictionary where the keys are element type strings 
-    (e.g., 'LIN2', 'TRI3', 'HEX8') and the values are dictionaries containing 
-    information about the element type, including its VTK code, number of nodes, 
+    This function returns a dictionary where the keys are element type strings
+    (e.g., 'LIN2', 'TRI3', 'HEX8') and the values are dictionaries containing
+    information about the element type, including its VTK code, number of nodes,
     dimensionality, and associated VTK object.
 
     Returns:
@@ -40,9 +40,9 @@ def loadElementDict()-> dict:
                 ...
 
     Notes:
-        - Some element types are defined but have a value of `None`, indicating 
+        - Some element types are defined but have a value of `None`, indicating
           that they are not yet implemented or supported.
-        - The VTK objects (e.g., vtk.vtkLine, vtk.vtkTriangle) must be imported 
+        - The VTK objects (e.g., vtk.vtkLine, vtk.vtkTriangle) must be imported
           from the VTK library for this function to work.
     """
     elementDict = {
@@ -114,15 +114,15 @@ def loadElementDict()-> dict:
 
 def getVTKtoElem()-> dict:
     """
-    Returns a dictionary mapping VTK element types to their corresponding 
+    Returns a dictionary mapping VTK element types to their corresponding
     element type codes used in another system.
 
-    The mapping includes standard VTK element types, quadratic elements, 
+    The mapping includes standard VTK element types, quadratic elements,
     and some special cases like polygons and voxel types.
 
     Returns:
-        dict: A dictionary where the keys are VTK element type strings 
-                (e.g., 'VTK_VERTEX', 'VTK_TRIANGLE') and the values are 
+        dict: A dictionary where the keys are VTK element type strings
+                (e.g., 'VTK_VERTEX', 'VTK_TRIANGLE') and the values are
                 corresponding element type codes (e.g., 'NOD1', 'TRI3').
     """
 
@@ -169,7 +169,7 @@ def getVTKObj(txtEltype):
 
     # depending on the type of txtEltype
     numPerElement = -1
-    if txtEltype.upper() in VTKtoElem.keys():
+    if txtEltype.upper() in VTKtoElem:
         txtEltype = VTKtoElem[txtEltype]
     vtkobj = elementDict[txtEltype.upper()].get('vtkobj', None)
     numPerElement = getNumberNodes(txtEltype.upper())
@@ -182,12 +182,12 @@ def getVTKElemType(txtEltype: Union[str, int])-> tuple:
     """
     Get the VTK element type and the number of nodes per element.
 
-    This function retrieves the VTK element type number and the number of nodes per element 
-    based on the provided text declaration or integer. The VTK element type number corresponds 
+    This function retrieves the VTK element type number and the number of nodes per element
+    based on the provided text declaration or integer. The VTK element type number corresponds
     to the numbering defined in the VTK documentation.
 
     Args:
-        txtEltype (Union[str, int]): The element type, either as a string (VTK string declaration) 
+        txtEltype (Union[str, int]): The element type, either as a string (VTK string declaration)
                                      or as an integer (VTK element type number).
 
     Returns:
@@ -213,7 +213,7 @@ def getVTKElemType(txtEltype: Union[str, int])-> tuple:
         elementNum = txtEltype
     else:
         elem_key = txtEltype.upper()
-        if elem_key in VTKtoElem.keys():
+        if elem_key in VTKtoElem:
             elem_key = VTKtoElem[elem_key]
         elementNum = elementDict[elem_key.upper()].get('code', None)
         numPerElement = getNumberNodes(elem_key.upper())
@@ -259,26 +259,26 @@ def getNumberNodes(txtElemtype: str) -> int:
     Get the number of nodes for a specific element type.
 
     Args:
-        txtElemtype (str): The element type as a string. If a number is used, 
+        txtElemtype (str): The element type as a string. If a number is used,
                            the function will return it.
 
     Returns:
-        int: The number of nodes for the specified element type, or None if 
+        int: The number of nodes for the specified element type, or None if
              the element type is not defined.
 
     Raises:
-        Logs an error if the specified element type does not exist in the 
+        Logs an error if the specified element type does not exist in the
         element dictionary.
 
     Notes:
-        The function relies on `loadElementDict()` to retrieve the dictionary 
+        The function relies on `loadElementDict()` to retrieve the dictionary
         of element types and their properties.
     """
 
     elementDict = loadElementDict()
     nbNodes = 0
     # check if the type of element exists
-    if txtElemtype in elementDict.keys():
+    if txtElemtype in elementDict:
         # get the number of nodes for the type of element
         if elementDict[txtElemtype]:
             nbNodes = elementDict[txtElemtype].get('nodes', 0)
