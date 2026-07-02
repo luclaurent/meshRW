@@ -247,14 +247,14 @@ def test_MSHreader3D():
     assert mesh.getTags() == [5, 6]
     assert mesh.getElements().get('TET4').shape == (96925, 4)
     assert mesh.getElements().get('PRI6').shape == (1667, 6)
-    assert mesh.getElements(type='TET4').shape == (96925, 4)
-    assert mesh.getElements(type='PRI6').shape == (1667, 6)
+    assert mesh.getElements(typeElem='TET4').shape == (96925, 4)
+    assert mesh.getElements(typeElem='PRI6').shape == (1667, 6)
     assert mesh.getElements(tag=5).get('TET4').shape == (96925, 4)
     assert mesh.getElements(tag=6).get('PRI6').shape == (1667, 6)
     assert mesh.getElements(tag=6).get('TET4') is None
     assert mesh.getElements(tag=5).get('PRI6') is None
-    assert len(mesh.getElements(tag=6, type='TET4')) == 0
-    assert len(mesh.getElements(tag=5, type='PRI6')) == 0
+    assert len(mesh.getElements(tag=6, typeElem='TET4')) == 0
+    assert len(mesh.getElements(tag=5, typeElem='PRI6')) == 0
 
 
 def test_MSHreader2D():
@@ -265,16 +265,16 @@ def test_MSHreader2D():
     assert mesh.getTags() == [2, 4, 1, 15, 5, 27]
     assert mesh.getElements().get('LIN2').shape == (52, 2)
     assert mesh.getElements().get('TRI3').shape == (14614, 3)
-    assert mesh.getElements(type='LIN2').shape == (52, 2)
-    assert mesh.getElements(type='TRI3').shape == (14614, 3)
-    assert mesh.getElements(tag=2, type='LIN2').shape == (52, 2)
-    assert mesh.getElements(tag=4, type='LIN2').shape == (52, 2)
-    assert mesh.getElements(tag=1, type='TRI3').shape == (14614, 3)
-    assert mesh.getElements(tag=15, type='TRI3').shape == (14156, 3)
-    assert mesh.getElements(tag=5, type='TRI3').shape == (458, 3)
-    assert mesh.getElements(tag=27, type='TRI3').shape == (458, 3)
-    assert len(mesh.getElements(tag=5, type='LIN2')) == 0
-    assert len(mesh.getElements(tag=27, type='LIN2')) == 0
+    assert mesh.getElements(typeElem='LIN2').shape == (52, 2)
+    assert mesh.getElements(typeElem='TRI3').shape == (14614, 3)
+    assert mesh.getElements(tag=2, typeElem='LIN2').shape == (52, 2)
+    assert mesh.getElements(tag=4, typeElem='LIN2').shape == (52, 2)
+    assert mesh.getElements(tag=1, typeElem='TRI3').shape == (14614, 3)
+    assert mesh.getElements(tag=15, typeElem='TRI3').shape == (14156, 3)
+    assert mesh.getElements(tag=5, typeElem='TRI3').shape == (458, 3)
+    assert mesh.getElements(tag=27, typeElem='TRI3').shape == (458, 3)
+    assert len(mesh.getElements(tag=5, typeElem='LIN2')) == 0
+    assert len(mesh.getElements(tag=27, typeElem='LIN2')) == 0
 
 
 # # if __name__ == "__main_":

@@ -333,7 +333,3 @@ class fileHandler(FileHandler):
             safeMode=safeMode,
             **kwargs,
         )
-
-    def getHandler(self) -> object:
-        """Compatibility wrapper for :meth:`getHandler`."""
-        return self.getHandler()

@@ -113,9 +113,9 @@ class mshWriter(writerClass.writer):
         Logger.info('Start writing msh file')
         _ = verbose
         # adapt inputs
-        nodes, elements, fields = writerClass.adaptInputs(nodes, elements, fields)
+        nodesOk, elementsOk, fieldsOk = writerClass.adaptInputs(nodes, elements, fields)
         # initialization
-        super().__init__(filename, nodes, elements, fields, append, title, opts)
+        super().__init__(filename, nodesOk, elementsOk, fieldsOk, append, title, opts)
 
         # load specific configuration
         self.db = dbmsh
@@ -128,7 +128,7 @@ class mshWriter(writerClass.writer):
             self.fhandle = fileio.fileHandler(filename=filename, right='w', safeMode=False)
 
         # write contents
-        self.writeContents(nodes, elements, fields)
+        self.writeContents(nodesOk, elementsOk, fieldsOk)
 
         # close file
         self.fhandle.close()
@@ -885,13 +885,13 @@ class mshReader:
                 elemsExportUnique[iT] = np.unique(elemsExport[iT], axis=0)
 
         # specific export
-        if not dictFormat and not type:
+        if not dictFormat and not typeElem:
             if len(elemsExport) > 1:
                 Logger.warning('Elements exported without the dictionary format: some data are not exported')
             if len(elemsExport) == 0:
                 Logger.warning('No element to export')
                 return np.array([])
-            idElems = list(elemsExport.keys())[0]
+            idElems = list(elemsExport)[0]
             elemsExport = elemsExport[idElems]
             elemsExportUnique = elemsExportUnique[idElems]
 

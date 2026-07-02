@@ -74,9 +74,9 @@ def test_VTKwriterNoPhysGrp():
     # extract elements list and data
     elemsData = data['e']
     # generate data on nodes
-    dataNodes = numpy.random.rand(nodes.shape[0], nodes.shape[1])
+    # dataNodes = numpy.random.rand(nodes.shape[0], nodes.shape[1])
     # generate data on elements
-    dataElem = numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 2)
+    # dataElem = numpy.random.rand(elemsData['TET4'].shape[0] + elemsData['PRI6'].shape[0], 2)
     # write msh file
     outputfile = ArtifactsPath / Path('build.vtk')
     vtk.vtkWriter(

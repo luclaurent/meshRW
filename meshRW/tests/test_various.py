@@ -1,7 +1,5 @@
 import pytest
-from meshRW.various import convert_size, timeit
-from loguru import logger
-import time
+from meshRW.various import convert_size
 
 def test_convert_size():
     # Test for 0 bytes
