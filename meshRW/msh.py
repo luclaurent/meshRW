@@ -520,7 +520,7 @@ class MSHReader:
         curIt (int): Current iteration index for reading nodes or elements.
 
     Methods:
-        __init__(filename=None, type='mshv2', dim=3):
+        __init__(filename=None, typeMSH='mshv2', dim=3):
             Initializes the MSHReader object, opens the file, and reads its content.
 
         initContent():
@@ -556,7 +556,7 @@ class MSHReader:
             Args:
                 tag (int, optional): Tag to filter nodes by.
 
-        getElements(type=None, tag=None, dict_format=True):
+        getElements(type=None, typeElem=None, tag=None, dict_format=True):
             Returns the list of elements.
             Args:
                 type (str, optional): Type of elements to filter by.
@@ -880,6 +880,7 @@ class MSHReader:
         return np.array([]) if self.nodes is None else self.nodes
 
     def getElements(self,
+                    type: str|None=None, # backward compatibility (depreciated)
                     typeElem: str|None=None,
                     tag: int|None=None,
                     dictFormat: bool=True)-> Union[np.ndarray, dict]:
@@ -887,7 +888,7 @@ class MSHReader:
         Retrieve elements from the mesh based on specified criteria.
 
         Parameters:
-            typeElem (str, optional): The type of elements to retrieve. This can be specified
+            typeElem/type (str, optional): The type of elements to retrieve. This can be specified
                 using the Gmsh element ID or the general name of the elements. If not provided,
                 elements of all types will be considered.
             tag (int, optional): The tag to filter elements by. If specified, only elements
@@ -927,6 +928,8 @@ class MSHReader:
                         elemsTag[iM] = list()
                     elemsTag[iM].extend(vT[iM])
         # filter by type
+        if type is not None:
+            typeElem = type
         if typeElem:
             elemsExportUnique = np.array([])
             if typeElem in elemsTag.keys():
