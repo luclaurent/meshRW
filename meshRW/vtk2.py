@@ -17,7 +17,7 @@ import vtk
 import vtkmodules.util.numpy_support as ns
 from loguru import logger as Logger
 # pylint: disable=c-extension-no-member, no-member
-from lxml import etree
+import lxml.etree as etree
 
 from . import configMESH, dbvtk, various, writerClass
 
@@ -260,6 +260,8 @@ class vtkWriter(writerClass.writer):
 
     @various.timeit('Fields declared')
     def writeContents(self,
+                      nodes: Optional[Union[list, np.ndarray]] = None,
+                      elements: Optional[Union[list, np.ndarray, dict]] = None,
                       fields: Optional[Union[list, np.ndarray]] = None,
                       numStep: Optional[int] = None)-> None:
         """
@@ -278,6 +280,7 @@ class vtkWriter(writerClass.writer):
         Returns:
             None
         """
+        _ = (nodes, elements)
         self.writeFields(fields, numStep=numStep)
 
     def writeFields(self,
@@ -310,15 +313,19 @@ class vtkWriter(writerClass.writer):
             - If the field type is not recognized, an error is logged.
         """
         if fields is not None:
+            if self.ugrid is None:
+                Logger.error('Unstructured grid is not initialized. Cannot write fields.')
+                return
+            ugrid = self.ugrid
             if not isinstance(fields, list):
                 fields = [fields]
             Logger.info(f'Add {len(fields)} fields')
             for f in fields:
                 data, typedata = self.setField(f, numStep=numStep)
                 if typedata == 'nodal':
-                    self.ugrid.GetPointData().AddArray(data)
+                    ugrid.GetPointData().AddArray(data)
                 elif typedata == 'elemental':
-                    self.ugrid.GetCellData().AddArray(data)
+                    ugrid.GetCellData().AddArray(data)
                 else:
                     Logger.error(f'Field type {typedata} not recognized')
 
@@ -339,6 +346,9 @@ class vtkWriter(writerClass.writer):
         Returns:
             None
         """
+        if self.ugrid is None:
+            Logger.error('Unstructured grid is not initialized. Cannot write nodes.')
+            return
         points = vtk.vtkPoints()
         nodes_run = np.asarray(nodes)
         for i in range(len(nodes_run)):
@@ -368,6 +378,9 @@ class vtkWriter(writerClass.writer):
             - Debug logs are generated to indicate the number and type of elements being processed.
 
         """
+        if self.ugrid is None:
+            Logger.error('Unstructured grid is not initialized. Cannot write elements.')
+            return
         for m in elements:
             # get connectivity data
             typeElem = m.get('type')
@@ -466,7 +479,7 @@ class vtkWriter(writerClass.writer):
         """
         # load field data
         data = field.get('data')
-        name = field.get('name')
+        name = field.get('name') or 'field'
         _ = field.get('numEntities', None)
         nbsteps = field.get('nbsteps', 1)
         steps = field.get('steps', None)
@@ -488,10 +501,12 @@ class vtkWriter(writerClass.writer):
             if not timesteps and nbsteps>1:
                 timesteps = np.zeros(nbsteps)
 
-            if nbsteps > 1 or steps is not None:
+            if data is not None and (nbsteps > 1 or steps is not None):
                 data = data[numStep]
+        if data is None:
+            raise ValueError('Field data is required')
         # initialize VTK's array
-        dataVtk = ns.numpy_to_vtk(data)
+        dataVtk = ns.numpy_to_vtk(np.asarray(data))
         # dataVtk = vtk.vtkDoubleArray()
         dataVtk.SetName(name)
         # if len(data.shape) == 1:
@@ -538,25 +553,29 @@ class vtkWriter(writerClass.writer):
               `ascii` attributes of the instance.
             - Logs the size of the saved file and the time taken to write it.
         """
-        _ = ugrid
+        ugrid_run = self.ugrid if ugrid is None else ugrid
         if filename is None:
             Logger.error('No filename provided for writing VTK file')
+            return
+        if ugrid_run is None:
+            Logger.error('No unstructured grid provided for writing VTK file')
             return
         # initialization
         if self.writer is None:
             self.writer = vtk.vtkXMLUnstructuredGridWriter()
-            self.writer.SetInputDataObject(self.ugrid)
-            if self.binary:
-                self.writer.SetFileType(vtk.VTK_BINARY)
-            if self.ascii:
-                self.writer.SetDataModeToAscii()
-        self.writer.SetFileName(str(filename))
-        self.writer.Update()
+        vtk_writer = self.writer
+        vtk_writer.SetInputDataObject(ugrid_run)
+        if self.binary:
+            vtk_writer.SetDataModeToBinary()
+        if self.ascii:
+            vtk_writer.SetDataModeToAscii()
+        vtk_writer.SetFileName(str(filename))
+        vtk_writer.Update()
         # self.writer.SetDebug(True)
         # self.writer.SetWriteTimeValue(True)
 
         starttime = time.perf_counter()
-        self.writer.Write()
+        vtk_writer.Write()
         filename = Path(filename)
         txt = f'Data save in {filename} ({various.convert_size(filename.stat().st_size)}) '
         txt += f'- Elapsed {(time.perf_counter()-starttime):.4f} s'
