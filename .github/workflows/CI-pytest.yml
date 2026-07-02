@@ -68,7 +68,7 @@ jobs:
       - name: Coverage Badge
         run: |
           pip install -U genbadge
-          genbadge coverage -i  coverage.xml -o coverage/coverage.svg
+          genbadge coverage -i  reportcov/report.xml -o coverage/coverage.svg
 
       - name: Publish coverage badge branch
         if: ${{ matrix.python-version == '3.13' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
