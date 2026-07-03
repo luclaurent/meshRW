@@ -4,4 +4,4 @@ The package exposes mesh readers/writers for legacy Gmsh (``.msh``) and
 VTK/VTU outputs used by ParaView workflows.
 """
 
-__version__ = '1.6.0'
+__version__ = '1.6.1'
